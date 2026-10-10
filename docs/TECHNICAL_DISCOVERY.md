@@ -26,6 +26,14 @@ was checked against actual script sources or installed files unless explicitly m
 Implication for the repo: the project currently has no mod skeleton. A script-only mod layout
 (`modInfusion\content\scripts\...`) is viable and is the lowest-risk packaging approach.
 
+**Development workflow (decided):** all mod source lives in this repository (e.g. `src\modInfusion\...`);
+the game's `mods\` directory receives copies only via a deploy script. The game directory is never
+edited directly. Script merging is still required for any mod that overrides base scripts — it was
+not simplified by the Next-Gen/REDkit update (the community maintains a "Script Merger - Remastered"
+fork for the UTF-8 change, and Vortex integrates it). By shipping only new script files, this mod
+avoids the merger entirely for itself and all users; any future base-file override (e.g. a
+blacksmith-menu tab in Milestone 6) must be justified and its conflict surface documented.
+
 ## 2. Critical conflict constraint (user's install)
 
 Three installed mods **override the same base scripts** and are merged by `mod0000_MergedFiles`:
