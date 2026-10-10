@@ -4,6 +4,11 @@
 
 Witcher 3 Infusion — a sacrifice-based equipment progression mod for The Witcher 3: Wild Hunt Next-Gen.
 
+Game and Redkit paths:
+
+- "E:\SteamLibrary\steamapps\common\The Witcher 3"
+- "E:\SteamLibrary\steamapps\common\The Witcher 3 REDkit"
+
 ## Before coding
 
 - Read INFUSION_SPEC.md before implementing features.
