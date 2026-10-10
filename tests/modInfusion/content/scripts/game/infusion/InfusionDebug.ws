@@ -214,7 +214,8 @@ exec function infuseSelfTest()
 	//    item (equipping would steal the steel slot and unequip the
 	//    player's weapon). Skipped when no steel sword is equipped.
 	equippedSteel = inv.GetItemsByCategory( 'steelsword' );
-	for ( var k = 0; k < equippedSteel.Size(); k += 1 )
+	k = 0;
+	while ( k < equippedSteel.Size() )
 	{
 		if ( GetWitcherPlayer().IsItemEquipped( equippedSteel[k] ) )
 		{
@@ -223,6 +224,7 @@ exec function infuseSelfTest()
 			theGame.GetGuiManager().ShowNotification( "check 3 equipped: " + InfusionErrorToString( p.errorCode ), 4.0 );
 			break;
 		}
+		k += 1;
 	}
 	if ( k >= equippedSteel.Size() )
 	{
