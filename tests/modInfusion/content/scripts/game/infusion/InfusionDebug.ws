@@ -140,6 +140,8 @@ function InfusionRunBestPair()
 	var err : EInfusionError;
 	var p : SInfusionPreview;
 	var inv : CInventoryComponent;
+	var i : int;
+	var matText : string;
 
 	if ( !InfusionFindBestPair( targetId, sacrificeId ) )
 	{
@@ -152,8 +154,22 @@ function InfusionRunBestPair()
 	err = svc.Execute( targetId, sacrificeId, p );
 	if ( err == IFE_Ok )
 	{
+		matText = "";
+		for ( i = 0; i < p.materials.Size(); i += 1 )
+		{
+			if ( i > 0 )
+			{
+				matText += ", ";
+			}
+			matText += p.materials[i].itemName + " x" + p.materials[i].quantity;
+		}
+		if ( matText == "" )
+		{
+			matText = "(fully covered by salvage)";
+		}
 		theGame.GetGuiManager().ShowNotification(
 			"Infusion OK: " + inv.GetItemName( targetId ) + " is now level " + p.sacrificeLevel, 6.0 );
+		theGame.GetGuiManager().ShowNotification( "materials consumed: " + matText, 6.0 );
 		theSound.SoundEvent( "gui_crafting_craft_item" );
 	}
 	else
@@ -246,7 +262,7 @@ exec function infuseSelfTest()
 		theGame.GetGuiManager().ShowNotification( "check 4 category: skipped (no silver sword)", 4.0 );
 	}
 
-	// 5) real infusion (consumes the sacrifice on success)
+	// 5) real infusion (consumes the sacrifice and materials on success)
 	InfusionRunBestPair();
 
 	// Verdict: the infusion itself reports its own sound; here we report the
@@ -260,6 +276,15 @@ exec function infuseSelfTest()
 	{
 		theGame.GetGuiManager().ShowNotification( "INFUSION SELFTEST: " + failed + " of 4 checks FAILED", 6.0 );
 		theSound.SoundEvent( "gui_global_denied" );
+	}
+
+	// Material sanity print: what the next infusion of a similar pair would
+	// require after salvage discount (read-only; from the freshly spawned pair
+	// these values were just exercised by the real infusion above).
+	svc.Preview( t[0], t2[0], p );
+	if ( p.errorCode == IFE_Ok )
+	{
+		theGame.GetGuiManager().ShowNotification( "material preview (next pair): " + p.materials.Size() + " requirement(s)", 4.0 );
 	}
 }
 

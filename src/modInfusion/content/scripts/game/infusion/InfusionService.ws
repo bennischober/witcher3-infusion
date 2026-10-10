@@ -29,6 +29,127 @@ class W3InfusionService extends IScriptable
 	default MAX_CORRECTION_STEPS = 3;
 
 	// ---------------------------------------------------------------------
+	// Material requirements (M3, spec §5.4; config service comes in M5)
+	// ---------------------------------------------------------------------
+
+	// Base recipe per supported category. Values deliberately overlap with the
+	// category's typical sacrifice yields so the salvage discount is exercised.
+	// These are prototype balance values, not final decisions (spec §16 M3).
+	private function GetRecipeForCategory( category : name, out recipe : array<SItemParts> ) : bool
+	{
+		var part : SItemParts;
+
+		switch ( category )
+		{
+			case 'steelsword':
+				part.itemName = 'Leather straps';
+				part.quantity = 2;
+				recipe.PushBack( part );
+				part.itemName = 'Steel ingot';
+				part.quantity = 2;
+				recipe.PushBack( part );
+				return true;
+
+			case 'silversword':
+				part.itemName = 'Leather straps';
+				part.quantity = 2;
+				recipe.PushBack( part );
+				part.itemName = 'Meteorite ingot';
+				part.quantity = 2;
+				recipe.PushBack( part );
+				return true;
+
+			case 'armor':
+				part.itemName = 'Leather squares';
+				part.quantity = 2;
+				recipe.PushBack( part );
+				part.itemName = 'Thread';
+				part.quantity = 4;
+				recipe.PushBack( part );
+				return true;
+
+			case 'pants':
+			case 'boots':
+				part.itemName = 'Leather scraps';
+				part.quantity = 2;
+				recipe.PushBack( part );
+				part.itemName = 'Thread';
+				part.quantity = 2;
+				recipe.PushBack( part );
+				return true;
+
+			case 'gloves':
+				part.itemName = 'Leather scraps';
+				part.quantity = 1;
+				recipe.PushBack( part );
+				part.itemName = 'Thread';
+				part.quantity = 2;
+				recipe.PushBack( part );
+				return true;
+		}
+		return false;
+	}
+
+	// Salvage yield of the sacrifice: native recycling_parts data (spec §5.2
+	// primary path). Returns false when the item has no salvage data; the
+	// caller treats that as zero recovery.
+	private function GetSalvageYield( inv : CInventoryComponent, item : SItemUniqueId, out yield : array<SItemParts> ) : bool
+	{
+		var parts : array<SItemParts>;
+		var i : int;
+
+		if ( !inv.IsIdValid( item ) )
+		{
+			return false;
+		}
+
+		parts = inv.GetItemRecyclingParts( item );
+		if ( parts.Size() == 0 )
+		{
+			return false;
+		}
+
+		for ( i = 0; i < parts.Size(); i += 1 )
+		{
+			yield.PushBack( parts[i] );
+		}
+		return true;
+	}
+
+	// Remaining material requirements after applying the sacrifice's salvage
+	// as a discount (spec §5.4). Excess salvage is discarded, never refunded.
+	private function ComputeRemainingMaterials( recipe, salvaged : array<SItemParts>, out remaining : array<SItemParts> ) : void
+	{
+		var i, j : int;
+		var salvagedQty : int;
+		var part : SItemParts;
+
+		for ( i = 0; i < recipe.Size(); i += 1 )
+		{
+			salvagedQty = 0;
+			for ( j = 0; j < salvaged.Size(); j += 1 )
+			{
+				if ( salvaged[j].itemName == recipe[i].itemName )
+				{
+					salvagedQty = salvaged[j].quantity;
+					break;
+				}
+			}
+
+			part.itemName = recipe[i].itemName;
+			part.quantity = recipe[i].quantity - salvagedQty;
+			if ( part.quantity < 0 )
+			{
+				part.quantity = 0;   // excess salvage is discarded (spec §5.4)
+			}
+			if ( part.quantity > 0 )
+			{
+				remaining.PushBack( part );
+			}
+		}
+	}
+
+	// ---------------------------------------------------------------------
 	// Category support table
 	// ---------------------------------------------------------------------
 
@@ -213,6 +334,7 @@ class W3InfusionService extends IScriptable
 		var targetData, sacrificeData : SInfusionCategoryData;
 		var targetLevel, sacrificeLevel : int;
 		var gap : int;
+		var remaining : array<SItemParts>;
 
 		preview.targetId = targetId;
 		preview.sacrificeId = sacrificeId;
@@ -290,6 +412,13 @@ class W3InfusionService extends IScriptable
 			return preview.errorCode;
 		}
 
+		// Materials (spec §5.2/§5.4): native salvage data as discount.
+		GetRecipeForCategory( targetData.category, preview.materials );
+		GetSalvageYield( inv, sacrificeId, preview.salvaged );
+		remaining.Clear();
+		ComputeRemainingMaterials( preview.materials, preview.salvaged, remaining );
+		preview.materials = remaining;
+
 		preview.stepsToAdd = gap;
 		preview.newLevel = targetLevel + gap;
 		preview.laborFee = GetLaborFee( gap );
@@ -298,7 +427,43 @@ class W3InfusionService extends IScriptable
 	}
 
 	// ---------------------------------------------------------------------
-	// Labor fee (M2 flat; M5 full formula per spec §6.3)
+	// Material inventory operations (spec §5.4, §13.1)
+	// ---------------------------------------------------------------------
+
+	// True when the inventory holds at least the required quantity of every
+	// remaining material.
+	private function VerifyMaterials( inv : CInventoryComponent, required : array<SItemParts> ) : bool
+	{
+		var i : int;
+
+		for ( i = 0; i < required.Size(); i += 1 )
+		{
+			if ( required[i].quantity > 0
+				&& inv.GetItemQuantityByName( required[i].itemName ) < required[i].quantity )
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	// Deducts the required material quantities from the inventory.
+	// Call only after VerifyMaterials passed (spec §13.1).
+	private function RemoveMaterials( inv : CInventoryComponent, required : array<SItemParts> ) : void
+	{
+		var i : int;
+
+		for ( i = 0; i < required.Size(); i += 1 )
+		{
+			if ( required[i].quantity > 0 )
+			{
+				inv.RemoveItemByName( required[i].itemName, required[i].quantity );
+			}
+		}
+	}
+
+	// ---------------------------------------------------------------------
+	// Labor fee (M3 flat formula; M5 full config per spec §6.3)
 	// ---------------------------------------------------------------------
 
 	private function GetLaborFee( levelGap : int ) : int
@@ -336,6 +501,13 @@ class W3InfusionService extends IScriptable
 		if ( inv.GetMoney() < preview.laborFee )
 		{
 			preview.errorCode = IFE_NotEnoughCrowns;
+			return preview.errorCode;
+		}
+
+		// Material check AFTER the salvage discount (spec §5.4/§13.1).
+		if ( !VerifyMaterials( inv, preview.materials ) )
+		{
+			preview.errorCode = IFE_NotEnoughMaterials;
 			return preview.errorCode;
 		}
 
@@ -382,8 +554,10 @@ class W3InfusionService extends IScriptable
 		}
 
 		// 5) Commit irreversible parts, in loss-minimizing order:
-		//    charge money first, then consume the sacrifice (spec §13.2).
+		//    charge money, consume materials, then consume the sacrifice
+		//    (spec §13.2).
 		inv.RemoveMoney( preview.laborFee );
+		RemoveMaterials( inv, preview.materials );
 		inv.RemoveItem( sacrificeId );
 
 		// 6) Restore durability as part of the paid service (spec §3.4).
