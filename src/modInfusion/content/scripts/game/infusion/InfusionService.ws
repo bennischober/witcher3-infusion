@@ -462,6 +462,32 @@ class W3InfusionService extends IScriptable
 		}
 	}
 
+	// Human-readable material list for log lines ("item xN[, item xN...]").
+	private function DescribeMaterials( parts : array<SItemParts> ) : string
+	{
+		var i : int;
+		var text : string;
+
+		text = "";
+		for ( i = 0; i < parts.Size(); i += 1 )
+		{
+			if ( parts[i].quantity <= 0 )
+			{
+				continue;
+			}
+			if ( text != "" )
+			{
+				text += ", ";
+			}
+			text += parts[i].itemName + " x" + parts[i].quantity;
+		}
+		if ( text == "" )
+		{
+			text = " none";
+		}
+		return text;
+	}
+
 	// ---------------------------------------------------------------------
 	// Labor fee (M3 flat formula; M5 full config per spec §6.3)
 	// ---------------------------------------------------------------------
@@ -488,6 +514,7 @@ class W3InfusionService extends IScriptable
 		var levelBefore, levelAfter : int;
 		var added, guard : int;
 		var i : int;
+		var sacrificeName : name;
 
 		// 1) Full re-validation immediately before commit (spec §13.1).
 		err = Preview( targetId, sacrificeId, preview );
@@ -508,10 +535,13 @@ class W3InfusionService extends IScriptable
 		if ( !VerifyMaterials( inv, preview.materials ) )
 		{
 			preview.errorCode = IFE_NotEnoughMaterials;
+			LogChannel( 'Infusion', "ABORT: missing materials. requirements:" + DescribeMaterials( preview.materials )
+				+ " (salvage covered " + DescribeMaterials( preview.salvaged ) + ")" );
 			return preview.errorCode;
 		}
 
 		levelBefore = preview.targetLevel;
+		sacrificeName = inv.GetItemName( sacrificeId );
 
 		// 2) Begin deferred inventory update (verified vanilla pattern).
 		GetWitcherPlayer().StartInvUpdateTransaction();
@@ -570,7 +600,7 @@ class W3InfusionService extends IScriptable
 
 		LogChannel( 'Infusion', "OK: target " + inv.GetItemName( targetId )
 			+ " level " + levelBefore + " -> " + levelAfter
-			+ ", sacrifice " + inv.GetItemName( sacrificeId ) + " consumed ("
+			+ ", sacrifice " + sacrificeName + " consumed ("
 			+ added + " x " + preview.stepAbility + " added)"
 			+ ", fee " + preview.laborFee );
 

@@ -220,6 +220,11 @@ exec function infuseSelfTest()
 		inv.AddItemCraftedAbility( s[0], 'autogen_fixed_steel_dmg', true );
 	}
 
+	LogChannel( 'Infusion', "selftest: spawned " + inv.GetItemName( t[0] ) + " L"
+		+ svc.ComputeItemLevel( inv, t[0] ) + " (target), " + inv.GetItemName( s[0] ) + " L"
+		+ svc.ComputeItemLevel( inv, s[0] ) + " (sacrifice, boosted +10), "
+		+ inv.GetItemName( t2[0] ) + " L" + svc.ComputeItemLevel( inv, t2[0] ) + " (equal-level reject)" );
+
 	// Mark all spawned items so infuseCleanTestItems can remove them later.
 	inv.AddItemTag( t[0], 'InfusionTestItem' );
 	inv.AddItemTag( s[0], 'InfusionTestItem' );
@@ -401,9 +406,12 @@ exec function infuseTestMissingMaterials()
 
 	straps = inv.GetItemQuantityByName( 'Leather straps' );
 	ingots = inv.GetItemQuantityByName( 'Steel ingot' );
+	LogChannel( 'Infusion', "missing-materials test: precondition straps=" + straps + " ingots=" + ingots
+		+ " money=" + inv.GetMoney() );
 	if ( straps > 0 || ingots > 0 )
 	{
 		FactsSet( "InfLastTest", 0 );
+		LogChannel( 'Infusion', "missing-materials test ABORTED at precondition (materials still present)" );
 		theGame.GetGuiManager().ShowNotification(
 			"PRECONDITION FAILED: drop your Leather straps and Steel ingots first (have " + straps + "/" + ingots + ")", 6.0 );
 		theSound.SoundEvent( "gui_global_denied" );
@@ -438,6 +446,8 @@ exec function infuseTestMissingMaterials()
 	}
 
 	err = svc.Execute( t[0], s[0], p );
+	LogChannel( 'Infusion', "missing-materials test: Execute returned " + InfusionErrorToString( err )
+		+ " (expected: missing required crafting materials)" );
 
 	if ( err == IFE_NotEnoughMaterials )
 	{
