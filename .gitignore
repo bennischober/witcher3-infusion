@@ -19,6 +19,7 @@ out/
 .env.*
 !.env.example
 local.settings.json
+orthos-key
 
 # Temporary test output
 test-results/

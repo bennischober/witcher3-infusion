@@ -1,0 +1,25 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "litellm": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LiteLLM",
+      "options": {
+        "baseURL": "https://api.prod.orthos.uni-ulm.de/v1",
+        "apiKey": "{file:orthos-key}"
+      }
+    }
+  },
+  "lsp": true,
+  "mcp": {
+    "litellm-tools": {
+      "type": "remote",
+      "url": "https://api.prod.orthos.uni-ulm.de/mcp",
+      "oauth": false,
+      "headers": {
+        "x-litellm-api-key": "Bearer {file:orthos-key}"
+      },
+      "enabled": true
+    }
+  }
+}
