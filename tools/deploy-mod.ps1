@@ -40,7 +40,7 @@ Copy-Item -Recurse -Force -Path (Join-Path $srcRoot "*") -Destination $dstRoot
 
 # Report what was deployed
 $files = Get-ChildItem -Recurse -File -Path $dstRoot | Where-Object { $_.Name -notlike "__folder_managed_by_vortex" }
-Write-Host "Deployed $($files.Count) file(s) to $dstRoot:"
+Write-Host "Deployed $($files.Count) file(s) to ${dstRoot}:"
 $files | ForEach-Object { Write-Host ("  " + $_.FullName.Substring($dstRoot.Length + 1)) }
 
 Write-Host ""
