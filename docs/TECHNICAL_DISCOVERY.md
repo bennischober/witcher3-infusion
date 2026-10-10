@@ -14,14 +14,15 @@ was checked against actual script sources or installed files unless explicitly m
 
 | Item | Finding |
 | --- | --- |
-| Game edition | Next-Gen. `bin\x64` (DX11, scriptStudio remnants) and `bin\x64_dx12\witcher3.exe` present. Exe version **5.0.0.1048522** (patch 4.04c era). |
+| Game edition | **Remastered (5.01, exe 5.0.0.1048522, updated 2026-10-10)**. DX12-only. Supersedes the Next-Gen edition; base game + all DLCs merged into single bundles. Previously listed as "Next-Gen 4.04c" — that install was upgraded in place. |
 | REDkit | Full install at `...\The Witcher 3 REDkit` with `editor.exe`, `wcc_lite.exe`, `bundlebuilder.exe`, `r4Launcher.exe`, `scriptStudio.exe`. |
-| Script sources | `REDkit\r4data\scripts` (1,525 `.ws` files) is **byte-identical** to the game's `content\content0\scripts` (MD5-verified sample: `inventoryComponent.ws`). All engine/game script APIs can therefore be read from REDkit sources with full confidence. |
-| Script deployment | Mods ship **loose `.ws` files** under `mods\modX\content\scripts\...`; the game compiles them at launch (proven by installed `modLevelingGear`, which contains only `.ws` files, no bundles, no metadata.store). |
-| User's installed mods | `mod0000_MergedFiles` (Vortex script merger — merges `gameParams.ws`, `inventoryComponent.ws`, `playerWitcher.ws`), `modLevelingGear` (Vortex-managed), `modFCR3_2_Nitpicker` + `modFCR3_3_Padlock` (combat overhaul), `modHQFacesV3`, `modMoreMoneyForTraders`, `modOver9000ngplus`, `modRealWeather`. |
+| Script sources | `REDkit\r4data\scripts` (1,525 `.ws` files) matched the game's `content\content0\scripts` before the 5.00 update (MD5-verified). **After 5.00 the game scripts changed** (UTF-8 re-encode + keyword/compiler changes + gameplay changes) — re-verify any API assumption against the *current* game scripts before relying on it; the community changelog (Nexus mod 12945 / GitHub `ElementaryLewis/The-Witcher-3-Remastered-Changelog`) diffs 4.04b → 5.00b → 5.01 file-by-file. |
+| Script deployment | Mods ship **loose `.ws` files** under `mods\modX\content\scripts\...`; the game compiles them at launch. **5.00 requirements: UTF-8 with BOM encoding** (scripts, XML, CSV, w3strings were UTF-16 in Next-Gen); new compiler reserves `map`/`set` as keywords; `precompiled.rsblob` (REDkit-cooked) is the console-safe alternative, optional on PC. |
+| User's installed mods (after 2026-10-10 cleanup) | `modHQFacesV3` (texture/mesh assets — unaffected by 5.00), `modRealWeather` (CSV weather assets + `DLC\RealWeather` bundle half — kept, verify in game), `modInfusion` (this project). **Removed:** `modFCR3_2_Nitpicker` + `modFCR3_3_Padlock` (FCR3 is bundled with the game since 4.0), `modLevelingGear` (abandonware, keyword-broken), `mod0000_MergedFiles` (merger output for the two above), `modMoreMoneyForTraders` (UTF-16 script, unfixable), `modOver9000ngplus` (unverified NG+ data mod). Full rationale in `docs/PATCH_NOTES_2026-10-10_scripts.md` and `docs/MOD_CLEANUP_2026-10-10.md`. |
 | UI assets | All menus are compiled Flash SWFs inside cooked bundles (e.g. `gameplay\gui_new\swf\repair\panel_blacksmith.redswf`). **No SWF sources (`.fla`) are shipped** — modifying existing menus visually requires community SWF tools and is high-risk. |
 | Localization | Game uses compiled `.w3strings`; REDkit ships `REDstrings.exe` (bin\tools\RedStrings_internal) for string database work. Community encoders exist for adding strings. |
 | Console | Not enabled in `user.settings`; enabling requires `DBGConsoleOn=true` (commonly via registry `AllowConsole=1`). **Unverified on this machine** — to be enabled for prototype testing. |
+| In-game mod browser | 5.00 integrates the mod.io SDK (Mod Hub) with a curated, platform-validated mod list; Nexus remains usable but only "Remastered Compatible"-tagged mods should be installed. `ModsConfig.json` referenced by the exe (not yet created on this install). |
 
 Implication for the repo: the project currently has no mod skeleton. A script-only mod layout
 (`modInfusion\content\scripts\...`) is viable and is the lowest-risk packaging approach.
@@ -36,19 +37,28 @@ blacksmith-menu tab in Milestone 6) must be justified and its conflict surface d
 
 ## 2. Critical conflict constraint (user's install)
 
-Three installed mods **override the same base scripts** and are merged by `mod0000_MergedFiles`:
+**Superseded 2026-10-10:** the original install carried three script-merging mods
+(`mod0000_MergedFiles` merging `gameParams.ws`, `inventoryComponent.ws`, `playerWitcher.ws` for
+Leveling Gear + FCR3). Those mods were **removed** during the Remastered cleanup (FCR3 is bundled
+with the game since 4.0; Leveling Gear was keyword-broken and abandonware; see
+`docs/MOD_CLEANUP_2026-10-10.md`). The constraint below is retained as the general design rule —
+it now costs nothing locally and remains essential for distribution:
 
-- `gameParams.ws` — Leveling Gear, FCR3
-- `inventoryComponent.ws` — Leveling Gear, FCR3
-- `playerWitcher.ws` — Leveling Gear, FCR3
+- **Never override a base game script file** (`gameParams.ws`, `inventoryComponent.ws`,
+  `playerWitcher.ws`, etc.). Ship only new files in new folders. This keeps the mod
+  script-merger-free for every user (Next-Gen and Remastered alike).
+- On Remastered, prefer the new conflict-free mechanisms for anything that *must* touch base code:
+  script annotations (`@wrapMethod`), scope-based scripting (add functions/vars/enums to a class
+  from a separate file), and XML `on_conflict="extend"` definitions. These require cooking a
+  `precompiled.rsblob` via REDkit (optional on PC, required on consoles).
 
 Any mod that also overrides these files would need re-merging on every change and risks breaking
 the user's setup. **Design decision: the infusion mod must NOT override any base script file.**
 Instead it adds only **new** script files (new classes, new enums) and uses event/extension points
-that do not collide with merged files. This satisfies §14 compatibility goals for this specific install.
+that do not collide with other mods. This satisfies §14 compatibility goals for this specific install.
 
 Note: `W3CraftsmanComponent`, `W3CraftingManager`, `CR4BlacksmithMenu`, `CR4CommonMenu` live in files
-that the user's mods do not touch (`craftsmanComponent.ws`, `craftingManager.ws`, `blacksmithMenu.ws`,
+that no installed mod touches (`craftsmanComponent.ws`, `craftingManager.ws`, `blacksmithMenu.ws`,
 `commonMenu.ws`). Overriding those is currently conflict-free — but the smallest prototype should
 still avoid menu overrides entirely (see §7).
 
@@ -70,7 +80,7 @@ Verified call chain (REDkit sources):
 - The stat values come from the item's **ability list**: base abilities from the item definition
   (e.g. `Bear Armor 4 _Stats` → `armor type="base" min="240"`) plus **runtime-added crafted abilities**.
 
-**The autogen system** (vanilla loot leveling; inventoryComponent.ws:4410 `GenerateItemLevel`):
+**The autogen system** (vanilla loot leveling; inventoryComponent.ws `GenerateItemLevel`):
 
 - Loot items tagged `Autogen` get `autogen_steel_base`/`autogen_steel_dmg` (etc.) abilities added at
   spawn — one `_dmg` ability **per level**. Each `autogen_fixed_*_dmg` ability adds exactly one
@@ -88,9 +98,10 @@ field is touched, and save/load persistence follows the game's own NG+ mechanism
 are part of the item instance; vanilla relies on the same mechanism across saves, see
 `NGPItemAdjusted` item modifier at inventoryComponent.ws:5081).
 
-Leveling Gear (installed mod) confirms the same technique from the other direction: it does not store
-levels either; it computes a virtual level from stats and applies per-level autogen abilities
-(`GetItemLevel`/`GetItemArmorTotal` in its inventoryComponent.ws override).
+Leveling Gear (removed 2026-10-10; its source was studied before removal) confirmed the same
+technique from the other direction: it did not store levels either; it computed a virtual level from
+stats and applied per-level autogen abilities (`GetItemLevel`/`GetItemArmorTotal` in its
+inventoryComponent.ws override).
 
 **Witcher gear specifics:** Witcher set pieces (e.g. `Bear Armor 4`, tag `BearSet`) are NOT tagged
 `Autogen`; their stats are fixed per crafted tier (`Bear Armor 4` → armor 240 → derived level 44,
@@ -202,26 +213,17 @@ item picking from the player inventory — a candidate for sacrifice selection i
 ## 9. Risks and unresolved items
 
 1. **Script merge conflicts** — mitigated by design: new files only; no overrides of
-   `gameParams.ws` / `inventoryComponent.ws` / `playerWitcher.ws` (§2). If a future feature *must*
-   modify those, it must ship merge instructions for Vortex/`mod0000_MergedFiles`.
-2. **FCR3 stat overhaul** — FCR3 changes damage/armor semantics (its own `GenerateItemLevel` scales
-   off enemy levels). Autogen ability math (stat_add per level) may differ under FCR3. The infusion
-   MVP must compute the level step from **actual observed stat deltas** at runtime rather than
-   hard-coding 8/10/5/2 — or verify FCR3 keeps vanilla autogen abilities (partially verified: FCR3
-   still calls `GenerateItemLevel` and uses autogen abilities, inventoryComponent.ws FCR3:4383+).
-   → Prototype test on this install required.
-3. **Leveling Gear auto-scale side effect (verified in merged files)** — on this install,
-   `GetItemLevel(item)` mutates scalable items: if the item's derived level is below the player's
-   level, it permanently adds `autogen_fixed_*` abilities until the item reaches player level
-   (merged `inventoryComponent.ws` lines 425–428, `isItemScalable` at 470ff). Consequences:
-   - Reading a level via `GetItemLevel` is **not side-effect free** for weapons/armor below player
-     level; merely opening the inventory triggers the same behavior (this is Leveling Gear's
-     "items level with you" mechanic).
-   - The infusion service must therefore compute levels itself (aggregate stat + counted autogen
-     abilities + formula) instead of relying on `GetItemLevel`, or accept that both target and
-     sacrifice will already be scaled to player level.
-   - Infusion remains meaningful under this setup: only sacrifices **above** player level produce
-     progression, matching the install's item ecosystem.
+   base game scripts (§2). If a future feature *must* modify those, prefer Remastered
+   annotations/scope-based scripting, or document the conflict surface.
+2. ~~**FCR3 stat overhaul**~~ **Resolved 2026-10-10:** FCR3 was removed from the install (bundled
+   with the game since 4.0; the installed copy was an old pre-4.0 version with keyword-broken
+   scripts). The vanilla stat system applies. *Caveat:* the game's built-in FCR3 is a curated
+   subset — if it alters damage/armor semantics relative to 1.x-era vanilla, the level formulas in
+   §3 must be re-verified against in-game values (the prototype's add-until-equal loop is robust
+   to different `stat_add` values either way).
+3. ~~**Leveling Gear auto-scale side effect**~~ **Resolved 2026-10-10:** Leveling Gear was removed.
+   `GetItemLevel` is side-effect-free vanilla again. The infusion service still computes levels
+   itself (signature stability + FCR3-in-bundle uncertainty), which remains the right call.
 4. **Per-level stat step** — read at runtime via
    `GetItemAbilityAttributeValue(itemId, attributeName, 'autogen_fixed_steel_dmg')` (import at
    inventoryComponent.ws:197) rather than hard-coding 8/10/5/2; robust under overhauls. Fallback
@@ -293,8 +295,9 @@ within the same architecture.
    `ArchMasterLaborMultiplier` (or a lookup). **Approved by user 2026-10-10.**
 2. §9 MVP interface: debug console (`exec function`s) for Milestone 2; menu integration deferred.
    **Approved by user 2026-10-10.**
-3. §2.2 reference mods: Leveling Gear is installed locally and its full source is available for
-   study — use it as primary reference (it already demonstrates the level-derivation technique).
+3. §2.2 reference mods: Leveling Gear's source was studied before its removal (it demonstrated the
+   level-derivation technique). For future Remastered-era reference, use the community changelog
+   (Nexus 12945 / GitHub) and Remastered-tagged mods.
 4. §9: "extend the repair interface" is only feasible via script-level menu overrides (no SWF
    sources); MVP uses script-only UI paths. SWF editing explicitly out of scope for v1.
 5. §5.2: salvage uses native `recycling_parts` directly — the configurable salvage mapping is a
