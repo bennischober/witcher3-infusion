@@ -52,3 +52,4 @@ Bonus merging must remain separate from the core infusion mechanic. It may be de
 - Do not commit proprietary game assets or unauthorized third-party mod files.
 - Keep documentation updated when implementation decisions change.
 - Do not overwrite unrelated user changes.
+- Use the `git-commit-message-rules` to properly format/create a commit message.
