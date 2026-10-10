@@ -199,9 +199,9 @@ exec function infuseSelfTest()
 	inv = thePlayer.inv;
 	svc = InfusionGetService();
 
-	t  = inv.AddAnItem( 'Novigraadan sword 1', 1 );
-	s  = inv.AddAnItem( 'Novigraadan sword 3', 1 );
-	t2 = inv.AddAnItem( 'Novigraadan sword 1', 1 );
+	t  = inv.AddAnItem( 'Novigraadan sword 1', 1, true, true );
+	s  = inv.AddAnItem( 'Novigraadan sword 3', 1, true, true );
+	t2 = inv.AddAnItem( 'Novigraadan sword 1', 1, true, true );
 
 	if ( t.Size() == 0 || s.Size() == 0 || t2.Size() == 0 )
 	{
@@ -421,8 +421,13 @@ exec function infuseTestMissingMaterials()
 		inv.RemoveItemByName( 'Steel ingot', ingots );
 	}
 
-	t = inv.AddAnItem( 'Novigraadan sword 1', 1 );
-	s = inv.AddAnItem( 'Novigraadan sword 1', 1 );
+	// Quiet spawns/restore: dontInformGui + dontMarkAsNew prevent the
+	// "new item" popups that made the restore step look like the test
+	// granted hundreds of materials (the counts were unchanged; the popup
+	// just announced the re-added stack).
+
+	t = inv.AddAnItem( 'Novigraadan sword 1', 1, true, true );
+	s = inv.AddAnItem( 'Novigraadan sword 1', 1, true, true );
 	ok = false;
 	if ( t.Size() == 0 || s.Size() == 0 )
 	{
@@ -472,11 +477,11 @@ exec function infuseTestMissingMaterials()
 	inv.RemoveItem( s[0] );
 	if ( straps > 0 )
 	{
-		inv.AddAnItem( 'Leather straps', straps );
+		inv.AddAnItem( 'Leather straps', straps, true, true );
 	}
 	if ( ingots > 0 )
 	{
-		inv.AddAnItem( 'Steel ingot', ingots );
+		inv.AddAnItem( 'Steel ingot', ingots, true, true );
 	}
 	if ( inv.GetMoney() > moneyBefore )
 	{
@@ -497,24 +502,36 @@ exec function infuseTestMissingMaterials()
 	}
 }
 
-// Re-displays the result of the last infuseTestMissingMaterials run as a
-// notification - useful because the console overlay hides notifications
-// fired while it is open. 1 = pass, 0 = fail (or test never ran).
+// Re-displays the result of the last infuseTestMissingMaterials run.
+// Uses two channels: HUD notification AND the HudConsoleMsg ("Game saved"
+// style top-left message), because the notification queue can be busy or
+// hidden behind the console overlay. Also logs to the file.
 exec function infuseReadLastTest()
 {
+	var hud : CR4ScriptedHud;
+	var msg : string;
+
 	if ( FactsDoesExist( "InfLastTest" ) )
 	{
 		if ( FactsQuerySum( "InfLastTest" ) == 1 )
 		{
-			theGame.GetGuiManager().ShowNotification( "last material rejection test: PASS", 6.0 );
+			msg = "last material rejection test: PASS";
 		}
 		else
 		{
-			theGame.GetGuiManager().ShowNotification( "last material rejection test: FAIL (or precondition/setup failed)", 6.0 );
+			msg = "last material rejection test: FAIL (or setup failed)";
 		}
 	}
 	else
 	{
-		theGame.GetGuiManager().ShowNotification( "no material rejection test result recorded yet", 5.0 );
+		msg = "no material rejection test result recorded yet";
+	}
+
+	LogChannel( 'Infusion', "infuseReadLastTest: " + msg );
+	theGame.GetGuiManager().ShowNotification( msg, 6.0 );
+	hud = (CR4ScriptedHud)theGame.GetHud();
+	if ( hud )
+	{
+		hud.HudConsoleMsg( msg );
 	}
 }
