@@ -1,0 +1,24 @@
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Generated build output
+build/
+dist/
+out/
+
+# Local-only settings
+.env
+.env.*
+!.env.example
+local.settings.json
+
+# Temporary test output
+test-results/
