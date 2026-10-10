@@ -6,13 +6,17 @@
 - Compile errors show as an on-screen dialog AND are written to
   `Documents\The Witcher 3\scriptslog.txt` — **only when the game is launched with the
   `-debugscripts` flag** (Steam launch options). Without the flag the file is not written.
-- `scriptslog.txt` is truncated (mode `w`) at each launch with the flag; it records the compile
-  banner and compile errors. It does **not** capture `LogChannel` runtime output (verified on
-  5.01) — runtime logging requires other channels (see below).
-- `LogChannel` output is an internal engine channel system; it does not render in the 5.01
-  debug console overlay and does not reach `scriptslog.txt`. For user-visible debug output use
-  HUD notifications (`theGame.GetGuiManager().ShowNotification`), sounds
-  (`theSound.SoundEvent`), or observable game state.
+- `scriptslog.txt` is truncated (mode `w`) at each launch with the flag. **With the flag active
+  it captures ALL `LogChannel` runtime output for the whole session** (verified on 5.01 — a
+  2-minute session produced >1 MB covering every channel). An early test session produced only
+  the 101-byte header because nothing logged during it, which briefly looked like a channel
+  filter — it is not. Runtime file logging works.
+- Practical consequence: with `-debugscripts` active, `LogChannel('MyChannel', ...)` IS the file
+  logging mechanism for mods. Grep the file for the channel name to extract a mod's trace.
+- For user-visible feedback use HUD notifications
+  (`theGame.GetGuiManager().ShowNotification`), sounds (`theSound.SoundEvent`), or observable
+  game state — note the console overlay can hide notification lines fired while it is open, so
+  tests should also persist a result (e.g. `FactsSet`) and offer a re-display command.
 
 ## Compiler strictness rules (with real error messages)
 
