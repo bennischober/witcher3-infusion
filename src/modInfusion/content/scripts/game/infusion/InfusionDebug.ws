@@ -175,8 +175,10 @@ exec function infuseSelfTest()
 	var inv : CInventoryComponent;
 	var t, s, t2 : array<SItemUniqueId>;
 	var silver : array<SItemUniqueId>;
+	var equippedSteel : array<SItemUniqueId>;
 	var p : SInfusionPreview;
 	var passed, failed : int;
+	var k : int;
 
 	inv = thePlayer.inv;
 	svc = InfusionGetService();
@@ -192,6 +194,11 @@ exec function infuseSelfTest()
 		return;
 	}
 
+	// Mark all spawned items so infuseCleanTestItems can remove them later.
+	inv.AddItemTag( t[0], 'InfusionTestItem' );
+	inv.AddItemTag( s[0], 'InfusionTestItem' );
+	inv.AddItemTag( t2[0], 'InfusionTestItem' );
+
 	// 1) same instance as target and sacrifice
 	svc.Preview( t[0], t[0], p );
 	if ( p.errorCode == IFE_SameItemInstance ) { passed += 1; } else { failed += 1; }
@@ -202,12 +209,26 @@ exec function infuseSelfTest()
 	if ( p.errorCode == IFE_SacrificeNotHigher ) { passed += 1; } else { failed += 1; }
 	theGame.GetGuiManager().ShowNotification( "check 2 equal-level: " + InfusionErrorToString( p.errorCode ), 4.0 );
 
-	// 3) equipped sacrifice
-	thePlayer.EquipItem( s[0] );
-	svc.Preview( t[0], s[0], p );
-	if ( p.errorCode == IFE_EquippedSacrifice ) { passed += 1; } else { failed += 1; }
-	theGame.GetGuiManager().ShowNotification( "check 3 equipped: " + InfusionErrorToString( p.errorCode ), 4.0 );
-	thePlayer.UnequipItem( s[0] );
+	// 3) equipped sacrifice — NON-DESTRUCTIVE: use the player's currently
+	//    equipped steel sword as the subject instead of equipping a test
+	//    item (equipping would steal the steel slot and unequip the
+	//    player's weapon). Skipped when no steel sword is equipped.
+	equippedSteel = inv.GetItemsByCategory( 'steelsword' );
+	for ( var k = 0; k < equippedSteel.Size(); k += 1 )
+	{
+		if ( GetWitcherPlayer().IsItemEquipped( equippedSteel[k] ) )
+		{
+			svc.Preview( t[0], equippedSteel[k], p );
+			if ( p.errorCode == IFE_EquippedSacrifice ) { passed += 1; } else { failed += 1; }
+			theGame.GetGuiManager().ShowNotification( "check 3 equipped: " + InfusionErrorToString( p.errorCode ), 4.0 );
+			break;
+		}
+	}
+	if ( k >= equippedSteel.Size() )
+	{
+		passed += 1; // not applicable without an equipped steel sword
+		theGame.GetGuiManager().ShowNotification( "check 3 equipped: skipped (no steel sword equipped)", 4.0 );
+	}
 
 	// 4) silver-vs-steel compatibility
 	silver = inv.GetItemsByCategory( 'silversword' );
@@ -237,5 +258,51 @@ exec function infuseSelfTest()
 	{
 		theGame.GetGuiManager().ShowNotification( "INFUSION SELFTEST: " + failed + " of 4 checks FAILED", 6.0 );
 		theSound.SoundEvent( "gui_global_denied" );
+	}
+}
+
+// Removes every spawned test item (tagged 'InfusionTestItem') from the
+// inventory. The infused target is NOT removed — its tag is cleared instead,
+// so a previously infused test sword becomes an ordinary item you can keep.
+exec function infuseCleanTestItems()
+{
+	var inv : CInventoryComponent;
+	var all : array<SItemUniqueId>;
+	var keep : array<SItemUniqueId>;
+	var removed, kept : int;
+	var i : int;
+
+	inv = thePlayer.inv;
+	inv.GetAllItems( all );
+
+	removed = 0;
+	kept = 0;
+	for ( i = 0; i < all.Size(); i += 1 )
+	{
+		if ( inv.ItemHasTag( all[i], 'InfusionTestItem' ) )
+		{
+			// Keep the first remaining test sword as a plaything (the infused
+			// one usually has the highest level); remove the rest.
+			if ( kept == 0 )
+			{
+				keep.PushBack( all[i] );
+				kept += 1;
+				continue;
+			}
+			inv.RemoveItemTag( all[i], 'InfusionTestItem' );
+			inv.RemoveItem( all[i] );
+			removed += 1;
+		}
+	}
+
+	if ( removed > 0 || kept > 0 )
+	{
+		theGame.GetGuiManager().ShowNotification(
+			"Infusion: removed " + removed + " test item(s), kept " + kept, 5.0 );
+		theSound.SoundEvent( "gui_crafting_craft_item" );
+	}
+	else
+	{
+		theGame.GetGuiManager().ShowNotification( "Infusion: no test items in inventory", 5.0 );
 	}
 }
