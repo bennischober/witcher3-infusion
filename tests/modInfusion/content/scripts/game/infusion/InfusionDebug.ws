@@ -383,14 +383,14 @@ exec function infuseCleanTestItems()
 	}
 }
 
-// Negative-case test for the material requirement (spec §5.4/§13.1):
-// spawns a target and a sacrifice whose salvage does NOT overlap the
-// recipe (sword 1 yields Leather squares + Iron ingot; the recipe needs
-// Leather straps + Steel ingot), so with a stripped material stash the
-// infusion MUST be rejected with IFE_NotEnoughMaterials and nothing may
-// be consumed. Verifies the rejection and the untouched inventory state.
-// The result is also stored in the 'InfLastTest' fact (1 = pass, 0 = fail)
-// so infuseReadLastTest can re-show it after the console is closed.
+// Negative-case test for the material requirement (spec §5.4/§13.1).
+// SIDE-EFFECT-FREE by design: the test removes the recipe materials and the
+// required crowns programmatically, runs the infusion (which must be
+// rejected with IFE_NotEnoughMaterials and consume nothing), then restores
+// the exact previous material and crown counts. The sword pair it spawns is
+// removed as well. The inventory and purse are unchanged after the run.
+// Result is stored in the 'InfLastTest' fact (1 = pass, 0 = fail) so
+// infuseReadLastTest can re-show it after the console is closed.
 exec function infuseTestMissingMaterials()
 {
 	var svc : W3InfusionService;
@@ -398,79 +398,101 @@ exec function infuseTestMissingMaterials()
 	var t, s : array<SItemUniqueId>;
 	var p : SInfusionPreview;
 	var err : EInfusionError;
-	var straps, ingots, swordsBefore : int;
+	var straps, ingots, swordsBefore, moneyBefore : int;
 	var k : int;
+	var ok : bool;
 
 	inv = thePlayer.inv;
 	svc = InfusionGetService();
 
+	// Capture the full side-effect surface, then neutralize it for the test.
 	straps = inv.GetItemQuantityByName( 'Leather straps' );
 	ingots = inv.GetItemQuantityByName( 'Steel ingot' );
-	LogChannel( 'Infusion', "missing-materials test: precondition straps=" + straps + " ingots=" + ingots
-		+ " money=" + inv.GetMoney() );
-	if ( straps > 0 || ingots > 0 )
+	moneyBefore = inv.GetMoney();
+	LogChannel( 'Infusion', "missing-materials test: setup straps=" + straps + " ingots=" + ingots
+		+ " money=" + moneyBefore );
+
+	if ( straps > 0 )
 	{
-		FactsSet( "InfLastTest", 0 );
-		LogChannel( 'Infusion', "missing-materials test ABORTED at precondition (materials still present)" );
-		theGame.GetGuiManager().ShowNotification(
-			"PRECONDITION FAILED: drop your Leather straps and Steel ingots first (have " + straps + "/" + ingots + ")", 6.0 );
-		theSound.SoundEvent( "gui_global_denied" );
-		return;
+		inv.RemoveItemByName( 'Leather straps', straps );
+	}
+	if ( ingots > 0 )
+	{
+		inv.RemoveItemByName( 'Steel ingot', ingots );
 	}
 
 	t = inv.AddAnItem( 'Novigraadan sword 1', 1 );
 	s = inv.AddAnItem( 'Novigraadan sword 1', 1 );
+	ok = false;
 	if ( t.Size() == 0 || s.Size() == 0 )
 	{
-		FactsSet( "InfLastTest", 0 );
-		theGame.GetGuiManager().ShowNotification( "test setup failed (spawn)", 5.0 );
-		return;
+		LogChannel( 'Infusion', "missing-materials test: ABORTED (spawn failed)" );
 	}
-	inv.AddItemTag( t[0], 'InfusionTestItem' );
-	inv.AddItemTag( s[0], 'InfusionTestItem' );
-
-	// Guarantee the level gap (same mechanism as infuseSelfTest).
-	for ( k = 0; k < 10; k += 1 )
+	else
 	{
-		inv.AddItemCraftedAbility( s[0], 'autogen_fixed_steel_dmg', true );
-	}
+		inv.AddItemTag( t[0], 'InfusionTestItem' );
+		inv.AddItemTag( s[0], 'InfusionTestItem' );
 
-	swordsBefore = inv.GetItemQuantityByName( 'Novigraadan sword 1' );
+		// Guarantee the level gap (same mechanism as infuseSelfTest).
+		for ( k = 0; k < 10; k += 1 )
+		{
+			inv.AddItemCraftedAbility( s[0], 'autogen_fixed_steel_dmg', true );
+		}
 
-	// De-money the test: crowns must not influence the material rejection
-	// path. If the player is broke, grant exactly the fee (debug grant,
-	// removed again on the PASS path).
-	if ( inv.GetMoney() < 1000 )
-	{
-		inv.AddMoney( 1000 );
-	}
+		swordsBefore = inv.GetItemQuantityByName( 'Novigraadan sword 1' );
 
-	err = svc.Execute( t[0], s[0], p );
-	LogChannel( 'Infusion', "missing-materials test: Execute returned " + InfusionErrorToString( err )
-		+ " (expected: missing required crafting materials)" );
+		// De-money the test: crowns must not influence the material rejection
+		// path (temporary grant, reverted below).
+		if ( moneyBefore < 1000 )
+		{
+			inv.AddMoney( 1000 - moneyBefore );
+		}
 
-	if ( err == IFE_NotEnoughMaterials )
-	{
-		// Nothing may have been consumed: both swords still present.
-		if ( inv.GetItemQuantityByName( 'Novigraadan sword 1' ) == swordsBefore
+		err = svc.Execute( t[0], s[0], p );
+		LogChannel( 'Infusion', "missing-materials test: Execute returned " + InfusionErrorToString( err )
+			+ " (expected: missing required crafting materials)" );
+
+		if ( err == IFE_NotEnoughMaterials
+			&& inv.GetItemQuantityByName( 'Novigraadan sword 1' ) == swordsBefore
 			&& inv.IsIdValid( t[0] ) && inv.IsIdValid( s[0] ) )
 		{
-			FactsSet( "InfLastTest", 1 );
-			theGame.GetGuiManager().ShowNotification( "MATERIAL REJECTION TEST: PASS (rejected, nothing consumed)", 6.0 );
-			theSound.SoundEvent( "gui_crafting_craft_item" );
+			ok = true;
+			LogChannel( 'Infusion', "missing-materials test: PASS (rejected, nothing consumed)" );
 		}
 		else
 		{
-			FactsSet( "InfLastTest", 0 );
-			theGame.GetGuiManager().ShowNotification( "MATERIAL REJECTION TEST: FAIL (consumed something!)", 6.0 );
-			theSound.SoundEvent( "gui_global_denied" );
+			LogChannel( 'Infusion', "missing-materials test: FAIL (got " + InfusionErrorToString( err )
+				+ ", swords now " + inv.GetItemQuantityByName( 'Novigraadan sword 1' )
+				+ " expected " + swordsBefore + ")" );
 		}
+	}
+
+	// ---- restore the exact previous state (side-effect neutrality) ----
+	inv.RemoveItem( t[0] );
+	inv.RemoveItem( s[0] );
+	if ( straps > 0 )
+	{
+		inv.AddAnItem( 'Leather straps', straps );
+	}
+	if ( ingots > 0 )
+	{
+		inv.AddAnItem( 'Steel ingot', ingots );
+	}
+	if ( inv.GetMoney() > moneyBefore )
+	{
+		inv.RemoveMoney( inv.GetMoney() - moneyBefore );
+	}
+
+	if ( ok )
+	{
+		FactsSet( "InfLastTest", 1 );
+		theGame.GetGuiManager().ShowNotification( "MATERIAL REJECTION TEST: PASS (state restored)", 6.0 );
+		theSound.SoundEvent( "gui_crafting_craft_item" );
 	}
 	else
 	{
 		FactsSet( "InfLastTest", 0 );
-		theGame.GetGuiManager().ShowNotification(
-			"MATERIAL REJECTION TEST: FAIL (expected NotEnoughMaterials, got " + InfusionErrorToString( err ) + ")", 6.0 );
+		theGame.GetGuiManager().ShowNotification( "MATERIAL REJECTION TEST: FAIL - run infuseReadLastTest after closing the console", 6.0 );
 		theSound.SoundEvent( "gui_global_denied" );
 	}
 }
