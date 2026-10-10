@@ -263,36 +263,70 @@ exec function infuseSelfTest()
 	}
 }
 
-// Removes every spawned test item (tagged 'InfusionTestItem') from the
-// inventory. The infused target is NOT removed — its tag is cleared instead,
-// so a previously infused test sword becomes an ordinary item you can keep.
+// Removes spawned test items. Two populations:
+//  a) tagged 'InfusionTestItem' (spawned by the current test code)
+//  b) untagged 'Novigraadan sword 1/3' steel swords (spawned by older test
+//     builds before tagging existed) — identified by item name + category,
+//     which only the test spawner produces for the player.
+// Keeps exactly one: the highest-level candidate (typically the infused
+// target). Never touches equipped items or any other item types.
 exec function infuseCleanTestItems()
 {
 	var inv : CInventoryComponent;
 	var all : array<SItemUniqueId>;
-	var keep : array<SItemUniqueId>;
+	var candidates : array<SItemUniqueId>;
+	var bestId : SItemUniqueId;
+	var bestLevel : int;
+	var lvl : int;
+	var itemName : name;
 	var removed, kept : int;
 	var i : int;
+	var svc : W3InfusionService;
 
 	inv = thePlayer.inv;
 	inv.GetAllItems( all );
+	svc = InfusionGetService();
 
-	removed = 0;
-	kept = 0;
+	// Collect candidates: tagged test items, plus legacy untagged test swords.
 	for ( i = 0; i < all.Size(); i += 1 )
 	{
 		if ( inv.ItemHasTag( all[i], 'InfusionTestItem' ) )
 		{
-			// Keep the first remaining test sword as a plaything (the infused
-			// one usually has the highest level); remove the rest.
-			if ( kept == 0 )
+			candidates.PushBack( all[i] );
+			continue;
+		}
+
+		// Legacy fallback: test spawner only ever created these two defs.
+		itemName = inv.GetItemName( all[i] );
+		if ( inv.GetItemCategory( all[i] ) == 'steelsword'
+			&& !GetWitcherPlayer().IsItemEquipped( all[i] )
+			&& ( itemName == 'Novigraadan sword 1' || itemName == 'Novigraadan sword 3' ) )
+		{
+			candidates.PushBack( all[i] );
+		}
+	}
+
+	// Keep the highest-level candidate (the infused trophy), remove the rest.
+	removed = 0;
+	kept = 0;
+	for ( i = 0; i < candidates.Size(); i += 1 )
+	{
+		lvl = svc.ComputeItemLevel( inv, candidates[i] );
+		if ( kept == 0 || lvl > bestLevel )
+		{
+			if ( kept > 0 )
 			{
-				keep.PushBack( all[i] );
-				kept += 1;
-				continue;
+				inv.RemoveItem( bestId );
+				removed += 1;
 			}
-			inv.RemoveItemTag( all[i], 'InfusionTestItem' );
-			inv.RemoveItem( all[i] );
+			bestId = candidates[i];
+			bestLevel = lvl;
+			kept += 1;
+		}
+		else
+		{
+			inv.RemoveItemTag( candidates[i], 'InfusionTestItem' );
+			inv.RemoveItem( candidates[i] );
 			removed += 1;
 		}
 	}
@@ -300,7 +334,7 @@ exec function infuseCleanTestItems()
 	if ( removed > 0 || kept > 0 )
 	{
 		theGame.GetGuiManager().ShowNotification(
-			"Infusion: removed " + removed + " test item(s), kept " + kept, 5.0 );
+			"Infusion: removed " + removed + " test item(s), kept 1 (level " + bestLevel + ")", 6.0 );
 		theSound.SoundEvent( "gui_crafting_craft_item" );
 	}
 	else
