@@ -1,4 +1,4 @@
-/***********************************************************************/
+﻿/***********************************************************************/
 /** 	Witcher Gear Infusion — Milestone 2 prototype
 /** 	Core infusion service: level computation, validation, transaction.
 /**

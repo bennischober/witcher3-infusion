@@ -1,4 +1,4 @@
-/***********************************************************************/
+﻿/***********************************************************************/
 /** 	Witcher Gear Infusion — Milestone 2 prototype
 /** 	Type definitions shared by the infusion system.
 /**

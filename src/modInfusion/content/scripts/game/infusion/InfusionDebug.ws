@@ -1,4 +1,4 @@
-/***********************************************************************/
+﻿/***********************************************************************/
 /** 	Witcher Gear Infusion — Milestone 2 prototype
 /** 	Debug console entry points (spec §9.3 alternative; discovery §7 option 3).
 /**
