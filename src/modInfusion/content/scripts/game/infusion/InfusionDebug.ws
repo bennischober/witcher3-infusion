@@ -103,21 +103,28 @@ exec function infusePreview()
 	var err : EInfusionError;
 	var p : SInfusionPreview;
 	var inv : CInventoryComponent;
+	var msg : string;
 
 	inv = thePlayer.inv;
 
 	if ( !InfusionFindBestPair( targetId, sacrificeId, err ) )
 	{
+		theGame.GetGuiManager().ShowNotification( "Infusion: no valid pair (need sacrifice > target level)", 5.0 );
 		return;
 	}
 
 	svc = InfusionGetService();
 	svc.Preview( targetId, sacrificeId, p );
 
-	LogChannel( 'Infusion', "preview: target " + inv.GetItemName( targetId ) + " (level " + p.targetLevel + ")"
-		+ " <- sacrifice " + inv.GetItemName( sacrificeId ) + " (level " + p.sacrificeLevel + ")" );
-	LogChannel( 'Infusion', "  gap=" + p.levelGap + "  newLevel=" + p.newLevel
-		+ "  ability=" + p.stepAbility + "  fee=" + p.laborFee );
+	msg = "target " + inv.GetItemName( targetId ) + " (level " + p.targetLevel + ")"
+		+ " <- sacrifice " + inv.GetItemName( sacrificeId ) + " (level " + p.sacrificeLevel + ")";
+	LogChannel( 'Infusion', "preview: " + msg );
+	theGame.GetGuiManager().ShowNotification( msg, 6.0 );
+
+	msg = "gap=" + p.levelGap + "  newLevel=" + p.newLevel
+		+ "  ability=" + p.stepAbility + "  fee=" + p.laborFee;
+	LogChannel( 'Infusion', "  " + msg );
+	theGame.GetGuiManager().ShowNotification( msg, 6.0 );
 }
 
 exec function infuseRun()
@@ -139,6 +146,7 @@ exec function infuseSelfTest()
 	var t, s, t2 : array<SItemUniqueId>;
 	var silver : array<SItemUniqueId>;
 	var p : SInfusionPreview;
+	var msg : string;
 
 	inv = thePlayer.inv;
 	svc = InfusionGetService();
@@ -150,7 +158,9 @@ exec function infuseSelfTest()
 
 	if ( t.Size() == 0 || s.Size() == 0 || t2.Size() == 0 )
 	{
-		LogChannel( 'Infusion', "FAIL: could not spawn test items (wrong item names?)" );
+		msg = "SELFTEST FAIL: could not spawn test items";
+		LogChannel( 'Infusion', msg );
+		theGame.GetGuiManager().ShowNotification( msg, 6.0 );
 		return;
 	}
 
@@ -158,16 +168,22 @@ exec function infuseSelfTest()
 
 	// same instance as target and sacrifice
 	svc.Preview( t[0], t[0], p );
-	LogChannel( 'Infusion', "  same-instance check: " + InfusionErrorToString( p.errorCode ) + " (expect: target and sacrifice must be different items)" );
+	msg = "1/4 same-instance: " + InfusionErrorToString( p.errorCode );
+	LogChannel( 'Infusion', msg );
+	theGame.GetGuiManager().ShowNotification( msg, 5.0 );
 
 	// equal-level sacrifice (both spawned from the same definition)
 	svc.Preview( t[0], t2[0], p );
-	LogChannel( 'Infusion', "  equal-level check: " + InfusionErrorToString( p.errorCode ) + " (expect: sacrifice must be higher level than target)" );
+	msg = "2/4 equal-level: " + InfusionErrorToString( p.errorCode );
+	LogChannel( 'Infusion', msg );
+	theGame.GetGuiManager().ShowNotification( msg, 5.0 );
 
 	// equipped sacrifice
 	thePlayer.EquipItem( s[0] );
 	svc.Preview( t[0], s[0], p );
-	LogChannel( 'Infusion', "  equipped-sacrifice check: " + InfusionErrorToString( p.errorCode ) + " (expect: sacrifice item is equipped)" );
+	msg = "3/4 equipped: " + InfusionErrorToString( p.errorCode );
+	LogChannel( 'Infusion', msg );
+	theGame.GetGuiManager().ShowNotification( msg, 5.0 );
 	thePlayer.UnequipItem( s[0] );
 
 	// silver-vs-steel compatibility: any silver sword present?
@@ -175,19 +191,22 @@ exec function infuseSelfTest()
 	if ( silver.Size() > 0 )
 	{
 		svc.Preview( t[0], silver[0], p );
-		LogChannel( 'Infusion', "  category check: " + InfusionErrorToString( p.errorCode ) + " (expect: target and sacrifice are incompatible)" );
+		msg = "4/4 category: " + InfusionErrorToString( p.errorCode );
 	}
 	else
 	{
-		LogChannel( 'Infusion', "  category check: skipped (no silver sword in inventory)" );
+		msg = "4/4 category: skipped (no silver sword)";
 	}
+	LogChannel( 'Infusion', msg );
+	theGame.GetGuiManager().ShowNotification( msg, 5.0 );
 
 	LogChannel( 'Infusion', "--- self test: real infusion (Novigraadan sword 1 <- Novigraadan sword 3) ---" );
 	InfusionRunBestPair();
 
 	InfusionPrintStats();
 
-	LogChannel( 'Infusion', "--- self test done. Verify: sacrifice gone, target level raised, durability 100%. Save, reload, run infuseStats again. ---" );
+	LogChannel( 'Infusion', "--- self test done ---" );
+	theGame.GetGuiManager().ShowNotification( "Infusion self test done", 4.0 );
 }
 
 // Shared implementation used by the infuseRun / infuseStats console commands and
@@ -199,11 +218,13 @@ function InfusionRunBestPair()
 	var err : EInfusionError;
 	var p : SInfusionPreview;
 	var inv : CInventoryComponent;
+	var msg : string;
 
 	inv = thePlayer.inv;
 
 	if ( !InfusionFindBestPair( targetId, sacrificeId, err ) )
 	{
+		theGame.GetGuiManager().ShowNotification( "Infusion: no valid pair found", 5.0 );
 		return;
 	}
 
@@ -212,12 +233,15 @@ function InfusionRunBestPair()
 	err = svc.Execute( targetId, sacrificeId, p );
 	if ( err == IFE_Ok )
 	{
-		LogChannel( 'Infusion', "infusion complete: " + inv.GetItemName( targetId )
-			+ " is now level " + p.sacrificeLevel );
+		msg = "Infusion OK: " + inv.GetItemName( targetId ) + " is now level " + p.sacrificeLevel;
+		LogChannel( 'Infusion', msg );
+		theGame.GetGuiManager().ShowNotification( msg, 6.0 );
 	}
 	else
 	{
-		LogChannel( 'Infusion', "infusion failed: " + InfusionErrorToString( err ) );
+		msg = "Infusion FAILED: " + InfusionErrorToString( err );
+		LogChannel( 'Infusion', msg );
+		theGame.GetGuiManager().ShowNotification( msg, 6.0 );
 	}
 }
 
@@ -231,6 +255,7 @@ function InfusionPrintStats()
 	var inv : CInventoryComponent;
 	var witcher : W3PlayerWitcher;
 	var stat : SAbilityAttributeValue;
+	var msg : string;
 
 	svc = InfusionGetService();
 	inv = thePlayer.inv;
@@ -238,6 +263,7 @@ function InfusionPrintStats()
 
 	if ( InfusionGetSteelSwords( ids ) == 0 )
 	{
+		theGame.GetGuiManager().ShowNotification( "Infusion: no steelswords in inventory", 4.0 );
 		LogChannel( 'Infusion', "no steelswords in inventory" );
 		return;
 	}
@@ -247,10 +273,12 @@ function InfusionPrintStats()
 	{
 		lvl = svc.ComputeItemLevel( inv, ids[i] );
 		stat = inv.GetItemAttributeValue( ids[i], 'SlashingDamage' );
-		LogChannel( 'Infusion', "  [" + i + "] " + inv.GetItemName( ids[i] )
+		msg = "  [" + i + "] " + inv.GetItemName( ids[i] )
 			+ "  level=" + lvl
 			+ "  slashing=" + stat.valueBase
 			+ "  quest=" + inv.IsItemQuest( ids[i] )
-			+ "  equipped=" + witcher.IsItemEquipped( ids[i] ) );
+			+ "  equipped=" + witcher.IsItemEquipped( ids[i] );
+		LogChannel( 'Infusion', msg );
+		theGame.GetGuiManager().ShowNotification( msg, 4.0 );
 	}
 }
