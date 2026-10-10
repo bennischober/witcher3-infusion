@@ -280,7 +280,6 @@ class W3InfusionService extends IScriptable
 		preview.targetLevel = targetLevel;
 		preview.sacrificeLevel = sacrificeLevel;
 		preview.stepAbility = targetData.stepAbility;
-		preview.stepValue = targetData.stepValue;
 
 		gap = sacrificeLevel - targetLevel;
 		preview.levelGap = gap;

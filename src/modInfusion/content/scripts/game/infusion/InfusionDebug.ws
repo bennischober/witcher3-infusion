@@ -96,35 +96,6 @@ function InfusionFindBestPair( out targetId : SItemUniqueId, out sacrificeId : S
 	return true;
 }
 
-exec function infuseStats()
-{
-	var svc : W3InfusionService;
-	var ids : array<SItemUniqueId>;
-	var i : int;
-	var lvl : int;
-	var inv : CInventoryComponent;
-
-	svc = InfusionGetService();
-	inv = thePlayer.inv;
-
-	if ( InfusionGetSteelSwords( ids ) == 0 )
-	{
-		LogChannel( 'Infusion', "no steelswords in inventory" );
-		return;
-	}
-
-	LogChannel( 'Infusion', "steelswords in inventory:" );
-	for ( i = 0; i < ids.Size(); i += 1 )
-	{
-		lvl = svc.ComputeItemLevel( inv, ids[i] );
-		LogChannel( 'Infusion', "  [" + i + "] " + inv.GetItemName( ids[i] )
-			+ "  level=" + lvl
-			+ "  slashing=" + inv.GetItemAttributeValue( ids[i], 'SlashingDamage' ).valueBase
-			+ "  quest=" + inv.IsItemQuest( ids[i] )
-			+ "  equipped=" + thePlayer.IsItemEquipped( ids[i] ) );
-	}
-}
-
 exec function infusePreview()
 {
 	var svc : W3InfusionService;
@@ -151,31 +122,12 @@ exec function infusePreview()
 
 exec function infuseRun()
 {
-	var svc : W3InfusionService;
-	var targetId, sacrificeId : SItemUniqueId;
-	var err : EInfusionError;
-	var p : SInfusionPreview;
-	var inv : CInventoryComponent;
+	InfusionRunBestPair();
+}
 
-	inv = thePlayer.inv;
-
-	if ( !InfusionFindBestPair( targetId, sacrificeId, err ) )
-	{
-		return;
-	}
-
-	svc = InfusionGetService();
-
-	err = svc.Execute( targetId, sacrificeId, p );
-	if ( err == IFE_Ok )
-	{
-		LogChannel( 'Infusion', "infusion complete: " + inv.GetItemName( targetId )
-			+ " is now level " + p.sacrificeLevel );
-	}
-	else
-	{
-		LogChannel( 'Infusion', "infusion failed: " + InfusionErrorToString( err ) );
-	}
+exec function infuseStats()
+{
+	InfusionPrintStats();
 }
 
 // Spawns two vanilla steelswords, verifies rejection rules, then performs one
@@ -185,9 +137,8 @@ exec function infuseSelfTest()
 	var svc : W3InfusionService;
 	var inv : CInventoryComponent;
 	var t, s, t2 : array<SItemUniqueId>;
+	var silver : array<SItemUniqueId>;
 	var p : SInfusionPreview;
-	var err : EInfusionError;
-	var targetId, sacrificeId : SItemUniqueId;
 
 	inv = thePlayer.inv;
 	svc = InfusionGetService();
@@ -220,9 +171,10 @@ exec function infuseSelfTest()
 	thePlayer.UnequipItem( s[0] );
 
 	// silver-vs-steel compatibility: any silver sword present?
-	if ( inv.GetItemsByCategory( 'silversword' ).Size() > 0 )
+	silver = inv.GetItemsByCategory( 'silversword' );
+	if ( silver.Size() > 0 )
 	{
-		svc.Preview( t[0], inv.GetItemsByCategory( 'silversword' )[0], p );
+		svc.Preview( t[0], silver[0], p );
 		LogChannel( 'Infusion', "  category check: " + InfusionErrorToString( p.errorCode ) + " (expect: target and sacrifice are incompatible)" );
 	}
 	else
@@ -231,9 +183,74 @@ exec function infuseSelfTest()
 	}
 
 	LogChannel( 'Infusion', "--- self test: real infusion (Novigraadan sword 1 <- Novigraadan sword 3) ---" );
-	infuseRun();
+	InfusionRunBestPair();
 
-	infuseStats();
+	InfusionPrintStats();
 
 	LogChannel( 'Infusion', "--- self test done. Verify: sacrifice gone, target level raised, durability 100%. Save, reload, run infuseStats again. ---" );
+}
+
+// Shared implementation used by the infuseRun / infuseStats console commands and
+// by infuseSelfTest (exec functions cannot call each other directly from script).
+function InfusionRunBestPair()
+{
+	var svc : W3InfusionService;
+	var targetId, sacrificeId : SItemUniqueId;
+	var err : EInfusionError;
+	var p : SInfusionPreview;
+	var inv : CInventoryComponent;
+
+	inv = thePlayer.inv;
+
+	if ( !InfusionFindBestPair( targetId, sacrificeId, err ) )
+	{
+		return;
+	}
+
+	svc = InfusionGetService();
+
+	err = svc.Execute( targetId, sacrificeId, p );
+	if ( err == IFE_Ok )
+	{
+		LogChannel( 'Infusion', "infusion complete: " + inv.GetItemName( targetId )
+			+ " is now level " + p.sacrificeLevel );
+	}
+	else
+	{
+		LogChannel( 'Infusion', "infusion failed: " + InfusionErrorToString( err ) );
+	}
+}
+
+// Shared implementation behind the infuseStats console command.
+function InfusionPrintStats()
+{
+	var svc : W3InfusionService;
+	var ids : array<SItemUniqueId>;
+	var i : int;
+	var lvl : int;
+	var inv : CInventoryComponent;
+	var witcher : W3PlayerWitcher;
+	var stat : SAbilityAttributeValue;
+
+	svc = InfusionGetService();
+	inv = thePlayer.inv;
+	witcher = GetWitcherPlayer();
+
+	if ( InfusionGetSteelSwords( ids ) == 0 )
+	{
+		LogChannel( 'Infusion', "no steelswords in inventory" );
+		return;
+	}
+
+	LogChannel( 'Infusion', "steelswords in inventory:" );
+	for ( i = 0; i < ids.Size(); i += 1 )
+	{
+		lvl = svc.ComputeItemLevel( inv, ids[i] );
+		stat = inv.GetItemAttributeValue( ids[i], 'SlashingDamage' );
+		LogChannel( 'Infusion', "  [" + i + "] " + inv.GetItemName( ids[i] )
+			+ "  level=" + lvl
+			+ "  slashing=" + stat.valueBase
+			+ "  quest=" + inv.IsItemQuest( ids[i] )
+			+ "  equipped=" + witcher.IsItemEquipped( ids[i] ) );
+	}
 }
