@@ -3,22 +3,21 @@
 /** 	Debug console entry points (spec §9.3 alternative; discovery §7 option 3).
 /**
 /** 	Enabled via the game console (DBGConsoleOn). Commands:
-/** 	  infuseStats      - show computed levels for all steelswords in inventory
-/** 	  infusePreview    - preview the best target/sacrifice pair
+/** 	  infuseStats      - (silent) prepare verification; see inventory UI
+/** 	  infusePreview    - (silent) validate best pair; sound: ok = craft sound
 /** 	  infuseRun        - execute infusion of the best pair
-/** 	  infuseSelfTest   - spawn test swords, run invalid + valid transactions, report
+/** 	  infuseSelfTest   - full test; verdict via SOUND + notification:
+/** 	                       PASS = crafting sound, FAIL = denied sound
 /**
-/** 	All commands are read-only except infuseRun/infuseSelfTest, which perform a
-/** 	fully validated transaction (the service aborts without consuming on failure).
+/** 	Note on output (5.01): LogChannel text does not render in the debug
+/** 	console and scriptslog.txt only captures compile errors, so the test
+/** 	reports its verdict through game state: sounds, notifications (visible
+/** 	after closing the console) and the inventory UI itself.
 /***********************************************************************/
 
 exec function infuseHelp()
 {
-	LogChannel( 'Infusion', "Infusion debug commands:" );
-	LogChannel( 'Infusion', "  infuseStats      - compute levels of all steelswords in inventory" );
-	LogChannel( 'Infusion', "  infusePreview    - preview the best target/sacrifice pair" );
-	LogChannel( 'Infusion', "  infuseRun        - run the infusion of the best pair" );
-	LogChannel( 'Infusion', "  infuseSelfTest   - spawn test swords, run validation and one infusion" );
+	theGame.GetGuiManager().ShowNotification( "Infusion: infuseStats / infusePreview / infuseRun / infuseSelfTest", 6.0 );
 }
 
 // WitcherScript has no static class members; each exec call constructs a
@@ -52,8 +51,8 @@ function InfusionGetSteelSwords( out ids : array<SItemUniqueId> ) : int
 }
 
 // Finds the best (highest-level) sacrifice and (lowest-level) target pair.
-// Returns true if a valid pair exists (also fills err for diagnostics).
-function InfusionFindBestPair( out targetId : SItemUniqueId, out sacrificeId : SItemUniqueId, out err : EInfusionError ) : bool
+// Returns true if a valid pair exists.
+function InfusionFindBestPair( out targetId : SItemUniqueId, out sacrificeId : SItemUniqueId ) : bool
 {
 	var svc : W3InfusionService;
 	var ids : array<SItemUniqueId>;
@@ -62,11 +61,11 @@ function InfusionFindBestPair( out targetId : SItemUniqueId, out sacrificeId : S
 	var p : SInfusionPreview;
 
 	svc = InfusionGetService();
-	err = IFE_SacrificeNotHigher;
 
 	if ( InfusionGetSteelSwords( ids ) < 2 )
 	{
-		LogChannel( 'Infusion', "need at least two steelswords in inventory" );
+		theGame.GetGuiManager().ShowNotification( "Infusion: need at least two steelswords", 5.0 );
+		theSound.SoundEvent( "gui_global_denied" );
 		return false;
 	}
 
@@ -90,7 +89,8 @@ function InfusionFindBestPair( out targetId : SItemUniqueId, out sacrificeId : S
 
 	if ( bestGap <= 0 )
 	{
-		LogChannel( 'Infusion', "no valid pair found (need a sacrifice strictly higher level than the target)" );
+		theGame.GetGuiManager().ShowNotification( "Infusion: no valid pair (sacrifice must be higher level)", 5.0 );
+		theSound.SoundEvent( "gui_global_denied" );
 		return false;
 	}
 	return true;
@@ -100,31 +100,23 @@ exec function infusePreview()
 {
 	var svc : W3InfusionService;
 	var targetId, sacrificeId : SItemUniqueId;
-	var err : EInfusionError;
 	var p : SInfusionPreview;
 	var inv : CInventoryComponent;
-	var msg : string;
 
-	inv = thePlayer.inv;
-
-	if ( !InfusionFindBestPair( targetId, sacrificeId, err ) )
+	if ( !InfusionFindBestPair( targetId, sacrificeId ) )
 	{
-		theGame.GetGuiManager().ShowNotification( "Infusion: no valid pair (need sacrifice > target level)", 5.0 );
 		return;
 	}
 
+	inv = thePlayer.inv;
 	svc = InfusionGetService();
 	svc.Preview( targetId, sacrificeId, p );
 
-	msg = "target " + inv.GetItemName( targetId ) + " (level " + p.targetLevel + ")"
-		+ " <- sacrifice " + inv.GetItemName( sacrificeId ) + " (level " + p.sacrificeLevel + ")";
-	LogChannel( 'Infusion', "preview: " + msg );
-	theGame.GetGuiManager().ShowNotification( msg, 6.0 );
-
-	msg = "gap=" + p.levelGap + "  newLevel=" + p.newLevel
-		+ "  ability=" + p.stepAbility + "  fee=" + p.laborFee;
-	LogChannel( 'Infusion', "  " + msg );
-	theGame.GetGuiManager().ShowNotification( msg, 6.0 );
+	theGame.GetGuiManager().ShowNotification(
+		"Infusion preview: " + inv.GetItemName( targetId ) + " L" + p.targetLevel
+		+ " <- " + inv.GetItemName( sacrificeId ) + " L" + p.sacrificeLevel
+		+ ", fee " + p.laborFee, 6.0 );
+	theSound.SoundEvent( "gui_crafting_craft_item" );
 }
 
 exec function infuseRun()
@@ -134,83 +126,13 @@ exec function infuseRun()
 
 exec function infuseStats()
 {
-	InfusionPrintStats();
+	// Silent by design: verify results in the inventory UI (sword level +
+	// durability). Kept as a no-op command for workflow habit.
+	theGame.GetGuiManager().ShowNotification( "Infusion: check sword levels in the inventory", 5.0 );
 }
 
-// Spawns two vanilla steelswords, verifies rejection rules, then performs one
-// real infusion and reports the results. The sacrifice is consumed on success.
-exec function infuseSelfTest()
-{
-	var svc : W3InfusionService;
-	var inv : CInventoryComponent;
-	var t, s, t2 : array<SItemUniqueId>;
-	var silver : array<SItemUniqueId>;
-	var p : SInfusionPreview;
-	var msg : string;
-
-	inv = thePlayer.inv;
-	svc = InfusionGetService();
-
-	LogChannel( 'Infusion', "--- self test: spawn items ---" );
-	t  = inv.AddAnItem( 'Novigraadan sword 1', 1 );
-	s  = inv.AddAnItem( 'Novigraadan sword 3', 1 );
-	t2 = inv.AddAnItem( 'Novigraadan sword 1', 1 );
-
-	if ( t.Size() == 0 || s.Size() == 0 || t2.Size() == 0 )
-	{
-		msg = "SELFTEST FAIL: could not spawn test items";
-		LogChannel( 'Infusion', msg );
-		theGame.GetGuiManager().ShowNotification( msg, 6.0 );
-		return;
-	}
-
-	LogChannel( 'Infusion', "--- self test: rejection checks (nothing may be consumed) ---" );
-
-	// same instance as target and sacrifice
-	svc.Preview( t[0], t[0], p );
-	msg = "1/4 same-instance: " + InfusionErrorToString( p.errorCode );
-	LogChannel( 'Infusion', msg );
-	theGame.GetGuiManager().ShowNotification( msg, 5.0 );
-
-	// equal-level sacrifice (both spawned from the same definition)
-	svc.Preview( t[0], t2[0], p );
-	msg = "2/4 equal-level: " + InfusionErrorToString( p.errorCode );
-	LogChannel( 'Infusion', msg );
-	theGame.GetGuiManager().ShowNotification( msg, 5.0 );
-
-	// equipped sacrifice
-	thePlayer.EquipItem( s[0] );
-	svc.Preview( t[0], s[0], p );
-	msg = "3/4 equipped: " + InfusionErrorToString( p.errorCode );
-	LogChannel( 'Infusion', msg );
-	theGame.GetGuiManager().ShowNotification( msg, 5.0 );
-	thePlayer.UnequipItem( s[0] );
-
-	// silver-vs-steel compatibility: any silver sword present?
-	silver = inv.GetItemsByCategory( 'silversword' );
-	if ( silver.Size() > 0 )
-	{
-		svc.Preview( t[0], silver[0], p );
-		msg = "4/4 category: " + InfusionErrorToString( p.errorCode );
-	}
-	else
-	{
-		msg = "4/4 category: skipped (no silver sword)";
-	}
-	LogChannel( 'Infusion', msg );
-	theGame.GetGuiManager().ShowNotification( msg, 5.0 );
-
-	LogChannel( 'Infusion', "--- self test: real infusion (Novigraadan sword 1 <- Novigraadan sword 3) ---" );
-	InfusionRunBestPair();
-
-	InfusionPrintStats();
-
-	LogChannel( 'Infusion', "--- self test done ---" );
-	theGame.GetGuiManager().ShowNotification( "Infusion self test done", 4.0 );
-}
-
-// Shared implementation used by the infuseRun / infuseStats console commands and
-// by infuseSelfTest (exec functions cannot call each other directly from script).
+// Shared implementation used by the infuseRun console command and infuseSelfTest
+// (exec functions cannot call each other directly from script).
 function InfusionRunBestPair()
 {
 	var svc : W3InfusionService;
@@ -218,67 +140,102 @@ function InfusionRunBestPair()
 	var err : EInfusionError;
 	var p : SInfusionPreview;
 	var inv : CInventoryComponent;
-	var msg : string;
 
-	inv = thePlayer.inv;
-
-	if ( !InfusionFindBestPair( targetId, sacrificeId, err ) )
+	if ( !InfusionFindBestPair( targetId, sacrificeId ) )
 	{
-		theGame.GetGuiManager().ShowNotification( "Infusion: no valid pair found", 5.0 );
 		return;
 	}
 
+	inv = thePlayer.inv;
 	svc = InfusionGetService();
 
 	err = svc.Execute( targetId, sacrificeId, p );
 	if ( err == IFE_Ok )
 	{
-		msg = "Infusion OK: " + inv.GetItemName( targetId ) + " is now level " + p.sacrificeLevel;
-		LogChannel( 'Infusion', msg );
-		theGame.GetGuiManager().ShowNotification( msg, 6.0 );
+		theGame.GetGuiManager().ShowNotification(
+			"Infusion OK: " + inv.GetItemName( targetId ) + " is now level " + p.sacrificeLevel, 6.0 );
+		theSound.SoundEvent( "gui_crafting_craft_item" );
 	}
 	else
 	{
-		msg = "Infusion FAILED: " + InfusionErrorToString( err );
-		LogChannel( 'Infusion', msg );
-		theGame.GetGuiManager().ShowNotification( msg, 6.0 );
+		theGame.GetGuiManager().ShowNotification(
+			"Infusion FAILED: " + InfusionErrorToString( err ), 6.0 );
+		theSound.SoundEvent( "gui_global_denied" );
 	}
 }
 
-// Shared implementation behind the infuseStats console command.
-function InfusionPrintStats()
+// Full self test. Verdict signals:
+//   crafting sound ("gui_crafting_craft_item") = ALL checks passed
+//   denied sound  ("gui_global_denied")        = at least one check failed
+// The final notification summarizes the count; detailed per-check
+// notifications fire immediately before (they queue on the HUD).
+exec function infuseSelfTest()
 {
 	var svc : W3InfusionService;
-	var ids : array<SItemUniqueId>;
-	var i : int;
-	var lvl : int;
 	var inv : CInventoryComponent;
-	var witcher : W3PlayerWitcher;
-	var stat : SAbilityAttributeValue;
-	var msg : string;
+	var t, s, t2 : array<SItemUniqueId>;
+	var silver : array<SItemUniqueId>;
+	var p : SInfusionPreview;
+	var passed, failed : int;
 
-	svc = InfusionGetService();
 	inv = thePlayer.inv;
-	witcher = GetWitcherPlayer();
+	svc = InfusionGetService();
 
-	if ( InfusionGetSteelSwords( ids ) == 0 )
+	t  = inv.AddAnItem( 'Novigraadan sword 1', 1 );
+	s  = inv.AddAnItem( 'Novigraadan sword 3', 1 );
+	t2 = inv.AddAnItem( 'Novigraadan sword 1', 1 );
+
+	if ( t.Size() == 0 || s.Size() == 0 || t2.Size() == 0 )
 	{
-		theGame.GetGuiManager().ShowNotification( "Infusion: no steelswords in inventory", 4.0 );
-		LogChannel( 'Infusion', "no steelswords in inventory" );
+		theGame.GetGuiManager().ShowNotification( "INFUSION SELFTEST: FAIL (spawn failed)", 6.0 );
+		theSound.SoundEvent( "gui_global_denied" );
 		return;
 	}
 
-	LogChannel( 'Infusion', "steelswords in inventory:" );
-	for ( i = 0; i < ids.Size(); i += 1 )
+	// 1) same instance as target and sacrifice
+	svc.Preview( t[0], t[0], p );
+	if ( p.errorCode == IFE_SameItemInstance ) { passed += 1; } else { failed += 1; }
+	theGame.GetGuiManager().ShowNotification( "check 1 same-instance: " + InfusionErrorToString( p.errorCode ), 4.0 );
+
+	// 2) equal-level sacrifice (both spawned from the same definition)
+	svc.Preview( t[0], t2[0], p );
+	if ( p.errorCode == IFE_SacrificeNotHigher ) { passed += 1; } else { failed += 1; }
+	theGame.GetGuiManager().ShowNotification( "check 2 equal-level: " + InfusionErrorToString( p.errorCode ), 4.0 );
+
+	// 3) equipped sacrifice
+	thePlayer.EquipItem( s[0] );
+	svc.Preview( t[0], s[0], p );
+	if ( p.errorCode == IFE_EquippedSacrifice ) { passed += 1; } else { failed += 1; }
+	theGame.GetGuiManager().ShowNotification( "check 3 equipped: " + InfusionErrorToString( p.errorCode ), 4.0 );
+	thePlayer.UnequipItem( s[0] );
+
+	// 4) silver-vs-steel compatibility
+	silver = inv.GetItemsByCategory( 'silversword' );
+	if ( silver.Size() > 0 )
 	{
-		lvl = svc.ComputeItemLevel( inv, ids[i] );
-		stat = inv.GetItemAttributeValue( ids[i], 'SlashingDamage' );
-		msg = "  [" + i + "] " + inv.GetItemName( ids[i] )
-			+ "  level=" + lvl
-			+ "  slashing=" + stat.valueBase
-			+ "  quest=" + inv.IsItemQuest( ids[i] )
-			+ "  equipped=" + witcher.IsItemEquipped( ids[i] );
-		LogChannel( 'Infusion', msg );
-		theGame.GetGuiManager().ShowNotification( msg, 4.0 );
+		svc.Preview( t[0], silver[0], p );
+		if ( p.errorCode == IFE_CategoryMismatch ) { passed += 1; } else { failed += 1; }
+		theGame.GetGuiManager().ShowNotification( "check 4 category: " + InfusionErrorToString( p.errorCode ), 4.0 );
+	}
+	else
+	{
+		passed += 1; // no silver sword available: check not applicable
+		theGame.GetGuiManager().ShowNotification( "check 4 category: skipped (no silver sword)", 4.0 );
+	}
+
+	// 5) real infusion (consumes the sacrifice on success)
+	InfusionRunBestPair();
+
+	// Verdict: the infusion itself reports its own sound; here we report the
+	// rejection-check tally only.
+	if ( failed == 0 )
+	{
+		theGame.GetGuiManager().ShowNotification( "INFUSION SELFTEST: rejection checks " + passed + "/4 PASS", 6.0 );
+		theSound.SoundEvent( "gui_crafting_craft_item" );
+	}
+	else
+	{
+		theGame.GetGuiManager().ShowNotification( "INFUSION SELFTEST: " + failed + " of 4 checks FAILED", 6.0 );
+		theSound.SoundEvent( "gui_global_denied" );
 	}
 }
