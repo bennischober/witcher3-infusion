@@ -210,6 +210,16 @@ exec function infuseSelfTest()
 		return;
 	}
 
+	// Guarantee a level advantage for the sacrifice: spawned autogen items
+	// both roll to playerLevel-1, so without this the pair is usually equal
+	// level and the test fails with IFE_SacrificeNotHigher (spawn RNG from
+	// autogen_steel_dmg min7/max8 only rarely produces a +1 gap). Adding ten
+	// fixed step abilities makes the sacrifice exactly ten levels higher.
+	for ( k = 0; k < 10; k += 1 )
+	{
+		inv.AddItemCraftedAbility( s[0], 'autogen_fixed_steel_dmg', true );
+	}
+
 	// Mark all spawned items so infuseCleanTestItems can remove them later.
 	inv.AddItemTag( t[0], 'InfusionTestItem' );
 	inv.AddItemTag( s[0], 'InfusionTestItem' );
