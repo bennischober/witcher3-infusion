@@ -202,18 +202,37 @@ item picking from the player inventory — a candidate for sacrifice selection i
    hard-coding 8/10/5/2 — or verify FCR3 keeps vanilla autogen abilities (partially verified: FCR3
    still calls `GenerateItemLevel` and uses autogen abilities, inventoryComponent.ws FCR3:4383+).
    → Prototype test on this install required.
-3. **`RemoveItemCraftedAbility` duplicate semantics** — unverified (§3). Not needed for MVP.
-4. **Derived-level rounding** — `FloorF` vs `CeilF` per category; adding exactly N abilities should
+3. **Leveling Gear auto-scale side effect (verified in merged files)** — on this install,
+   `GetItemLevel(item)` mutates scalable items: if the item's derived level is below the player's
+   level, it permanently adds `autogen_fixed_*` abilities until the item reaches player level
+   (merged `inventoryComponent.ws` lines 425–428, `isItemScalable` at 470ff). Consequences:
+   - Reading a level via `GetItemLevel` is **not side-effect free** for weapons/armor below player
+     level; merely opening the inventory triggers the same behavior (this is Leveling Gear's
+     "items level with you" mechanic).
+   - The infusion service must therefore compute levels itself (aggregate stat + counted autogen
+     abilities + formula) instead of relying on `GetItemLevel`, or accept that both target and
+     sacrifice will already be scaled to player level.
+   - Infusion remains meaningful under this setup: only sacrifices **above** player level produce
+     progression, matching the install's item ecosystem.
+4. **Per-level stat step** — read at runtime via
+   `GetItemAbilityAttributeValue(itemId, attributeName, 'autogen_fixed_steel_dmg')` (import at
+   inventoryComponent.ws:197) rather than hard-coding 8/10/5/2; robust under overhauls. Fallback
+   table required only when the item has no autogen ability yet. The XML `type=` attribute on
+   autogen damage abilities is omitted; vanilla behavior (NG+ item leveling works off these
+   abilities and levels are derived from `valueBase`) implies omitted type defaults to `base` —
+   **inferred, verify in-game**.
+5. **`RemoveItemCraftedAbility` duplicate semantics** — unverified (§3). Not needed for MVP.
+6. **Derived-level rounding** — `FloorF` vs `CeilF` per category; adding exactly N abilities should
    raise derived level by exactly N, but quality −2/−1 adjustments are applied *after* the formula.
    Since we transfer level *differences* (same item, same quality), adjustments cancel out. Verify
    empirically.
-5. **Non-standard items** — quest items, Aerondight (its own leveling script, effects\other\
+7. **Non-standard items** — quest items, Aerondight (its own leveling script, effects\other\
    aerondight.ws), bolts, crossbows, and `AutogenUseLevelRange` merchant items need exclusion rules.
    MVP: restrict to player weapons/armor categories and exclude quest-tagged and Aerondight items.
-6. **UI without SWF editing** — a fully custom menu has no Flash asset to bind; solution for MVP is
+8. **UI without SWF editing** — a fully custom menu has no Flash asset to bind; solution for MVP is
    script-driven interaction (popup-based or debug exec), production UI in a later milestone using
    option 2 or a SWF from a compatible community framework. Documented as §9.4 limitation.
-7. **In-game testing not yet performed** — everything above is static verification. Milestone 2
+9. **In-game testing not yet performed** — everything above is static verification. Milestone 2
    includes the first in-game validation (console + debug commands).
 
 ## 10. Recommended architecture (maps to spec §12)
@@ -263,14 +282,16 @@ within the same architecture.
 
 1. §6.2/§10: craftsman tiers are `Journeyman / Master / Grand Master / Arch Master` — no Amateur.
    Config keys become `JourneymanLaborMultiplier`, `MasterLaborMultiplier`, `GrandMasterLaborMultiplier`,
-   `ArchMasterLaborMultiplier` (or a lookup).
-2. §2.2 reference mods: Leveling Gear is installed locally and its full source is available for
+   `ArchMasterLaborMultiplier` (or a lookup). **Approved by user 2026-10-10.**
+2. §9 MVP interface: debug console (`exec function`s) for Milestone 2; menu integration deferred.
+   **Approved by user 2026-10-10.**
+3. §2.2 reference mods: Leveling Gear is installed locally and its full source is available for
    study — use it as primary reference (it already demonstrates the level-derivation technique).
-3. §9: "extend the repair interface" is only feasible via script-level menu overrides (no SWF
+4. §9: "extend the repair interface" is only feasible via script-level menu overrides (no SWF
    sources); MVP uses script-only UI paths. SWF editing explicitly out of scope for v1.
-4. §5.2: salvage uses native `recycling_parts` directly — the configurable salvage mapping is a
+5. §5.2: salvage uses native `recycling_parts` directly — the configurable salvage mapping is a
    fallback for items lacking data, not the primary path.
-5. §13.2: engine-level atomic inventory transactions do not exist; safety comes from the
+6. §13.2: engine-level atomic inventory transactions do not exist; safety comes from the
    validate-verify-consume order plus `StartInvUpdateTransaction` (verified pattern above).
 
 None of these change the gameplay model: sacrifice-based level transfer, no bonus merging, no

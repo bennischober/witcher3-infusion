@@ -8,6 +8,7 @@ Technical Implementation Specification and Development Roadmap
 - **Project status:** Design specification; technical feasibility must be verified before implementation
 - **Working title:** Witcher Gear Infusion
 - **Core design principle:** Preserve equipment identity while allowing players to sacrifice higher-level equipment, materials, and crowns to upgrade their preferred gear through existing craftsmen.
+- **Technical findings:** See `docs/TECHNICAL_DISCOVERY.md` — verified game APIs, required deviations from early examples (craftsman tiers, UI constraints), and the recommended implementation architecture.
 
 ## 1. Project Overview
 
@@ -109,7 +110,7 @@ Respect third-party licenses. Do not copy code or redistribute assets without ap
 Identify how the game represents:
 
 - Blacksmiths versus armorers.
-- Amateur, journeyman, and master craftsmanship.
+- Amateur, journeyman, and master craftsmanship (the game's actual tiers are journeyman, master, grand master, and arch master — see §6.2).
 - Crafting specializations.
 - Existing crafting and repair service interfaces.
 - NPC-specific service capabilities.
@@ -411,13 +412,14 @@ Do not apply a craftsman's labor multiplier to the material quantities. A master
 
 ### 6.2 Craftsman fee multipliers
 
-Proposed initial balance values:
+Proposed initial balance values (mapped to the game's verified `ECraftsmanLevel` enum — the game has no "Amateur" tier):
 
 | Craftsman tier | Labor multiplier |
 | -------------- | ---------------- |
-| Amateur        | 1.0x             |
-| Journeyman     | 1.5x             |
-| Master         | 2.5x             |
+| Journeyman     | 1.0x             |
+| Master         | 1.5x             |
+| Grand Master   | 2.0x             |
+| Arch Master    | 2.5x             |
 
 These are starting values for testing, not final balance decisions.
 
@@ -522,9 +524,9 @@ Craftsman eligibility should be determined by:
 
 Proposed defaults:
 
-- Amateur craftsmen can infuse basic equipment.
-- Journeymen can handle more advanced equipment.
-- Master craftsmen can handle advanced Witcher gear and other high-tier equipment.
+- Journeyman craftsmen can infuse basic equipment.
+- Masters can handle more advanced equipment.
+- Grand masters and arch masters can handle advanced Witcher gear and other high-tier equipment.
 - Armorers handle armor.
 - Swordsmiths handle swords.
 
@@ -655,9 +657,10 @@ Suggested settings:
 | `EnableArmorInfusion`         | Enables armor infusion                                     |
 | `EnableSwordInfusion`         | Enables sword infusion                                     |
 | `RequireMasterForWitcherGear` | Controls the master-craftsman requirement                  |
-| `AmateurLaborMultiplier`      | Controls amateur service fees                              |
 | `JourneymanLaborMultiplier`   | Controls journeyman service fees                           |
 | `MasterLaborMultiplier`       | Controls master service fees                               |
+| `GrandMasterLaborMultiplier`  | Controls grand-master service fees                         |
+| `ArchMasterLaborMultiplier`   | Controls arch-master service fees                          |
 | `BaseLaborFee`                | Sets the baseline crown cost                               |
 | `LevelGapCostMultiplier`      | Controls the effect of the level difference                |
 | `TargetTierMultipliers`       | Configures cost by target equipment tier                   |
@@ -980,7 +983,7 @@ Verify that:
 Verify that:
 
 - Masters charge more labor than journeymen under default settings.
-- Journeymen charge more labor than amateurs under default settings.
+- Journeymen charge more labor than lower-tier craftsmen under default settings.
 - Larger level gaps increase labor costs as configured.
 - Higher-tier targets have the intended price multipliers.
 - Material salvage does not incorrectly reduce the labor fee.
