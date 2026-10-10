@@ -377,3 +377,75 @@ exec function infuseCleanTestItems()
 		theGame.GetGuiManager().ShowNotification( "Infusion: no test items in inventory", 5.0 );
 	}
 }
+
+// Negative-case test for the material requirement (spec §5.4/§13.1):
+// spawns a target and a sacrifice whose salvage does NOT overlap the
+// recipe (sword 1 yields Leather squares + Iron ingot; the recipe needs
+// Leather straps + Steel ingot), so with a stripped material stash the
+// infusion MUST be rejected with IFE_NotEnoughMaterials and nothing may
+// be consumed. Verifies the rejection and the untouched inventory state.
+exec function infuseTestMissingMaterials()
+{
+	var svc : W3InfusionService;
+	var inv : CInventoryComponent;
+	var t, s : array<SItemUniqueId>;
+	var p : SInfusionPreview;
+	var err : EInfusionError;
+	var straps, ingots, swordsBefore : int;
+	var k : int;
+
+	inv = thePlayer.inv;
+	svc = InfusionGetService();
+
+	straps = inv.GetItemQuantityByName( 'Leather straps' );
+	ingots = inv.GetItemQuantityByName( 'Steel ingot' );
+	if ( straps > 0 || ingots > 0 )
+	{
+		theGame.GetGuiManager().ShowNotification(
+			"test precondition: drop your Leather straps and Steel ingots first (have " + straps + "/" + ingots + ")", 6.0 );
+		theSound.SoundEvent( "gui_global_denied" );
+		return;
+	}
+
+	t = inv.AddAnItem( 'Novigraadan sword 1', 1 );
+	s = inv.AddAnItem( 'Novigraadan sword 1', 1 );
+	if ( t.Size() == 0 || s.Size() == 0 )
+	{
+		theGame.GetGuiManager().ShowNotification( "test setup failed (spawn)", 5.0 );
+		return;
+	}
+	inv.AddItemTag( t[0], 'InfusionTestItem' );
+	inv.AddItemTag( s[0], 'InfusionTestItem' );
+
+	// Guarantee the level gap (same mechanism as infuseSelfTest).
+	for ( k = 0; k < 10; k += 1 )
+	{
+		inv.AddItemCraftedAbility( s[0], 'autogen_fixed_steel_dmg', true );
+	}
+
+	swordsBefore = inv.GetItemQuantityByName( 'Novigraadan sword 1' );
+
+	err = svc.Execute( t[0], s[0], p );
+
+	if ( err == IFE_NotEnoughMaterials )
+	{
+		// Nothing may have been consumed: both swords still present.
+		if ( inv.GetItemQuantityByName( 'Novigraadan sword 1' ) == swordsBefore
+			&& inv.IsIdValid( t[0] ) && inv.IsIdValid( s[0] ) )
+		{
+			theGame.GetGuiManager().ShowNotification( "MATERIAL REJECTION TEST: PASS (rejected, nothing consumed)", 6.0 );
+			theSound.SoundEvent( "gui_crafting_craft_item" );
+		}
+		else
+		{
+			theGame.GetGuiManager().ShowNotification( "MATERIAL REJECTION TEST: FAIL (consumed something!)", 6.0 );
+			theSound.SoundEvent( "gui_global_denied" );
+		}
+	}
+	else
+	{
+		theGame.GetGuiManager().ShowNotification(
+			"MATERIAL REJECTION TEST: FAIL (expected NotEnoughMaterials, got " + InfusionErrorToString( err ) + ")", 6.0 );
+		theSound.SoundEvent( "gui_global_denied" );
+	}
+}
