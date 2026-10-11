@@ -19,7 +19,10 @@ enum EInfusionError
 	IFE_SacrificeNotHigher,   // sacrifice level <= target level (spec §3.2)
 	IFE_LevelMismatch,        // post-application verification failed; transaction aborted
 	IFE_NotEnoughCrowns,      // player cannot pay the labor fee (spec §6)
-	IFE_NotEnoughMaterials    // player lacks remaining materials after the salvage discount (spec §5.4)
+	IFE_NotEnoughMaterials,   // player lacks remaining materials after the salvage discount (spec §5.4)
+	IFE_NoCraftsman,          // no craftsman context and debug bypass is off (spec §8.1)
+	IFE_WrongCraftsmanType,   // craftsman specialization does not match the target category (spec §8.2)
+	IFE_CraftsmanLevelTooLow  // craftsman tier insufficient for the target's tier (spec §8.2)
 }
 
 // One entry per supported item category. Values mirror the vanilla autogen system
@@ -76,6 +79,9 @@ function InfusionErrorToString( err : EInfusionError ) : string
 		case IFE_LevelMismatch:    return "internal level verification failed (aborted, nothing consumed)";
 		case IFE_NotEnoughCrowns:  return "not enough crowns";
 		case IFE_NotEnoughMaterials: return "missing required crafting materials";
+		case IFE_NoCraftsman:      return "no craftsman available";
+		case IFE_WrongCraftsmanType: return "this craftsman cannot infuse this equipment";
+		case IFE_CraftsmanLevelTooLow: return "this craftsman is not qualified for this equipment";
 	}
 	return "unknown error";
 }

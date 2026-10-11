@@ -51,6 +51,7 @@ function InfusionGetSteelSwords( out ids : array<SItemUniqueId> ) : int
 }
 
 // Finds the best (highest-level) sacrifice and (lowest-level) target pair.
+// Debug mode: no craftsman context (service bypasses eligibility).
 // Returns true if a valid pair exists.
 function InfusionFindBestPair( out targetId : SItemUniqueId, out sacrificeId : SItemUniqueId ) : bool
 {
@@ -534,4 +535,61 @@ exec function infuseReadLastTest()
 	{
 		hud.HudConsoleMsg( msg );
 	}
+}
+
+// Craftsman discovery (read-only): reports the type/tier data of every
+// craftsman NPC within 40m. This is how the game's real craftsmen are
+// validated from live entities (their data lives in cooked entity templates
+// and is not readable offline).
+exec function infuseCraftsmanReport()
+{
+	var entities : array<CGameplayEntity>;
+	var comp : W3CraftsmanComponent;
+	var i : int;
+	var npc : CNewNPC;
+	var smithLvl, armorerLvl : ECraftsmanLevel;
+	var msg : string;
+	var hud : CR4ScriptedHud;
+
+	FindGameplayEntitiesInSphere( entities, thePlayer.GetWorldPosition(), 40, 30, '', FLAG_OnlyAliveActors );
+
+	LogChannel( 'Infusion', "craftsman report: scanning " + entities.Size() + " entities in 40m radius" );
+	msg = "craftsmen in 40m: " + entities.Size() + " entities scanned";
+
+	for ( i = 0; i < entities.Size(); i += 1 )
+	{
+		comp = (W3CraftsmanComponent)entities[i].GetComponentByClassName( 'W3CraftsmanComponent' );
+		if ( comp == NULL )
+		{
+			continue;
+		}
+
+		npc = (CNewNPC)entities[i];
+		smithLvl = comp.GetCraftsmanLevel( ECT_Smith );
+		armorerLvl = comp.GetCraftsmanLevel( ECT_Armorer );
+
+		msg = "CRAFTSMAN: " + npc.GetDisplayName() + " | smith=" + CraftsmanLevelToString( smithLvl )
+			+ " | armorer=" + CraftsmanLevelToString( armorerLvl );
+		LogChannel( 'Infusion', msg );
+		theGame.GetGuiManager().ShowNotification( msg, 8.0 );
+	}
+
+	hud = (CR4ScriptedHud)theGame.GetHud();
+	if ( hud )
+	{
+		hud.HudConsoleMsg( "craftsman report written to log (entities scanned: " + entities.Size() + ")" );
+	}
+}
+
+function CraftsmanLevelToString( level : ECraftsmanLevel ) : string
+{
+	switch ( level )
+	{
+		case ECL_Undefined:    return "none";
+		case ECL_Journeyman:   return "journeyman";
+		case ECL_Master:       return "master";
+		case ECL_Grand_Master: return "grandmaster";
+		case ECL_Arch_Master:  return "archmaster";
+	}
+	return "?";
 }

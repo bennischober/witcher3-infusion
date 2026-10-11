@@ -328,7 +328,8 @@ class W3InfusionService extends IScriptable
 	// ---------------------------------------------------------------------
 
 	// Validates a prospective infusion WITHOUT modifying anything (spec §9.2, §5.5).
-	public function Preview( targetId : SItemUniqueId, sacrificeId : SItemUniqueId, out preview : SInfusionPreview ) : EInfusionError
+	// craftsman: the NPC performing the service; NULL requires debugBypassCraftsman.
+	public function Preview( targetId : SItemUniqueId, sacrificeId : SItemUniqueId, out preview : SInfusionPreview, optional craftsman : CGameplayEntity ) : EInfusionError
 	{
 		var inv : CInventoryComponent;
 		var targetData, sacrificeData : SInfusionCategoryData;
@@ -395,6 +396,13 @@ class W3InfusionService extends IScriptable
 			return preview.errorCode;
 		}
 
+		// Craftsman eligibility (M4, spec §8.2) — before costs so an
+		// ineligible craftsman never sees a price.
+		if ( !VerifyCraftsman( inv, targetId, craftsman, preview ) )
+		{
+			return preview.errorCode;
+		}
+
 		targetLevel = ComputeItemLevel( inv, targetId );
 		sacrificeLevel = ComputeItemLevel( inv, sacrificeId );
 
@@ -424,6 +432,105 @@ class W3InfusionService extends IScriptable
 		preview.laborFee = GetLaborFee( gap );
 		preview.errorCode = IFE_Ok;
 		return preview.errorCode;
+	}
+
+	// ---------------------------------------------------------------------
+	// Craftsman eligibility (M4, spec §8.2; data comes from the live NPC's
+	// W3CraftsmanComponent — never hard-coded per NPC)
+	// ---------------------------------------------------------------------
+
+	// Debug bypass: when true, Preview/Execute run without a craftsman
+	// context (unit-style testing anywhere in the world). The production UI
+	// path must always pass a craftsman entity and will not enable this.
+	public var debugBypassCraftsman : bool;
+	default debugBypassCraftsman = true;
+
+	// Target tier requirement. The item's quality attribute (1..5) is the
+	// game's own rarity/tier signal (1-3 ordinary tiers, 4 = relic,
+	// 5 = Witcher gear). Maps to the craftsman level enum values
+	// (ECL_Journeyman=1 ... ECL_Arch_Master=4).
+	private const var CRAFTSMAN_LEVEL_REQUIRED_FOR_WITCHER_GEAR : int;
+	default CRAFTSMAN_LEVEL_REQUIRED_FOR_WITCHER_GEAR = 3;   // ECL_Grand_Master
+
+	private const var CRAFTSMAN_LEVEL_REQUIRED_FOR_RELIC_GEAR : int;
+	default CRAFTSMAN_LEVEL_REQUIRED_FOR_RELIC_GEAR = 2;     // ECL_Master
+
+	private const var CRAFTSMAN_LEVEL_REQUIRED_FOR_ORDINARY_GEAR : int;
+	default CRAFTSMAN_LEVEL_REQUIRED_FOR_ORDINARY_GEAR = 1;  // ECL_Journeyman
+
+	// Returns the craftsman level required for an item with the given quality.
+	private function RequiredCraftsmanLevelForQuality( quality : int ) : int
+	{
+		if ( quality >= 5 )
+		{
+			return CRAFTSMAN_LEVEL_REQUIRED_FOR_WITCHER_GEAR;
+		}
+		if ( quality == 4 )
+		{
+			return CRAFTSMAN_LEVEL_REQUIRED_FOR_RELIC_GEAR;
+		}
+		return CRAFTSMAN_LEVEL_REQUIRED_FOR_ORDINARY_GEAR;
+	}
+
+	// Validates the craftsman against the target item.
+	// craftsman may be NULL when debugBypassCraftsman is enabled.
+	// Sets preview.errorCode and returns false on ineligibility.
+	private function VerifyCraftsman( inv : CInventoryComponent, targetId : SItemUniqueId, craftsman : CGameplayEntity, out preview : SInfusionPreview ) : bool
+	{
+		var quality : int;
+		var requiredLevel : int;
+		var comp : W3CraftsmanComponent;
+		var craftsmanLevel : ECraftsmanLevel;
+		var category : name;
+		var requiredType : ECraftsmanType;
+
+		if ( craftsman == NULL )
+		{
+			if ( debugBypassCraftsman )
+			{
+				return true;   // unit-test mode: no craftsman context required
+			}
+			preview.errorCode = IFE_NoCraftsman;
+			return false;
+		}
+
+		comp = (W3CraftsmanComponent)craftsman.GetComponentByClassName( 'W3CraftsmanComponent' );
+		if ( comp == NULL )
+		{
+			preview.errorCode = IFE_NoCraftsman;
+			return false;
+		}
+
+		category = inv.GetItemCategory( targetId );
+		quality = RoundMath( CalculateAttributeValue( inv.GetItemAttributeValue( targetId, 'quality' ) ) );
+
+		// Specialization: swordsmith for swords, armorer for armor pieces.
+		if ( category == 'steelsword' || category == 'silversword' )
+		{
+			requiredType = ECT_Smith;
+		}
+		else
+		{
+			requiredType = ECT_Armorer;
+		}
+
+		if ( !comp.IsCraftsmanType( requiredType ) )
+		{
+			preview.errorCode = IFE_WrongCraftsmanType;
+			return false;
+		}
+
+		// Tier: required level depends on the target's quality tier.
+		requiredLevel = RequiredCraftsmanLevelForQuality( quality );
+		craftsmanLevel = comp.GetCraftsmanLevel( requiredType );
+
+		if ( craftsmanLevel < requiredLevel )
+		{
+			preview.errorCode = IFE_CraftsmanLevelTooLow;
+			return false;
+		}
+
+		return true;
 	}
 
 	// ---------------------------------------------------------------------
@@ -507,7 +614,7 @@ class W3InfusionService extends IScriptable
 	// Transaction (spec §13: validate -> verify -> commit -> verify)
 	// ---------------------------------------------------------------------
 
-	public function Execute( targetId : SItemUniqueId, sacrificeId : SItemUniqueId, out preview : SInfusionPreview ) : EInfusionError
+	public function Execute( targetId : SItemUniqueId, sacrificeId : SItemUniqueId, out preview : SInfusionPreview, optional craftsman : CGameplayEntity ) : EInfusionError
 	{
 		var inv : CInventoryComponent;
 		var err : EInfusionError;
@@ -517,7 +624,7 @@ class W3InfusionService extends IScriptable
 		var sacrificeName : name;
 
 		// 1) Full re-validation immediately before commit (spec §13.1).
-		err = Preview( targetId, sacrificeId, preview );
+		err = Preview( targetId, sacrificeId, preview, craftsman );
 		if ( err != IFE_Ok )
 		{
 			return err;
