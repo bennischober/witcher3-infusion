@@ -19,12 +19,14 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 
 		if ( !infusionService )
 		{
+			LogChannel( 'Infusion', "grid: item not shown (no service)" );
 			return false;
 		}
 
 		// Quick gates (cheap first): category support.
 		if ( !infusionService.IsSupportedTarget( item ) )
 		{
+			LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " not a supported target (category/exclusion/config)" );
 			return false;
 		}
 
@@ -38,11 +40,12 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 			}
 			if ( infusionService.Preview( item, ids[i], p ) == IFE_Ok )
 			{
-				sacrificeFound = true;
-				break;
+				LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " infusable (sacrifice: " + _inv.GetItemName( ids[i] ) + ", gap " + p.levelGap + ")" );
+				return true;
 			}
 		}
-		return sacrificeFound;
+		LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " has no valid sacrifice (" + ids.Size() + " candidates scanned)" );
+		return false;
 	}
 
 	// Show infusion-capable items (damaged or not) — unlike repair, which
