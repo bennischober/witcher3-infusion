@@ -202,22 +202,6 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		var numEnhancements : int;
 		var hasEnchantment : bool;
 		
-		// modInfusion -- begin: the Infuse state reuses the Repair frame on the
-		// Flash side (no SWF editing): Flash receives 'Repair', while the
-		// script-side state stays 'Infuse' so ApplyMenuState routes to the
-		// infusion grid and the confirmation interceptor engages.
-		if ( newState == 'Infuse' )
-		{
-			m_menuState = newState;
-			m_fxSetState.InvokeSelfOneArg( FlashArgString( 'Repair' ) );
-			if ( m_menuInited )
-			{
-				ApplyMenuState( newState );
-			}
-			return;
-		}
-		// modInfusion -- end
-		
 		if (newState == 'Sockets')
 		{
 			m_initialSelectionsToIgnore = 1;
@@ -279,25 +263,23 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			
 			switch( newState )
 			{
-				// modInfusion: the Repair state serves infusion too — the grid
-				// shows infusion targets; clicking one offers Infuse (below).
-				case 'Infuse':
-					_curInv = _infusionInv;
-					_infusionActive = true;
-					InvalidateInfusionMemo();
-					break;
+				// modInfusion: the Repair state is the unified service state —
+				// the grid shows repairable AND infusion-capable items; the
+				// per-item action (Repair or Infuse) and price are computed
+				// per item (label in GetItemDefaultActionName, price in the
+				// grid component).
 				case 'Repair':
-					if ( _infusionService && _infusionService.GetPublicConfig().EnableInfusion() )
+					_infusionActive = _infusionService
+						&& _infusionService.GetPublicConfig().EnableInfusion();
+					if ( _infusionActive )
 					{
 						_curInv = _infusionInv;
-						_infusionActive = true;
-						InvalidateInfusionMemo();
 					}
 					else
 					{
 						_curInv = _repairInv;
-						_infusionActive = false;
 					}
+					InvalidateInfusionMemo();
 					break;
 				case 'Sockets':
 					_curInv = _socketInv;
@@ -329,13 +311,13 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		
 		// modInfusion: in non-standalone mode the Repair state uses the
 		// infusion grid when infusion is enabled (handled in ApplyMenuState).
-		switch( newState )
-		{
-			case 'Sockets':
-			case 'Repair':
-			case 'AddSockets':
-			// modInfusion: Infuse uses the same two grid sections as Repair.
-			case 'Infuse':
+			// modInfusion: Infuse state removed (no Flash page exists for
+			// unknown states); the Repair state is the unified service state.
+			switch( newState )
+			{
+				case 'Sockets':
+				case 'Repair':
+				case 'AddSockets':
 				
 				m_sectionsList = m_flashValueStorage.CreateTempFlashArray();
 				curDataObject = CreateSectionsData( 0, 0, 3, GetLocStringByKeyExt( "panel_blacksmith_equipped" ) );
@@ -439,7 +421,9 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		// preview popup instead of the repair flow (spec §9). Early return
 		// replaced with if/else — bare 'return;' in a flash-bound event
 		// confuses the compiler's void/Bool handling here.
-		if ( _infusionActive && IsInfusionTarget( itemId ) )
+		if ( _infusionActive && IsInfusionTarget( itemId )
+			&& ( !_inv.HasItemDurability( itemId )
+				|| _inv.GetItemDurability( itemId ) >= _inv.GetItemMaxDurability( itemId ) ) )
 		{
 			StartInfusionFlow( itemId );
 		}
@@ -1055,10 +1039,19 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		var itemAction : EInventoryActionType;
 		itemAction = GetItemDefaultAction(item);
 		
-		// modInfusion: infusion-capable items show the Infuse action label.
+		// modInfusion: per-item action label. Damaged items keep the vanilla
+		// Repair label (vanilla behavior first). Undamaged infusion-capable
+		// items show the Infuse label (infusion includes full repair, so it
+		// covers the repair outcome anyway).
 		if ( _infusionActive && IsInfusionTarget( item ) )
 		{
-			return GetLocStringByKeyExt( "panel_button_inventory_infuse" );
+			// Infuse label only for undamaged items; damaged items keep the
+			// vanilla Repair label (repair first, then infuse).
+			if ( !_inv.HasItemDurability( item )
+				|| _inv.GetItemDurability( item ) >= _inv.GetItemMaxDurability( item ) )
+			{
+				return GetLocStringByKeyExt( "panel_button_inventory_infuse" );
+			}
 		}
 		
 		return GetItemActionFriendlyName(itemAction,GetWitcherPlayer().IsItemEquipped(item));

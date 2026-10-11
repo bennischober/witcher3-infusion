@@ -1084,13 +1084,19 @@ class CR4CommonMenu extends CR4MenuBase
 		}
 		if( isCraftingAvailable )
 		{
-			
-			// modInfusion -- begin: Infusion service tab
-			DefineMenuItem('BlacksmithMenu', "panel_title_infusion", '', 'Infuse', 'BlacksmithRepair');
+
+			// modInfusion -- begin
+			// NOTE: an extra "Infusion" tab was tested and does not work: the
+			// Flash tab bar has no page for an unknown state, so the panel
+			// renders blank (tab buttons are data-driven, but pages are not).
+			// The infusion UX therefore lives INSIDE the Repair tab (see
+			// blacksmithMenu.ws override): the grid shows infusion-capable
+			// items alongside repairable ones, each with its own action
+			// (Repair or Infuse) and price. No new tab, no Flash changes.
 			// modInfusion -- end
 
 			DefineMenuItem('CraftingMenu', "panel_title_crafting", '');
-			
+
 			DefineMenuItem('BlacksmithMenu', "panel_title_blacksmith_repair", '', 'Repair', 'BlacksmithRepair');
 			DefineMenuItem('BlacksmithMenu', "panel_title_blacksmith_sockets", '', 'Sockets', 'BlacksmithSockets');
 			DefineMenuItem('BlacksmithMenu', "panel_title_blacksmith_disassamble", '', 'Disassemble', 'BlacksmithDisassemble');
