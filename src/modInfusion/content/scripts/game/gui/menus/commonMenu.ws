@@ -1084,15 +1084,13 @@ class CR4CommonMenu extends CR4MenuBase
 		}
 		if( isCraftingAvailable )
 		{
-
-			// modInfusion -- begin: Infusion service tab (reuses the blacksmith
-			// menu shell; the Infuse state is implemented in blacksmithMenu.ws).
-			// Label is a loc key shipped in our w3strings file.
+			
+			// modInfusion -- begin: Infusion service tab
 			DefineMenuItem('BlacksmithMenu', "panel_title_infusion", '', 'Infuse', 'BlacksmithRepair');
 			// modInfusion -- end
 
 			DefineMenuItem('CraftingMenu', "panel_title_crafting", '');
-
+			
 			DefineMenuItem('BlacksmithMenu', "panel_title_blacksmith_repair", '', 'Repair', 'BlacksmithRepair');
 			DefineMenuItem('BlacksmithMenu', "panel_title_blacksmith_sockets", '', 'Sockets', 'BlacksmithSockets');
 			DefineMenuItem('BlacksmithMenu', "panel_title_blacksmith_disassamble", '', 'Disassemble', 'BlacksmithDisassemble');
