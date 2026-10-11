@@ -482,7 +482,7 @@ class W3InfusionService extends IScriptable
 
 		preview.stepsToAdd = gap;
 		preview.newLevel = targetLevel + gap;
-		preview.laborFee = GetLaborFee( gap, quality, craftsmanLevel );
+		preview.laborFee = GetLaborFee( inv, sacrificeId, gap, quality, craftsmanLevel );
 		preview.errorCode = IFE_Ok;
 		return preview.errorCode;
 	}
@@ -623,22 +623,32 @@ class W3InfusionService extends IScriptable
 	}
 
 	// ---------------------------------------------------------------------
-	// Labor fee (full formula per spec §6.3; multipliers from config §6.2)
+	// Labor fee (auto-balanced: fraction of the sacrifice's market value,
+	// scaled by craftsman tier, target tier, and level gap — spec §6.2/§6.3)
 	// ---------------------------------------------------------------------
 
-	private function GetLaborFee( gap : int, quality : int, craftsmanLevel : int ) : int
+	private function GetLaborFee( inv : CInventoryComponent, sacrificeId : SItemUniqueId, gap : int, quality : int, craftsmanLevel : int ) : int
 	{
 		var fee : float;
 		var mult : float;
+		var sacrificeValue : int;
+		var minFee : int;
+
+		// Anchor: the sacrifice's market value (auto-balances with the game's
+		// economy — official updates to item prices/loot scaling flow through).
+		sacrificeValue = GetConfig().GetSacrificeValue( inv, sacrificeId );
 
 		mult = GetConfig().GetCraftsmanMultiplier( craftsmanLevel )
 			* GetConfig().GetTargetTierMultiplier( quality )
 			* GetConfig().GetLevelGapMultiplier( gap );
 
-		fee = GetConfig().BaseLaborFee() * mult;
-		if ( fee < 0 )
+		fee = sacrificeValue * GetConfig().GetFeeFraction() * mult;
+
+		// Labor floor: even a zero-value sacrifice costs the craftsman's time.
+		minFee = GetConfig().GetMinLaborFee();
+		if ( fee < minFee )
 		{
-			fee = 0;   // config validation should prevent this; belt and braces
+			fee = minFee;
 		}
 		return RoundMath( fee );
 	}

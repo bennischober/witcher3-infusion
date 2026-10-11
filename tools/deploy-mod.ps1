@@ -38,11 +38,6 @@ if ($Uninstall) {
     } else {
         Write-Host "Nothing to remove: $dstRoot does not exist"
     }
-    $cfgDst = Join-Path $GameDir "bin\config\r4game\user_config_matrix\pc\modInfusion.xml"
-    if (Test-Path $cfgDst) {
-        Remove-Item -Force $cfgDst
-        Write-Host "Removed settings XML: $cfgDst"
-    }
     exit 0
 }
 
@@ -59,15 +54,11 @@ if (Test-Path (Join-Path $dstRoot "content")) {
 }
 Copy-Item -Recurse -Force -Path (Join-Path $srcRoot "*") -Destination $dstRoot
 
-# The settings-menu XML must live in the GAME's config folder (5.0+ auto-detects
-# every XML there; the mod folder's bin/ is NOT scanned for config matrices).
-$cfgSrc = Join-Path $srcRoot "bin\config\r4game\user_config_matrix\pc\modInfusion.xml"
-$cfgDst = Join-Path $GameDir "bin\config\r4game\user_config_matrix\pc\modInfusion.xml"
-if (Test-Path $cfgSrc) {
-    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $cfgDst) | Out-Null
-    Copy-Item -Force $cfgSrc $cfgDst
-    Write-Host "Settings XML installed: $cfgDst"
-}
+# The settings-menu XML is intentionally NOT deployed: the Remastered
+# settings UI is broken for mod groups (invisible entries, unresolved
+# '##option_' labels) and the decision is curated defaults without a menu
+# (spec §10 fallback path). See docs/TECHNICAL_DISCOVERY.md - the XML source
+# is kept in the repo for a future re-enable if CDPR fixes the UI.
 
 # Dev mode: overlay tests tree into the SAME mod folder (files win over src).
 # Kept as one folder so the script set compiles exactly as in release,
