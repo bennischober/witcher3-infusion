@@ -46,8 +46,9 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 	}
 
 	// Show infusion-capable items (damaged or not) — unlike repair, which
-	// only lists damaged equipment.
-	public function ShouldShowItem( item : SItemUniqueId ) : bool
+	// only lists damaged equipment. Access modifier matches the ancestor
+	// (protected) — the compiler rejects weaker overrides.
+	protected function ShouldShowItem( item : SItemUniqueId ) : bool
 	{
 		if ( !super.ShouldShowItem( item ) )
 		{

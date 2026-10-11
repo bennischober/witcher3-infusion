@@ -339,34 +339,14 @@ class W3InfusionService extends IScriptable
 	// Public queries (used by the M6 menu integration)
 	// ---------------------------------------------------------------------
 
-	// Quick gate (cheap check without inventory scan): category support and
-	// exclusion rules only. Used by the menu grid filter.
+	// True when the item's category is infusion-supported AND enabled
+	// (exclusion rules + config gate). Uses the player's inventory context.
 	public function IsSupportedTarget( item : SItemUniqueId ) : bool
 	{
 		var inv : CInventoryComponent;
 		var data : SInfusionCategoryData;
 
 		inv = GetWitcherPlayer().inv;
-		if ( !inv.IsIdValid( item ) )
-		{
-			return false;
-		}
-		if ( IsExcludedItem( inv, item ) )
-		{
-			return false;
-		}
-		if ( !GetCategoryData( inv.GetItemCategory( item ), data ) )
-		{
-			return false;
-		}
-		return GetConfig().IsCategoryEnabled( data.category );
-	}
-
-	// True when the item's category is infusion-supported AND enabled.
-	public function IsSupportedTarget( inv : CInventoryComponent, item : SItemUniqueId ) : bool
-	{
-		var data : SInfusionCategoryData;
-
 		if ( !inv.IsIdValid( item ) )
 		{
 			return false;
