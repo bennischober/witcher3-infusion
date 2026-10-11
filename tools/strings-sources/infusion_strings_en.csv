@@ -1,23 +1,23 @@
 ;meta[language=en]
 ; id | key(hex) | key(str) | text
-1||option_Enable Infusion|Enable Infusion
-2||option_Infuse steel swords|Infuse steel swords
-3||option_Infuse silver swords|Infuse silver swords
-4||option_Infuse armor pieces|Infuse armor pieces
-5||option_Base labor fee|Base labor fee
-6||option_Salvage yield multiplier|Salvage yield multiplier
-7||option_Salvage reduces material cost|Salvage reduces material cost
-8||option_Restore durability on infusion|Restore durability on infusion
-9||option_Fee growth per level gap|Fee growth per level gap
-10||option_Fee growth cap (x10)|Fee growth cap (x10)
-11||option_Witcher gear requires tier (1-4)|Witcher gear requires tier (1-4)
-12||panel_Witcher Gear Infusion|Witcher Gear Infusion
-13||panel_button_inventory_infuse|Infuse
-14||panel_infusion_popup_title|Infuse Equipment
-15||panel_infusion_recovered|Materials recovered
-16||panel_infusion_required|Additional materials required
-17||panel_infusion_consumed_note|The sacrifice item will be permanently consumed. The target will be fully repaired.
-18||panel_infusion_done|Infusion complete
-19||panel_infusion_no_sacrifice|No compatible sacrifice item available
-20||panel_title_infusion|Infusion
-21||panel_title_infusion_desc|Sacrifice equipment to upgrade your favorite gear
+2112345001||option_Enable Infusion|Enable Infusion
+2112345002||option_Infuse steel swords|Infuse steel swords
+2112345003||option_Infuse silver swords|Infuse silver swords
+2112345004||option_Infuse armor pieces|Infuse armor pieces
+2112345005||option_Base labor fee|Base labor fee
+2112345006||option_Salvage yield multiplier|Salvage yield multiplier
+2112345007||option_Salvage reduces material cost|Salvage reduces material cost
+2112345008||option_Restore durability on infusion|Restore durability on infusion
+2112345009||option_Fee growth per level gap|Fee growth per level gap
+2112345010||option_Fee growth cap (x10)|Fee growth cap (x10)
+2112345011||option_Witcher gear requires tier (1-4)|Witcher gear requires tier (1-4)
+2112345012||panel_Witcher Gear Infusion|Witcher Gear Infusion
+2112345013||panel_button_inventory_infuse|Infuse
+2112345014||panel_infusion_popup_title|Infuse Equipment
+2112345015||panel_infusion_recovered|Materials recovered
+2112345016||panel_infusion_required|Additional materials required
+2112345017||panel_infusion_consumed_note|The sacrifice item will be permanently consumed. The target will be fully repaired.
+2112345018||panel_infusion_done|Infusion complete
+2112345019||panel_infusion_no_sacrifice|No compatible sacrifice item available
+2112345020||panel_title_infusion|Infusion
+2112345021||panel_title_infusion_desc|Sacrifice equipment to upgrade your favorite gear
