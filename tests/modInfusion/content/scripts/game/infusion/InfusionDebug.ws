@@ -596,8 +596,10 @@ function CraftsmanLevelToString( level : ECraftsmanLevel ) : string
 
 // Spawns a smith NPC from a template in front of the player for integration
 // testing. The entity self-despawns after 120 seconds (DestroyAfter) or can
-// be removed earlier via infuseDespawnTestSmith.
-// Template path: any craftsman w2ent from gameplay/community/shops_and_craftsmen.
+// be removed earlier via infuseDespawnTestSmith (tag-matched, never touches
+// real community craftsmen).
+// NOTE: WitcherScript strings do not process backslash escapes - paths use
+// SINGLE backslashes (vanilla convention, verified signEntity.ws:708).
 exec function infuseSpawnTestSmith( optional master : bool )
 {
 	var template : CEntityTemplate;
@@ -606,16 +608,17 @@ exec function infuseSpawnTestSmith( optional master : bool )
 	var rot : EulerAngles;
 	var forward : Vector;
 	var path : string;
+	var tags : array<name>;
 
 	// Verified templates (docs/CRAFTSMAN_MAP.md): Novigrad market smith is a
 	// Master smith; the Crow's Perch Verden Smith is a Journeyman.
 	if ( master )
 	{
-		path = "gameplay\\community\\shops_and_craftsmen\\novigrad\\market\\novigrad_market_smith_01.w2ent";
+		path = "gameplay\community\shops_and_craftsmen\novigrad\market\novigrad_market_smith_01.w2ent";
 	}
 	else
 	{
-		path = "gameplay\\community\\shops_and_craftsmen\\no_mans_land\\snots\\snots_blacksmith_01.w2ent";
+		path = "gameplay\community\shops_and_craftsmen\no_mans_land\snots\snots_blacksmith_01.w2ent";
 	}
 
 	template = (CEntityTemplate)LoadResource( path, true );
@@ -631,7 +634,8 @@ exec function infuseSpawnTestSmith( optional master : bool )
 	pos = pos + forward * 3.0;   // 3m in front, facing the player
 	rot = EulerAngles( 0, thePlayer.GetHeading() + 180, 0 );
 
-	smith = theGame.CreateEntity( template, pos, rot );
+	tags.PushBack( 'InfusionTestSmith' );
+	smith = theGame.CreateEntity( template, pos, rot, false, false, false, , tags );
 	if ( !smith )
 	{
 		LogChannel( 'Infusion', "spawn test smith: CreateEntity failed" );
@@ -647,46 +651,28 @@ exec function infuseSpawnTestSmith( optional master : bool )
 	theSound.SoundEvent( "gui_crafting_craft_item" );
 }
 
-// Immediately removes the nearest spawned craftsman entity (within 20m).
+// Immediately removes the spawned test smith (tagged 'InfusionTestSmith').
+// Never touches real community craftsmen.
 exec function infuseDespawnTestSmith()
 {
-	var entities : array<CGameplayEntity>;
-	var comp : W3CraftsmanComponent;
+	var smiths : array<CEntity>;
 	var i : int;
-	var bestDist : float;
-	var bestIdx : int;
-	var dist : float;
 
-	FindGameplayEntitiesInSphere( entities, thePlayer.GetWorldPosition(), 20, 30, '', FLAG_OnlyAliveActors );
+	theGame.GetEntitiesByTag( 'InfusionTestSmith', smiths );
 
-	bestDist = -1;
-	bestIdx = -1;
-	for ( i = 0; i < entities.Size(); i += 1 )
+	if ( smiths.Size() == 0 )
 	{
-		comp = (W3CraftsmanComponent)entities[i].GetComponentByClassName( 'W3CraftsmanComponent' );
-		if ( !comp )
-		{
-			continue;
-		}
-		dist = VecLength( entities[i].GetWorldPosition() - thePlayer.GetWorldPosition() );
-		if ( bestDist < 0 || dist < bestDist )
-		{
-			bestDist = dist;
-			bestIdx = i;
-		}
+		LogChannel( 'Infusion', "despawn test smith: no spawned test smith present" );
+		theGame.GetGuiManager().ShowNotification( "no spawned test smith present", 6.0 );
+		return;
 	}
 
-	if ( bestIdx >= 0 )
+	for ( i = 0; i < smiths.Size(); i += 1 )
 	{
-		LogChannel( 'Infusion', "despawn test smith: destroying craftsman entity at " + bestDist + "m" );
-		entities[bestIdx].DestroyAfter( 0.1f );
-		theGame.GetGuiManager().ShowNotification( "test smith removed", 6.0 );
+		LogChannel( 'Infusion', "despawn test smith: destroying tagged entity " + i );
+		smiths[i].DestroyAfter( 0.1f );
 	}
-	else
-	{
-		LogChannel( 'Infusion', "despawn test smith: no craftsman entity within 20m" );
-		theGame.GetGuiManager().ShowNotification( "no craftsman entity within 20m", 6.0 );
-	}
+	theGame.GetGuiManager().ShowNotification( "test smith removed (" + smiths.Size() + ")", 6.0 );
 }
 
 // Integration test for craftsman eligibility (spec §8.2/§16 M4): runs the
