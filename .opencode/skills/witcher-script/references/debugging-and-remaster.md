@@ -77,13 +77,36 @@ Error ...: Could not find function 'IsItemEquipped'
 `GetWitcherPlayer()`), on components, or on the inventory component. Grep the shipped scripts
 for `function <Name>` to find the declaring class before calling.
 
-### 5. Struct member initialization
+### 5. Handle comparisons: use truthiness, never `== NULL`
+
+```
+Error ...: Unable to find suitable operator 'OperatorEqual' for given types (&handle:CGameplayEntity, void)
+```
+
+WitcherScript handles (class references) have no equality operator against `void`/`NULL`.
+The vanilla idiom — used universally, zero `== NULL` comparisons in the shipped corpus — is
+implicit boolean conversion:
+
+```ws
+// WRONG:                          // RIGHT (vanilla idiom):
+if ( craftsman == NULL )           if ( !craftsman )
+if ( comp != NULL )                if ( comp )
+```
+
+Applies to entity handles, component handles, and any class-typed variable. Structs
+(value types) are not affected — but note engine opaque structs cannot be null-checked at all.
+
+### 6. No ternary operator
+
+The corpus contains zero `cond ? a : b` expressions — conditionals are if/else only.
+
+### 7. Struct member initialization
 
 Struct locals are zero-initialized by type, not auto-constructed. Assign every member you rely
 on (vanilla often assigns the whole struct before use, or uses `out` parameters that the callee
 fills completely).
 
-### 6. General diagnosis order
+### 8. General diagnosis order
 
 1. Read the exact message + line number (first error is the real one; the rest are cascades).
 2. Check declaration order, missing `;`, unbalanced braces.
