@@ -594,6 +594,101 @@ function CraftsmanLevelToString( level : ECraftsmanLevel ) : string
 	return "?";
 }
 
+// Spawns a smith NPC from a template in front of the player for integration
+// testing. The entity self-despawns after 120 seconds (DestroyAfter) or can
+// be removed earlier via infuseDespawnTestSmith.
+// Template path: any craftsman w2ent from gameplay/community/shops_and_craftsmen.
+exec function infuseSpawnTestSmith( optional master : bool )
+{
+	var template : CEntityTemplate;
+	var smith : CEntity;
+	var pos : Vector;
+	var rot : EulerAngles;
+	var forward : Vector;
+	var path : string;
+
+	// Verified templates (docs/CRAFTSMAN_MAP.md): Novigrad market smith is a
+	// Master smith; the Crow's Perch Verden Smith is a Journeyman.
+	if ( master )
+	{
+		path = "gameplay\\community\\shops_and_craftsmen\\novigrad\\market\\novigrad_market_smith_01.w2ent";
+	}
+	else
+	{
+		path = "gameplay\\community\\shops_and_craftsmen\\no_mans_land\\snots\\snots_blacksmith_01.w2ent";
+	}
+
+	template = (CEntityTemplate)LoadResource( path, true );
+	if ( !template )
+	{
+		LogChannel( 'Infusion', "spawn test smith: template load failed: " + path );
+		theGame.GetGuiManager().ShowNotification( "SMITH SPAWN: template load failed", 6.0 );
+		return;
+	}
+
+	pos = thePlayer.GetWorldPosition();
+	forward = VecFromHeading( thePlayer.GetHeading() );
+	pos = pos + forward * 3.0;   // 3m in front, facing the player
+	rot = EulerAngles( 0, thePlayer.GetHeading() + 180, 0 );
+
+	smith = theGame.CreateEntity( template, pos, rot );
+	if ( !smith )
+	{
+		LogChannel( 'Infusion', "spawn test smith: CreateEntity failed" );
+		theGame.GetGuiManager().ShowNotification( "SMITH SPAWN: entity creation failed", 6.0 );
+		return;
+	}
+
+	// Self-cleanup after 120s (vanilla despawn mechanism).
+	smith.DestroyAfter( 120.f );
+
+	LogChannel( 'Infusion', "spawn test smith: spawned " + path + " (despawns in 120s)" );
+	theGame.GetGuiManager().ShowNotification( "SMITH SPAWNED 3m ahead - run infuseTestEligibility now", 8.0 );
+	theSound.SoundEvent( "gui_crafting_craft_item" );
+}
+
+// Immediately removes the nearest spawned craftsman entity (within 20m).
+exec function infuseDespawnTestSmith()
+{
+	var entities : array<CGameplayEntity>;
+	var comp : W3CraftsmanComponent;
+	var i : int;
+	var bestDist : float;
+	var bestIdx : int;
+	var dist : float;
+
+	FindGameplayEntitiesInSphere( entities, thePlayer.GetWorldPosition(), 20, 30, '', FLAG_OnlyAliveActors );
+
+	bestDist = -1;
+	bestIdx = -1;
+	for ( i = 0; i < entities.Size(); i += 1 )
+	{
+		comp = (W3CraftsmanComponent)entities[i].GetComponentByClassName( 'W3CraftsmanComponent' );
+		if ( !comp )
+		{
+			continue;
+		}
+		dist = VecLength( entities[i].GetWorldPosition() - thePlayer.GetWorldPosition() );
+		if ( bestDist < 0 || dist < bestDist )
+		{
+			bestDist = dist;
+			bestIdx = i;
+		}
+	}
+
+	if ( bestIdx >= 0 )
+	{
+		LogChannel( 'Infusion', "despawn test smith: destroying craftsman entity at " + bestDist + "m" );
+		entities[bestIdx].DestroyAfter( 0.1f );
+		theGame.GetGuiManager().ShowNotification( "test smith removed", 6.0 );
+	}
+	else
+	{
+		LogChannel( 'Infusion', "despawn test smith: no craftsman entity within 20m" );
+		theGame.GetGuiManager().ShowNotification( "no craftsman entity within 20m", 6.0 );
+	}
+}
+
 // Integration test for craftsman eligibility (spec §8.2/§16 M4): runs the
 // REAL eligibility path (bypass temporarily off) against the nearest
 // craftsman NPC. Uses a spawned steel-sword pair, so at an ARMORER the
