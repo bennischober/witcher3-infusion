@@ -336,6 +336,81 @@ class W3InfusionService extends IScriptable
 	}
 
 	// ---------------------------------------------------------------------
+	// Public queries (used by the M6 menu integration)
+	// ---------------------------------------------------------------------
+
+	// Quick gate (cheap check without inventory scan): category support and
+	// exclusion rules only. Used by the menu grid filter.
+	public function IsSupportedTarget( item : SItemUniqueId ) : bool
+	{
+		var inv : CInventoryComponent;
+		var data : SInfusionCategoryData;
+
+		inv = GetWitcherPlayer().inv;
+		if ( !inv.IsIdValid( item ) )
+		{
+			return false;
+		}
+		if ( IsExcludedItem( inv, item ) )
+		{
+			return false;
+		}
+		if ( !GetCategoryData( inv.GetItemCategory( item ), data ) )
+		{
+			return false;
+		}
+		return GetConfig().IsCategoryEnabled( data.category );
+	}
+
+	// True when the item's category is infusion-supported AND enabled.
+	public function IsSupportedTarget( inv : CInventoryComponent, item : SItemUniqueId ) : bool
+	{
+		var data : SInfusionCategoryData;
+
+		if ( !inv.IsIdValid( item ) )
+		{
+			return false;
+		}
+		if ( IsExcludedItem( inv, item ) )
+		{
+			return false;
+		}
+		if ( !GetCategoryData( inv.GetItemCategory( item ), data ) )
+		{
+			return false;
+		}
+		return GetConfig().IsCategoryEnabled( data.category );
+	}
+
+	// Finds the best valid sacrifice for a target (highest level gap wins;
+	// ties broken by lower fee). Returns false when none exists.
+	public function FindBestSacrifice( inv : CInventoryComponent, targetId : SItemUniqueId, out sacrificeId : SItemUniqueId, out preview : SInfusionPreview, optional craftsman : CGameplayEntity ) : bool
+	{
+		var all : array<SItemUniqueId>;
+		var p : SInfusionPreview;
+		var i : int;
+		var bestGap : int;
+
+		bestGap = 0;
+		inv.GetAllItems( all );
+
+		for ( i = 0; i < all.Size(); i += 1 )
+		{
+			if ( all[i] == targetId )
+			{
+				continue;
+			}
+			if ( Preview( targetId, all[i], p, craftsman ) == IFE_Ok && p.levelGap > bestGap )
+			{
+				bestGap = p.levelGap;
+				sacrificeId = all[i];
+				preview = p;
+			}
+		}
+		return bestGap > 0;
+	}
+
+	// ---------------------------------------------------------------------
 	// Item eligibility
 	// ---------------------------------------------------------------------
 

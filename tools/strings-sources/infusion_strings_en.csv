@@ -1,0 +1,22 @@
+;meta[language=en]
+; id | key(hex) | key(str) | text
+1||option_Enable Infusion|Enable Infusion
+2||option_Infuse steel swords|Infuse steel swords
+3||option_Infuse silver swords|Infuse silver swords
+4||option_Infuse armor pieces|Infuse armor pieces
+5||option_Base labor fee|Base labor fee
+6||option_Salvage yield multiplier|Salvage yield multiplier
+7||option_Salvage reduces material cost|Salvage reduces material cost
+8||option_Restore durability on infusion|Restore durability on infusion
+9||option_Fee growth per level gap|Fee growth per level gap
+10||option_Fee growth cap (x10)|Fee growth cap (x10)
+11||option_Witcher gear requires tier (1-4)|Witcher gear requires tier (1-4)
+12||panel_Witcher Gear Infusion|Witcher Gear Infusion
+13||panel_button_inventory_infuse|Infuse
+14||panel_infusion_popup_title|Infuse Equipment
+15||panel_infusion_recovered|Materials recovered
+16||panel_infusion_required|Additional materials required
+17||panel_infusion_consumed_note|The sacrifice item will be permanently consumed. The target will be fully repaired.
+18||panel_infusion_done|Infusion complete
+19||panel_infusion_no_sacrifice|No compatible sacrifice item available
+20||panel_title_infusion|Infusion
