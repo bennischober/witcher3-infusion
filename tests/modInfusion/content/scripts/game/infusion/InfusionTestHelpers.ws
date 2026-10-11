@@ -1,4 +1,4 @@
-/***********************************************************************/
+﻿/***********************************************************************/
 /** 	Witcher Gear Infusion — test harness helpers (DEV ONLY, never shipped)
 /** 	Shared plumbing for the debug test suite: service construction,
 /** 	item spawning/tagging, pair selection, result reporting.

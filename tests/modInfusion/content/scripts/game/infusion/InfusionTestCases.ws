@@ -1,4 +1,4 @@
-/***********************************************************************/
+﻿/***********************************************************************/
 /** 	Witcher Gear Infusion — test cases (DEV ONLY, never shipped)
 /** 	Executable test bodies. Entry points (exec functions) live in
 /** 	InfusionDebug.ws; shared plumbing in InfusionTestHelpers.ws.

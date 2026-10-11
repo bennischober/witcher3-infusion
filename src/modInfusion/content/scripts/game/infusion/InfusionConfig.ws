@@ -1,4 +1,4 @@
-/***********************************************************************/
+﻿/***********************************************************************/
 /** 	Witcher Gear Infusion — configuration
 /** 	All balance knobs and tuning values in one place. The service reads
 /** 	these through getters; M5 swaps the backing source (script constants
