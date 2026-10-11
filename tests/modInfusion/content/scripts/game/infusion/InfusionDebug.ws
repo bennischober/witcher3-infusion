@@ -61,9 +61,9 @@ exec function infuseRun()
 	InfusionRunBestPair();
 }
 
-exec function infuseSelfTest()
+exec function infuseSelfTest( optional armor : bool )
 {
-	InfusionTestCaseSelfTest();
+	InfusionTestCaseSelfTest( armor );
 }
 
 exec function infuseCleanTestItems()

@@ -9,7 +9,10 @@
 // ------------------------- rejection checks (self test) -------------------------
 
 // Runs the four rejection checks plus one real infusion.
-function InfusionTestCaseSelfTest()
+// Runs the four rejection checks plus one real infusion. Accepts an optional
+// armor flag: spawns armor pieces instead of swords (for testing at an
+// armorer).
+function InfusionTestCaseSelfTest( optional armor : bool )
 {
 	var svc : W3InfusionService;
 	var inv : CInventoryComponent;
@@ -23,9 +26,9 @@ function InfusionTestCaseSelfTest()
 	inv = thePlayer.inv;
 	svc = InfusionGetService();
 
-	if ( !InfusionSpawnTestSword( tId, false, 0 )
-		|| !InfusionSpawnTestSword( sId, true, 10 )
-		|| !InfusionSpawnTestSword( t2Id, false, 0 ) )
+	if ( !InfusionSpawnTestSword( tId, false, 0, armor )
+		|| !InfusionSpawnTestSword( sId, true, 10, armor )
+		|| !InfusionSpawnTestSword( t2Id, false, 0, armor ) )
 	{
 		InfusionReportResult( "INFUSION SELFTEST", false, "spawn failed" );
 		return;
@@ -63,8 +66,17 @@ function InfusionTestCaseSelfTest()
 	LogChannel( 'Infusion', "check 2 equal-level: " + InfusionErrorToString( p.errorCode ) );
 
 	// 3) equipped sacrifice — NON-DESTRUCTIVE: uses the player's currently
-	//    equipped steel sword as the subject. Skipped when none is equipped.
-	equippedSteel = inv.GetItemsByCategory( 'steelsword' );
+	//    equipped item of the matching category as the subject. Skipped when
+	//    none is equipped. (Steel sword by default; equipped armor when
+	//    running the armor variant.)
+	if ( armor )
+	{
+		equippedSteel = inv.GetItemsByCategory( 'armor' );
+	}
+	else
+	{
+		equippedSteel = inv.GetItemsByCategory( 'steelsword' );
+	}
 	k = 0;
 	while ( k < equippedSteel.Size() )
 	{
@@ -79,8 +91,8 @@ function InfusionTestCaseSelfTest()
 	}
 	if ( k >= equippedSteel.Size() )
 	{
-		passed += 1; // not applicable without an equipped steel sword
-		LogChannel( 'Infusion', "check 3 equipped: skipped (no steel sword equipped)" );
+		passed += 1; // not applicable without an equipped item of the category
+		LogChannel( 'Infusion', "check 3 equipped: skipped (nothing equipped in the category)" );
 	}
 
 	// 4) silver-vs-steel compatibility. The first silver sword may be an

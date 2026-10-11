@@ -133,24 +133,40 @@ function InfusionRunBestPair()
 	}
 }
 
-// Spawns a quiet (no popup) steel sword and tags it as a test item.
+// Spawns a quiet (no popup) item and tags it as a test item.
 // boostLevels > 0 adds that many fixed step abilities (deterministic level
-// advantage). Returns the instance id; invalid on failure.
-function InfusionSpawnTestSword( out id : SItemUniqueId, sword3 : bool, boostLevels : int ) : bool
+// advantage). sword3=false spawns 'Novigraadan sword 1', true spawns
+// 'Novigraadan sword 3'. armor=true spawns armor pieces instead
+// ('Light armor 01' as target / 'Light armor 06' as sacrifice).
+function InfusionSpawnTestSword( out id : SItemUniqueId, sword3 : bool, boostLevels : int, optional armor : bool ) : bool
 {
 	var inv : CInventoryComponent;
 	var ids : array<SItemUniqueId>;
 	var i : int;
+	var itemName : name;
 
 	inv = thePlayer.inv;
-	if ( sword3 )
+	if ( armor )
 	{
-		ids = inv.AddAnItem( 'Novigraadan sword 3', 1, true, true );
+		if ( sword3 )
+		{
+			itemName = 'Light armor 06';   // sacrifice: higher-tier piece
+		}
+		else
+		{
+			itemName = 'Light armor 01';   // target
+		}
+	}
+	else if ( sword3 )
+	{
+		itemName = 'Novigraadan sword 3';
 	}
 	else
 	{
-		ids = inv.AddAnItem( 'Novigraadan sword 1', 1, true, true );
+		itemName = 'Novigraadan sword 1';
 	}
+
+	ids = inv.AddAnItem( itemName, 1, true, true );
 
 	if ( ids.Size() == 0 )
 	{
@@ -160,9 +176,18 @@ function InfusionSpawnTestSword( out id : SItemUniqueId, sword3 : bool, boostLev
 	id = ids[0];
 	inv.AddItemTag( id, 'InfusionTestItem' );
 
+	// Level boost: swords use the steel step ability; armor uses the armor
+	// step ability (one per level, verified autogen values).
 	for ( i = 0; i < boostLevels; i += 1 )
 	{
-		inv.AddItemCraftedAbility( id, 'autogen_fixed_steel_dmg', true );
+		if ( armor )
+		{
+			inv.AddItemCraftedAbility( id, 'autogen_fixed_armor_armor', true );
+		}
+		else
+		{
+			inv.AddItemCraftedAbility( id, 'autogen_fixed_steel_dmg', true );
+		}
 	}
 	return true;
 }
