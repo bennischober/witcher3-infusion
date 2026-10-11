@@ -121,9 +121,31 @@ exec function infuseDespawnTestSmith()
 	InfusionDespawnTestSmith();
 }
 
-exec function infuseTestEligibility()
+// Decisive strings test: looks up our loc keys at runtime and logs the
+// results. Distinguishes "w3strings file not loaded" (raw key returned)
+// from "strings loaded but Flash rendering broken" (proper text returned).
+exec function infuseTestStrings()
 {
-	InfusionTestCaseEligibility();
+	var label : string;
+	var desc : string;
+	var button : string;
+
+	label = GetLocStringByKeyExt( "panel_title_infusion" );
+	desc = GetLocStringByKeyExt( "panel_title_infusion_desc" );
+	button = GetLocStringByKeyExt( "panel_button_inventory_infuse" );
+
+	LogChannel( 'Infusion', "strings test: title='" + label + "' desc='" + desc + "' button='" + button + "'" );
+
+	if ( label == "panel_title_infusion" || label == "" )
+	{
+		LogChannel( 'Infusion', "strings test: FAILED - w3strings not loaded (raw key or empty returned)" );
+		theGame.GetGuiManager().ShowNotification( "STRINGS TEST: NOT LOADED", 8.0 );
+	}
+	else
+	{
+		LogChannel( 'Infusion', "strings test: PASSED - strings file loaded and keys resolve" );
+		theGame.GetGuiManager().ShowNotification( "STRINGS TEST: LOADED - " + label, 8.0 );
+	}
 }
 
 // Sets a dev config override via persistent facts (player-invisible):
