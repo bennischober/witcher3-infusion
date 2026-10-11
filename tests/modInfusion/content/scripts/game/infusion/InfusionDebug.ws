@@ -610,6 +610,7 @@ exec function infuseTestEligibility()
 	var t, s : array<SItemUniqueId>;
 	var entities : array<CGameplayEntity>;
 	var comp : W3CraftsmanComponent;
+	var craftsmanEntity : CGameplayEntity;
 	var p : SInfusionPreview;
 	var err : EInfusionError;
 	var i : int;
@@ -632,6 +633,7 @@ exec function infuseTestEligibility()
 		if ( comp )
 		{
 			found = true;
+			craftsmanEntity = entities[i];   // capture: the loop index gets reused below
 			break;
 		}
 	}
@@ -645,7 +647,7 @@ exec function infuseTestEligibility()
 		return;
 	}
 
-	npcName = ((CNewNPC)entities[i]).GetDisplayName();
+	npcName = ((CNewNPC)craftsmanEntity).GetDisplayName();
 	smithLvl = comp.GetCraftsmanLevel( ECT_Smith );
 	armorerLvl = comp.GetCraftsmanLevel( ECT_Armorer );
 	LogChannel( 'Infusion', "eligibility test: craftsman " + npcName
@@ -681,7 +683,7 @@ exec function infuseTestEligibility()
 
 		// Real eligibility path: bypass OFF for this call.
 		svc.debugBypassCraftsman = false;
-		err = svc.Execute( t[0], s[0], p, entities[i] );
+		err = svc.Execute( t[0], s[0], p, craftsmanEntity );
 		svc.debugBypassCraftsman = true;
 
 		if ( expectedReject )
