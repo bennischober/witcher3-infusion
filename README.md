@@ -55,7 +55,8 @@ and development milestones.
   ability system, salvage data, craftsman tiers)
 - ✅ **Milestone 2** — core infusion transaction, verified in game (level transfer, sacrifice
   consumption, save/reload persistence)
-- 🔜 **Milestone 3** — material recipes and salvage recovery
+- ✅ **Milestone 3** — material recipes and salvage recovery, verified in game (discount math,
+  deduction, missing-materials rejection with nothing consumed, side-effect-free test harness)
 - 🔜 **Milestone 4** — craftsman eligibility integration
 - 🔜 **Milestone 5+** — pricing balance, production UI, release packaging
 
