@@ -57,8 +57,11 @@ and development milestones.
   consumption, save/reload persistence)
 - ✅ **Milestone 3** — material recipes and salvage recovery, verified in game (discount math,
   deduction, missing-materials rejection with nothing consumed, side-effect-free test harness)
-- 🔜 **Milestone 4** — craftsman eligibility integration
-- 🔜 **Milestone 5+** — pricing balance, production UI, release packaging
+- ✅ **Milestone 4** — craftsman eligibility, verified in game (specialization rejection,
+  tier acceptance at journeyman and master, real service delivery at spawned craftsman NPCs;
+  see docs/CRAFTSMAN_MAP.md)
+- 🔜 **Milestone 5** — pricing balance (real tier multipliers, level-gap curve) and configuration
+- 🔜 **Milestone 6+** — production UI, release packaging
 
 ## Repository structure
 
