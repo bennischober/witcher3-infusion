@@ -484,7 +484,8 @@ class W3InfusionService extends IScriptable
 		var category : name;
 		var requiredType : ECraftsmanType;
 
-		if ( craftsman == NULL )
+		// Handle truthiness is the vanilla idiom (no == NULL comparisons).
+		if ( !craftsman )
 		{
 			if ( debugBypassCraftsman )
 			{
@@ -495,7 +496,7 @@ class W3InfusionService extends IScriptable
 		}
 
 		comp = (W3CraftsmanComponent)craftsman.GetComponentByClassName( 'W3CraftsmanComponent' );
-		if ( comp == NULL )
+		if ( !comp )
 		{
 			preview.errorCode = IFE_NoCraftsman;
 			return false;

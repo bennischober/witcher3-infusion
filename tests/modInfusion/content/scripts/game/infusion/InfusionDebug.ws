@@ -559,7 +559,7 @@ exec function infuseCraftsmanReport()
 	for ( i = 0; i < entities.Size(); i += 1 )
 	{
 		comp = (W3CraftsmanComponent)entities[i].GetComponentByClassName( 'W3CraftsmanComponent' );
-		if ( comp == NULL )
+		if ( !comp )
 		{
 			continue;
 		}
