@@ -491,13 +491,13 @@ exec function infuseTestMissingMaterials()
 	if ( ok )
 	{
 		FactsSet( "InfLastTest", 1 );
-		theGame.GetGuiManager().ShowNotification( "MATERIAL REJECTION TEST: PASS (state restored)", 6.0 );
+		theGame.GetGuiManager().ShowNotification( "MATERIAL REJECTION TEST: PASS (state restored)", 9.0 );
 		theSound.SoundEvent( "gui_crafting_craft_item" );
 	}
 	else
 	{
 		FactsSet( "InfLastTest", 0 );
-		theGame.GetGuiManager().ShowNotification( "MATERIAL REJECTION TEST: FAIL - run infuseReadLastTest after closing the console", 6.0 );
+		theGame.GetGuiManager().ShowNotification( "MATERIAL REJECTION TEST: FAIL - run infuseReadLastTest after closing the console", 9.0 );
 		theSound.SoundEvent( "gui_global_denied" );
 	}
 }
@@ -528,7 +528,7 @@ exec function infuseReadLastTest()
 	}
 
 	LogChannel( 'Infusion', "infuseReadLastTest: " + msg );
-	theGame.GetGuiManager().ShowNotification( msg, 6.0 );
+	theGame.GetGuiManager().ShowNotification( msg, 9.0 );
 	hud = (CR4ScriptedHud)theGame.GetHud();
 	if ( hud )
 	{
