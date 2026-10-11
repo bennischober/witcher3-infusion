@@ -266,7 +266,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 				// modInfusion: the Repair state serves infusion too — the grid
 				// shows infusion targets; clicking one offers Infuse (below).
 				case 'Repair':
-					if ( _infusionService && _infusionService.GetConfig().EnableInfusion() )
+					if ( _infusionService && _infusionService.GetPublicConfig().EnableInfusion() )
 					{
 						_curInv = _infusionInv;
 						_infusionActive = true;
@@ -413,15 +413,14 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		var itemName		: name;
 		
 		// modInfusion -- begin: route infusion-capable items to the infusion
-		// preview popup instead of the repair flow (spec §9).
+		// preview popup instead of the repair flow (spec §9). Early return
+		// replaced with if/else — bare 'return;' in a flash-bound event
+		// confuses the compiler's void/Bool handling here.
 		if ( _infusionActive && IsInfusionTarget( itemId ) )
 		{
 			StartInfusionFlow( itemId );
-			return;
 		}
-		// modInfusion -- end
-		
-		if( m_menuState == 'Disassemble' && m_standaloneMode && _inv.GetItemQuantity(itemId) == 1 )
+		else if( m_menuState == 'Disassemble' && m_standaloneMode && _inv.GetItemQuantity(itemId) == 1 )
 		{
 			itemName = _inv.GetItemName( itemId );
 			

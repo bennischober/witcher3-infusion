@@ -28,6 +28,12 @@ class W3InfusionService extends IScriptable
 	// harness convenience; production code sets it explicitly).
 	public var config : W3InfusionConfig;
 
+	// Public accessor for menu code (the private GetConfig stays internal).
+	public function GetPublicConfig() : W3InfusionConfig
+	{
+		return GetConfig();
+	}
+
 	private function GetConfig() : W3InfusionConfig
 	{
 		if ( !config )
