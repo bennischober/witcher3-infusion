@@ -270,6 +270,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 					{
 						_curInv = _infusionInv;
 						_infusionActive = true;
+						InvalidateInfusionMemo();
 					}
 					else
 					{
@@ -885,6 +886,8 @@ class CR4BlacksmithMenu extends CR4MenuBase
 	
 	event  OnGlobalUpdate()
 	{
+		// modInfusion: inventory may have changed since the last render.
+		InvalidateInfusionMemo();
 		UpdateData();
 	}
 		
@@ -1049,8 +1052,15 @@ class CR4BlacksmithMenu extends CR4MenuBase
 
 	// modInfusion -- begin: infusion helpers ------------------------------------------------
 
+	// Per-refresh memo: the grid queries the same item multiple times per
+	// refresh (action label, action price, confirmation). The full check is
+	// an inventory scan; memoize the last queried target.
+	private var _memoTargetId : SItemUniqueId;
+	private var _memoIsTarget : bool;
+	private var _memoHasResult : bool;
+
 	// True when this item is a valid infusion target with an available
-	// sacrifice and an eligible craftsman.
+	// sacrifice and an eligible craftsman. Memoized per item.
 	private function IsInfusionTarget( item : SItemUniqueId ) : bool
 	{
 		var p : SInfusionPreview;
@@ -1059,11 +1069,27 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		{
 			return false;
 		}
-		if ( !_infusionService.IsSupportedTarget( item ) )
+		if ( _memoHasResult && _memoTargetId == item )
 		{
-			return false;
+			return _memoIsTarget;
 		}
-		return _infusionService.FindBestSacrifice( _inv, item, _infusionSacrificeId, p, _fixerNpc );
+
+		_memoIsTarget = false;
+		if ( _infusionService.IsSupportedTarget( item ) )
+		{
+			_memoIsTarget = _infusionService.FindBestSacrifice( _inv, item, _infusionSacrificeId, p, _fixerNpc );
+		}
+
+		_memoTargetId = item;
+		_memoHasResult = true;
+		return _memoIsTarget;
+	}
+
+	// Invalidates the memo (called when the grid refreshes or the menu
+	// state changes — the inventory may have changed between renders).
+	private function InvalidateInfusionMemo() : void
+	{
+		_memoHasResult = false;
 	}
 
 	// Runs the infusion preview for the clicked item and opens the
@@ -1110,6 +1136,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		}
 
 		_infusionActive = m_menuState == 'Repair';
+		InvalidateInfusionMemo();
 		UpdateData();
 	}
 
