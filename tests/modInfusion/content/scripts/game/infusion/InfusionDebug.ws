@@ -125,3 +125,26 @@ exec function infuseTestEligibility()
 {
 	InfusionTestCaseEligibility();
 }
+
+// Dumps the parsed configuration values to the log - the ground truth for
+// verifying what the settings menu writes vs. what the config class parses.
+exec function infuseDumpConfig()
+{
+	var c : W3InfusionConfig;
+
+	c = new W3InfusionConfig in theGame;
+	c.ReadAll();
+
+	LogChannel( 'Infusion', "config dump: enableInfusion=" + c.EnableInfusion()
+		+ " steel=" + c.IsCategoryEnabled( 'steelsword' )
+		+ " silver=" + c.IsCategoryEnabled( 'silversword' )
+		+ " armor=" + c.IsCategoryEnabled( 'armor' ) );
+	LogChannel( 'Infusion', "config dump: baseFee=" + c.BaseLaborFee()
+		+ " salvage=" + c.SalvageEnabled()
+		+ " salvageMult=" + c.SalvageYieldMultiplier()
+		+ " restoreDurability=" + c.RestoreTargetDurability() );
+	LogChannel( 'Infusion', "config dump: gapDivisor=" + c.GetLevelGapMultiplier( 10 )
+		+ " (mult for gap 10), witcherTierReq=" + c.GetRequiredCraftsmanLevel( 5 ) );
+
+	theGame.GetGuiManager().ShowNotification( "config dumped to log (Infusion channel)", 6.0 );
+}
