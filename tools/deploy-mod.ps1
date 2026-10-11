@@ -1,4 +1,4 @@
-# Requires PowerShell 5+ (Windows PowerShell or pwsh).
+﻿# Requires PowerShell 5+ (Windows PowerShell or pwsh).
 # Deploys the infusion mod sources from this repository into the game's mods folder.
 #
 # The game directory receives copies only - never edit deployed files directly.
@@ -38,6 +38,11 @@ if ($Uninstall) {
     } else {
         Write-Host "Nothing to remove: $dstRoot does not exist"
     }
+    $cfgDst = Join-Path $GameDir "bin\config\r4game\user_config_matrix\pc\modInfusion.xml"
+    if (Test-Path $cfgDst) {
+        Remove-Item -Force $cfgDst
+        Write-Host "Removed settings XML: $cfgDst"
+    }
     exit 0
 }
 
@@ -53,6 +58,16 @@ if (Test-Path (Join-Path $dstRoot "content")) {
     Remove-Item -Recurse -Force (Join-Path $dstRoot "content")
 }
 Copy-Item -Recurse -Force -Path (Join-Path $srcRoot "*") -Destination $dstRoot
+
+# The settings-menu XML must live in the GAME's config folder (5.0+ auto-detects
+# every XML there; the mod folder's bin/ is NOT scanned for config matrices).
+$cfgSrc = Join-Path $srcRoot "bin\config\r4game\user_config_matrix\pc\modInfusion.xml"
+$cfgDst = Join-Path $GameDir "bin\config\r4game\user_config_matrix\pc\modInfusion.xml"
+if (Test-Path $cfgSrc) {
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $cfgDst) | Out-Null
+    Copy-Item -Force $cfgSrc $cfgDst
+    Write-Host "Settings XML installed: $cfgDst"
+}
 
 # Dev mode: overlay tests tree into the SAME mod folder (files win over src).
 # Kept as one folder so the script set compiles exactly as in release,
