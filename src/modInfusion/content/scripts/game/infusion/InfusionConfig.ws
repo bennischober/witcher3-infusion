@@ -1,8 +1,9 @@
 ﻿/***********************************************************************/
 /** 	Witcher Gear Infusion — configuration
-/** 	All balance knobs and tuning values in one place. The service reads
-/** 	these through getters; M5 swaps the backing source (script constants
-/** 	-> in-game settings) WITHOUT touching the service logic.
+/** 	All balance knobs and tuning values in one place. Values come from the
+/** 	in-game settings menu (Options -> Mods -> Witcher Gear Infusion,
+/** 	user_config_matrix XML) with script defaults as fallback when a var is
+/** 	not present (e.g. menu not installed / older saves).
 /**
 /** 	Spec: INFUSION_SPEC.md §6 (fees), §7 (efficiency), §10 (configuration),
 /** 	      §8.2 (eligibility thresholds)
@@ -10,97 +11,226 @@
 
 class W3InfusionConfig extends IScriptable
 {
-	// ============================ feature flags ============================
+	// Cached raw values (refreshed on ReadAll; the menu only writes
+	// user.settings on apply, so caching per session is fine).
+	private var cacheEnableInfusion : bool;
+	private var cacheSteel, cacheSilver, cacheArmor : bool;
+	private var cacheBaseFee : int;
+	private var cacheSalvageEnabled : bool;
+	private var cacheSalvageMult : float;
+	private var cacheRestoreDurability : bool;
+	private var cacheGapDivisor : float;
+	private var cacheGapMaxMult : float;
+	private var cacheWitcherTierReq : int;
+	private var cacheLoaded : bool;
 
-	// Master switch for the whole feature (spec §10 EnableInfusion).
-	public var enableInfusion : bool;
-	default enableInfusion = true;
+	// ---------------------------------------------------------------------
+	// Settings-system access
+	// ---------------------------------------------------------------------
 
-	// Category toggles (spec §10). M2/M3 gate: only steelsword is enabled;
-	// the remaining categories activate with their milestones.
-	public var enableSteelSwordInfusion : bool;
-	default enableSteelSwordInfusion = true;
+	// Reads one string var from the mod's settings group; "" when absent.
+	private function GetVar( varName : name ) : string
+	{
+		return theGame.GetInGameConfigWrapper().GetVarValue( 'modInfusion', varName );
+	}
 
-	public var enableSilverSwordInfusion : bool;
-	default enableSilverSwordInfusion = false;   // Milestone: silver swords
+	// Reads one bool var ("1"/"true"/"0"/"false"); fallback when absent.
+	private function GetVarBool( varName : name, fallback : bool ) : bool
+	{
+		var v : string;
 
-	public var enableArmorInfusion : bool;
-	default enableArmorInfusion = false;         // Milestone: armor pieces
+		v = GetVar( varName );
+		if ( v == "" )
+		{
+			return fallback;
+		}
+		return v == "1" || v == "true";
+	}
 
-	// ========================== craftsman gates ============================
+	// Reads one int var; fallback when absent or unparseable.
+	private function GetVarInt( varName : name, fallback : int ) : int
+	{
+		var v : string;
 
-	// Tier requirements by target quality (spec §8.2). Quality is the game's
-	// own rarity signal: 1-3 ordinary, 4 = relic, 5 = Witcher gear.
-	// Values are ECraftsmanLevel enum ordinals (1 = Journeyman ... 4 = Arch Master).
-	public var craftsmanLevelForOrdinaryGear : int;
-	default craftsmanLevelForOrdinaryGear = 1;   // ECL_Journeyman
+		v = GetVar( varName );
+		if ( v == "" )
+		{
+			return fallback;
+		}
+		return StringToInt( v, fallback );
+	}
 
-	public var craftsmanLevelForRelicGear : int;
-	default craftsmanLevelForRelicGear = 2;      // ECL_Master
+	// Reads one float var scaled by 100 (menu sliders are integer percent);
+	// fallback when absent.
+	private function GetVarFloatPercent( varName : name, fallback : float ) : float
+	{
+		var v : string;
 
-	public var craftsmanLevelForWitcherGear : int;
-	default craftsmanLevelForWitcherGear = 3;    // ECL_Grand_Master
+		v = GetVar( varName );
+		if ( v == "" )
+		{
+			return fallback;
+		}
+		return StringToInt( v, 100 ) / 100.0f;
+	}
 
-	// ============================= labor fees ==============================
+	// ---------------------------------------------------------------------
+	// Loading
+	// ---------------------------------------------------------------------
 
-	// LaborFee = baseFee x craftsmanMult(tier) x targetTierMult(quality)
-	//          x levelGapMult(gap)   (spec §6.3)
-	public var baseLaborFee : int;
-	default baseLaborFee = 50;
+	// Refreshes the cache from the settings system. Safe to call repeatedly;
+	// cheap enough for on-demand use and required after menu changes.
+	public function ReadAll() : void
+	{
+		cacheEnableInfusion = GetVarBool( 'EnableInfusion', true );
 
-	// Craftsman tier multipliers (spec §6.2, real game tiers).
-	public var laborMultJourneyman : float;
-	default laborMultJourneyman = 1.0f;
+		cacheSteel = GetVarBool( 'EnableSteelSwordInfusion', true );
+		cacheSilver = GetVarBool( 'EnableSilverSwordInfusion', false );
+		cacheArmor = GetVarBool( 'EnableArmorInfusion', false );
 
-	public var laborMultMaster : float;
-	default laborMultMaster = 1.5f;
+		cacheBaseFee = SanitizeInt( GetVarInt( 'BaseLaborFee', 50 ), 0, 100000 );
+		cacheSalvageEnabled = GetVarBool( 'EnableSalvage', true );
+		cacheSalvageMult = GetVarFloatPercent( 'SalvageYieldMultiplier', 1.0f );
+		cacheRestoreDurability = GetVarBool( 'RestoreTargetDurability', true );
 
-	public var laborMultGrandMaster : float;
-	default laborMultGrandMaster = 2.0f;
+		cacheGapDivisor = SanitizeFloat( GetVarFloatPercent( 'GapCostDivisor', 10.0f ), 1.0f, 50.0f, 10.0f );
+		cacheGapMaxMult = GetVarFloatPercent( 'GapCostMaxMult', 3.0f );
 
-	public var laborMultArchMaster : float;
-	default laborMultArchMaster = 2.5f;
+		cacheWitcherTierReq = SanitizeInt( GetVarInt( 'CraftsmanLevelForWitcherGear', 3 ), 1, 4 );
+		cacheLoaded = true;
+	}
 
-	// Target tier multipliers by item quality (grey..Witcher gear).
-	// Index = quality (1..5).
-	public var targetTierMult1, targetTierMult2, targetTierMult3 : float;
-	default targetTierMult1 = 1.0f;
-	default targetTierMult2 = 1.2f;
-	default targetTierMult3 = 1.5f;
+	// ---------------------------------------------------------------------
+	// Feature flags (spec §10)
+	// ---------------------------------------------------------------------
 
-	public var targetTierMult4, targetTierMult5 : float;
-	default targetTierMult4 = 2.0f;
-	default targetTierMult5 = 3.0f;
+	public function EnableInfusion() : bool
+	{
+		return cacheEnableInfusion;
+	}
 
-	// Level-gap cost curve (spec §6.3/§7.1): fee multiplier grows with the
-	// gap. Multiplier = 1 + gap / gapDivisor, capped at gapMaxMult.
-	public var gapCostDivisor : float;
-	default gapCostDivisor = 10.0f;
+	// Category feature gate.
+	public function IsCategoryEnabled( category : name ) : bool
+	{
+		if ( category == 'steelsword' )
+		{
+			return cacheSteel;
+		}
+		if ( category == 'silversword' )
+		{
+			return cacheSilver;
+		}
+		if ( category == 'armor' || category == 'pants' || category == 'boots' || category == 'gloves' )
+		{
+			return cacheArmor;
+		}
+		return false;
+	}
 
-	public var gapCostMaxMult : float;
-	default gapCostMaxMult = 3.0f;
+	// ============================ fees (§6) ==============================
 
-	// ============================== salvage ================================
+	public function BaseLaborFee() : int
+	{
+		return cacheBaseFee;
+	}
 
-	// Enables material recovery from the sacrifice (spec §10 EnableSalvage).
-	public var enableSalvage : bool;
-	default enableSalvage = true;
+	// Craftsman multiplier by tier enum ordinal (1 = Journeyman ... 4 = Arch Master).
+	// Spec §6.2 starting values: 1.0 / 1.5 / 2.0 / 2.5.
+	public function GetCraftsmanMultiplier( craftsmanLevel : int ) : float
+	{
+		if ( craftsmanLevel <= 1 )
+		{
+			return 1.0f;
+		}
+		if ( craftsmanLevel == 2 )
+		{
+			return 1.5f;
+		}
+		if ( craftsmanLevel == 3 )
+		{
+			return 2.0f;
+		}
+		return 2.5f;
+	}
 
-	// Global multiplier on recovered quantities (spec §10 SalvageYieldMultiplier).
-	// Fractional results round down; 0 disables recovery economically.
-	public var salvageYieldMultiplier : float;
-	default salvageYieldMultiplier = 1.0f;
+	// Target tier multiplier by item quality (1..5). Spec-derived starting values.
+	public function GetTargetTierMultiplier( quality : int ) : float
+	{
+		if ( quality <= 1 )
+		{
+			return 1.0f;
+		}
+		if ( quality == 2 )
+		{
+			return 1.2f;
+		}
+		if ( quality == 3 )
+		{
+			return 1.5f;
+		}
+		if ( quality == 4 )
+		{
+			return 2.0f;
+		}
+		return 3.0f;
+	}
 
-	// ========================== durability ================================
+	// Level-gap multiplier (spec §7.1): 1 + gap/divisor, capped.
+	public function GetLevelGapMultiplier( levelGap : int ) : float
+	{
+		var mult : float;
 
-	// Full durability restoration as part of the service (spec §3.4, §10).
-	public var restoreTargetDurability : bool;
-	default restoreTargetDurability = true;
+		if ( levelGap <= 0 )
+		{
+			return 1.0f;
+		}
+
+		mult = 1.0f + levelGap / cacheGapDivisor;
+		if ( mult > cacheGapMaxMult )
+		{
+			mult = cacheGapMaxMult;
+		}
+		return mult;
+	}
+
+	// ============================ salvage (§5) ============================
+
+	public function SalvageEnabled() : bool
+	{
+		return cacheSalvageEnabled;
+	}
+
+	public function SalvageYieldMultiplier() : float
+	{
+		return cacheSalvageMult;
+	}
+
+	// ========================== durability (§3.4) =========================
+
+	public function RestoreTargetDurability() : bool
+	{
+		return cacheRestoreDurability;
+	}
+
+	// ========================= eligibility (§8.2) =========================
+
+	// Craftsman tier requirement for a target quality.
+	public function GetRequiredCraftsmanLevel( quality : int ) : int
+	{
+		if ( quality >= 5 )
+		{
+			return cacheWitcherTierReq;
+		}
+		if ( quality == 4 )
+		{
+			return 2;   // relic: master
+		}
+		return 1;       // ordinary: journeyman
+	}
 
 	// ============================ validation ===============================
 
-	// Applies the §10 safety rules to a candidate integer knob.
-	// Returns the sanitized value (never negative, sane bounds).
+	// §10 safety rules: clamp to sane bounds.
 	public function SanitizeInt( value : int, minValue : int, maxValue : int ) : int
 	{
 		if ( value < minValue )
@@ -114,93 +244,12 @@ class W3InfusionConfig extends IScriptable
 		return value;
 	}
 
-	// Craftsman multiplier by tier enum ordinal (1 = Journeyman ... 4 = Arch Master).
-	public function GetCraftsmanMultiplier( craftsmanLevel : int ) : float
+	private function SanitizeFloat( value : float, minValue : float, maxValue : float, fallback : float ) : float
 	{
-		if ( craftsmanLevel <= 1 )
+		if ( value < minValue || value > maxValue )
 		{
-			return laborMultJourneyman;
+			return fallback;
 		}
-		if ( craftsmanLevel == 2 )
-		{
-			return laborMultMaster;
-		}
-		if ( craftsmanLevel == 3 )
-		{
-			return laborMultGrandMaster;
-		}
-		return laborMultArchMaster;
-	}
-
-	// Target tier multiplier by item quality (1..5).
-	public function GetTargetTierMultiplier( quality : int ) : float
-	{
-		if ( quality <= 1 )
-		{
-			return targetTierMult1;
-		}
-		if ( quality == 2 )
-		{
-			return targetTierMult2;
-		}
-		if ( quality == 3 )
-		{
-			return targetTierMult3;
-		}
-		if ( quality == 4 )
-		{
-			return targetTierMult4;
-		}
-		return targetTierMult5;
-	}
-
-	// Level-gap multiplier for the fee curve (spec §7.1).
-	public function GetLevelGapMultiplier( levelGap : int ) : float
-	{
-		var mult : float;
-
-		if ( levelGap <= 0 )
-		{
-			return 1.0f;
-		}
-
-		mult = 1.0f + levelGap / gapCostDivisor;
-		if ( mult > gapCostMaxMult )
-		{
-			mult = gapCostMaxMult;
-		}
-		return mult;
-	}
-
-	// Craftsman tier requirement for a target quality (spec §8.2).
-	public function GetRequiredCraftsmanLevel( quality : int ) : int
-	{
-		if ( quality >= 5 )
-		{
-			return craftsmanLevelForWitcherGear;
-		}
-		if ( quality == 4 )
-		{
-			return craftsmanLevelForRelicGear;
-		}
-		return craftsmanLevelForOrdinaryGear;
-	}
-
-	// Category feature gate (M2/M3 scope: only steelsword enabled).
-	public function IsCategoryEnabled( category : name ) : bool
-	{
-		if ( category == 'steelsword' )
-		{
-			return enableSteelSwordInfusion;
-		}
-		if ( category == 'silversword' )
-		{
-			return enableSilverSwordInfusion;
-		}
-		if ( category == 'armor' || category == 'pants' || category == 'boots' || category == 'gloves' )
-		{
-			return enableArmorInfusion;
-		}
-		return false;
+		return value;
 	}
 }

@@ -25,7 +25,9 @@ class W3InfusionService extends IScriptable
 
 	// Injected configuration (set by the owner right after construction).
 	// NULL-safe access: lazily creates a default config when unset (debug
-	// harness convenience; production code sets it explicitly).
+	// harness convenience; production code sets it explicitly). Values are
+	// re-read from the settings system on each acquisition so menu changes
+	// apply without restart.
 	public var config : W3InfusionConfig;
 
 	private function GetConfig() : W3InfusionConfig
@@ -34,6 +36,7 @@ class W3InfusionService extends IScriptable
 		{
 			config = new W3InfusionConfig in theGame;
 		}
+		config.ReadAll();
 		return config;
 	}
 
@@ -166,7 +169,7 @@ class W3InfusionService extends IScriptable
 	{
 		var i : int;
 
-		if ( !GetConfig().enableSalvage )
+		if ( !GetConfig().SalvageEnabled() )
 		{
 			for ( i = 0; i < salvaged.Size(); i += 1 )
 			{
@@ -175,14 +178,14 @@ class W3InfusionService extends IScriptable
 			return;
 		}
 
-		if ( GetConfig().salvageYieldMultiplier == 1.0f )
+		if ( GetConfig().SalvageYieldMultiplier() == 1.0f )
 		{
 			return;
 		}
 
 		for ( i = 0; i < salvaged.Size(); i += 1 )
 		{
-			salvaged[i].quantity = FloorF( salvaged[i].quantity * GetConfig().salvageYieldMultiplier );
+			salvaged[i].quantity = FloorF( salvaged[i].quantity * GetConfig().SalvageYieldMultiplier() );
 		}
 	}
 
@@ -632,7 +635,7 @@ class W3InfusionService extends IScriptable
 			* GetConfig().GetTargetTierMultiplier( quality )
 			* GetConfig().GetLevelGapMultiplier( gap );
 
-		fee = GetConfig().baseLaborFee * mult;
+		fee = GetConfig().BaseLaborFee() * mult;
 		if ( fee < 0 )
 		{
 			fee = 0;   // config validation should prevent this; belt and braces
@@ -724,14 +727,14 @@ class W3InfusionService extends IScriptable
 		//    charge money, consume materials, then consume the sacrifice
 		//    (spec §13.2).
 		inv.RemoveMoney( preview.laborFee );
-		if ( GetConfig().enableSalvage )
+		if ( GetConfig().SalvageEnabled() )
 		{
 			RemoveMaterials( inv, preview.materials );
 		}
 		inv.RemoveItem( sacrificeId );
 
 		// 6) Restore durability as part of the paid service (spec §3.4).
-		if ( GetConfig().restoreTargetDurability && inv.HasItemDurability( targetId ) )
+		if ( GetConfig().RestoreTargetDurability() && inv.HasItemDurability( targetId ) )
 		{
 			inv.SetItemDurabilityScript( targetId, inv.GetItemMaxDurability( targetId ) );
 		}

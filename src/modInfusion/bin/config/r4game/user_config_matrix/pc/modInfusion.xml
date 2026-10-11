@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Witcher Gear Infusion - in-game configuration (Options -> Mods)
+	Variables are read by W3InfusionConfig via GetVarValue('modInfusion', <id>).
+	SLIDER format: min;max;default. Values persist in user.settings.
+-->
+<UserConfig>
+	<Group id="modInfusion" displayName="Witcher Gear Infusion">
+		<VisibleVars>
+			<Var id="EnableInfusion" displayName="Enable Infusion" displayType="TOGGLE"/>
+
+			<Var id="Separator" displayName="" displayType="SUBTLE_SEPARATOR"/>
+
+			<Var id="EnableSteelSwordInfusion" displayName="Infuse steel swords" displayType="TOGGLE"/>
+			<Var id="EnableSilverSwordInfusion" displayName="Infuse silver swords" displayType="TOGGLE"/>
+			<Var id="EnableArmorInfusion" displayName="Infuse armor pieces" displayType="TOGGLE"/>
+
+			<Var id="Separator" displayName="" displayType="SUBTLE_SEPARATOR"/>
+
+			<Var id="BaseLaborFee" displayName="Base labor fee" displayType="SLIDER;0;500;50"/>
+			<Var id="SalvageYieldMultiplier" displayName="Salvage yield multiplier" displayType="SLIDER;0;200;100"/>
+			<Var id="EnableSalvage" displayName="Salvage reduces material cost" displayType="TOGGLE"/>
+			<Var id="RestoreTargetDurability" displayName="Restore durability on infusion" displayType="TOGGLE"/>
+
+			<Var id="Separator" displayName="" displayType="SUBTLE_SEPARATOR"/>
+
+			<Var id="GapCostDivisor" displayName="Fee growth per level gap" displayType="SLIDER;1;50;10"/>
+			<Var id="GapCostMaxMult" displayName="Fee growth cap (x10)" displayType="SLIDER;10;50;30"/>
+			<Var id="CraftsmanLevelForWitcherGear" displayName="Witcher gear requires tier (1-4)" displayType="SLIDER;1;4;3"/>
+		</VisibleVars>
+	</Group>
+</UserConfig>
