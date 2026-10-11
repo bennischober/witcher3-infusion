@@ -272,6 +272,12 @@ class W3InfusionConfig extends IScriptable
 		return ENABLE_SALVAGE;
 	}
 
+	// Global multiplier on recovered quantities (rounded down by the caller).
+	public function SalvageYieldMultiplier() : float
+	{
+		return SALVAGE_YIELD_MULT;
+	}
+
 	public function RestoreTargetDurability() : bool
 	{
 		return RESTORE_DURABILITY;
