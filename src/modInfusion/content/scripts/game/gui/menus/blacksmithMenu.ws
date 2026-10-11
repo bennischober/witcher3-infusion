@@ -202,6 +202,22 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		var numEnhancements : int;
 		var hasEnchantment : bool;
 		
+		// modInfusion -- begin: the Infuse state reuses the Repair frame on the
+		// Flash side (no SWF editing): Flash receives 'Repair', while the
+		// script-side state stays 'Infuse' so ApplyMenuState routes to the
+		// infusion grid and the confirmation interceptor engages.
+		if ( newState == 'Infuse' )
+		{
+			m_menuState = newState;
+			m_fxSetState.InvokeSelfOneArg( FlashArgString( 'Repair' ) );
+			if ( m_menuInited )
+			{
+				ApplyMenuState( newState );
+			}
+			return;
+		}
+		// modInfusion -- end
+		
 		if (newState == 'Sockets')
 		{
 			m_initialSelectionsToIgnore = 1;
@@ -265,6 +281,11 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			{
 				// modInfusion: the Repair state serves infusion too — the grid
 				// shows infusion targets; clicking one offers Infuse (below).
+				case 'Infuse':
+					_curInv = _infusionInv;
+					_infusionActive = true;
+					InvalidateInfusionMemo();
+					break;
 				case 'Repair':
 					if ( _infusionService && _infusionService.GetPublicConfig().EnableInfusion() )
 					{
@@ -313,6 +334,8 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			case 'Sockets':
 			case 'Repair':
 			case 'AddSockets':
+			// modInfusion: Infuse uses the same two grid sections as Repair.
+			case 'Infuse':
 				
 				m_sectionsList = m_flashValueStorage.CreateTempFlashArray();
 				curDataObject = CreateSectionsData( 0, 0, 3, GetLocStringByKeyExt( "panel_blacksmith_equipped" ) );
