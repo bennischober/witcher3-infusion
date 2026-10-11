@@ -126,6 +126,65 @@ exec function infuseTestEligibility()
 	InfusionTestCaseEligibility();
 }
 
+// Sets a dev config override via persistent facts (player-invisible):
+//   infuseSetConfig('fee', 150)      -> fee fraction = 0.150 (x1000 stored)
+//   infuseSetConfig('fee', 0)        -> clear override
+//   infuseSetConfig('minfee', 25)    -> minimum labor fee
+//   infuseSetConfig('salvage', 1)    -> disable salvage economically (nonzero)
+//   infuseSetConfig('salvage', 0)    -> re-enable salvage
+exec function infuseSetConfig( key : string, value : int )
+{
+	var keyNorm : string;
+
+	keyNorm = StrLower( key );
+
+	if ( keyNorm == "fee" )
+	{
+		if ( value > 0 )
+		{
+			FactsSet( "InfCfg_BaseFee", value );
+			LogChannel( 'Infusion', "config override: fee fraction = " + value / 1000.0f );
+		}
+		else
+		{
+			FactsRemove( "InfCfg_BaseFee" );
+			LogChannel( 'Infusion', "config override: fee fraction cleared (default 0.10)" );
+		}
+	}
+	else if ( keyNorm == "minfee" )
+	{
+		if ( value > 0 )
+		{
+			FactsSet( "InfCfg_MinFee", value );
+			LogChannel( 'Infusion', "config override: min fee = " + value );
+		}
+		else
+		{
+			FactsRemove( "InfCfg_MinFee" );
+			LogChannel( 'Infusion', "config override: min fee cleared (default 10)" );
+		}
+	}
+	else if ( keyNorm == "salvage" )
+	{
+		if ( value > 0 )
+		{
+			FactsSet( "InfCfg_Salvage", 1 );
+			LogChannel( 'Infusion', "config override: salvage DISABLED" );
+		}
+		else
+		{
+			FactsRemove( "InfCfg_Salvage" );
+			LogChannel( 'Infusion', "config override: salvage re-enabled" );
+		}
+	}
+	else
+	{
+		LogChannel( 'Infusion', "infuseSetConfig: unknown key '" + key + "' (fee | minfee | salvage)" );
+	}
+
+	theGame.GetGuiManager().ShowNotification( "config override applied - see log", 6.0 );
+}
+
 // Dumps the parsed configuration values to the log - the ground truth for
 // verifying what the settings menu writes vs. what the config class parses.
 exec function infuseDumpConfig()
@@ -133,18 +192,18 @@ exec function infuseDumpConfig()
 	var c : W3InfusionConfig;
 
 	c = new W3InfusionConfig in theGame;
-	c.ReadAll();
 
 	LogChannel( 'Infusion', "config dump: enableInfusion=" + c.EnableInfusion()
 		+ " steel=" + c.IsCategoryEnabled( 'steelsword' )
 		+ " silver=" + c.IsCategoryEnabled( 'silversword' )
 		+ " armor=" + c.IsCategoryEnabled( 'armor' ) );
-	LogChannel( 'Infusion', "config dump: baseFee=" + c.BaseLaborFee()
+	LogChannel( 'Infusion', "config dump: feeFraction=" + c.GetFeeFraction()
+		+ " minFee=" + c.GetMinLaborFee()
 		+ " salvage=" + c.SalvageEnabled()
 		+ " salvageMult=" + c.SalvageYieldMultiplier()
 		+ " restoreDurability=" + c.RestoreTargetDurability() );
-	LogChannel( 'Infusion', "config dump: gapDivisor=" + c.GetLevelGapMultiplier( 10 )
-		+ " (mult for gap 10), witcherTierReq=" + c.GetRequiredCraftsmanLevel( 5 ) );
+	LogChannel( 'Infusion', "config dump: gapMult(10)=" + c.GetLevelGapMultiplier( 10 )
+		+ " witcherTierReq=" + c.GetRequiredCraftsmanLevel( 5 ) );
 
 	theGame.GetGuiManager().ShowNotification( "config dumped to log (Infusion channel)", 6.0 );
 }

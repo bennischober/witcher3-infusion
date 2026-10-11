@@ -25,9 +25,7 @@ class W3InfusionService extends IScriptable
 
 	// Injected configuration (set by the owner right after construction).
 	// NULL-safe access: lazily creates a default config when unset (debug
-	// harness convenience; production code sets it explicitly). Values are
-	// re-read from the settings system on each acquisition so menu changes
-	// apply without restart.
+	// harness convenience; production code sets it explicitly).
 	public var config : W3InfusionConfig;
 
 	private function GetConfig() : W3InfusionConfig
@@ -36,7 +34,6 @@ class W3InfusionService extends IScriptable
 		{
 			config = new W3InfusionConfig in theGame;
 		}
-		config.ReadAll();
 		return config;
 	}
 

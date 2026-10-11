@@ -1,18 +1,19 @@
 ﻿/***********************************************************************/
 /** 	Witcher Gear Infusion — configuration
-/** 	Balance model: the labor fee is anchored to the game's own economy —
-/** 	it is a fraction of the sacrifice item's market value (the price the
-/** 	game itself assigns to the item via GetItemPriceModified, which scales
-/** 	with item level/tier). Official updates that change item prices or
-/** 	loot scaling therefore automatically rebalance infusion fees — no
-/** 	hard-coded crowns to go stale.
+/** 	Balance model and knobs in one place.
 /**
-/** 	Fee = sacrificeValue x feeFraction x craftsmanMult x targetTierMult
-/** 	   x levelGapMult, rounded, clamped to >= minimumFee.
+/** 	Auto-balance: the labor fee anchors to the sacrifice item's market
+/** 	value (GetItemPriceModified — the game's own level/tier-scaled price)
+/** 	as a fraction, so official economy updates rebalance infusion fees
+/** 	automatically. Multipliers (§6.2) shape it; a labor floor keeps
+/** 	zero-value sacrifices meaningful.
 /**
-/** 	In-game settings menu: NOT used. The Remastered settings UI is broken
-/** 	for mod groups (invisible entries, unresolved labels); configuration
-/** 	ships as curated defaults with a dev-only console override.
+/** 	Settings menu: NOT used (Remastered settings UI is broken for mod
+/** 	groups; decision documented in docs/TECHNICAL_DISCOVERY.md). Values
+/** 	ship as curated script defaults; a dev-only console override via
+/** 	persistent facts allows live tuning without recompiling
+/** 	(tests/infuseSetConfig).
+/**
 /** 	Spec: INFUSION_SPEC.md §6 (fees), §7 (efficiency), §10 (configuration),
 /** 	      §8.2 (eligibility thresholds)
 /***********************************************************************/
@@ -52,9 +53,7 @@ class W3InfusionConfig extends IScriptable
 
 	// ============================= labor fees ==============================
 
-	// Fee as a fraction of the sacrifice's market value (auto-balance anchor):
-	// the game prices items by tier/level, so official rebalancing flows
-	// through automatically.
+	// Fee as a fraction of the sacrifice's market value (auto-balance anchor).
 	private const var FEE_FRACTION_OF_SACRIFICE_VALUE : float;
 	default FEE_FRACTION_OF_SACRIFICE_VALUE = 0.10f;   // 10% of the sacrifice's value
 
@@ -92,8 +91,8 @@ class W3InfusionConfig extends IScriptable
 	default TIER_MULT_5 = 3.0f;
 
 	// Level-gap cost curve (spec §7.1): multiplier = 1 + gap/gapDivisor,
-	// capped at gapMaxMult (spec §6.4: large upgrades cost more, but cap so
-	// master services are not mandatory for every upgrade, §7.2).
+	// capped at gapMaxMult (spec §7.2: cap so master services are not
+	// mandatory for every upgrade).
 	private const var GAP_DIVISOR : float;
 	default GAP_DIVISOR = 10.0f;
 
@@ -116,11 +115,11 @@ class W3InfusionConfig extends IScriptable
 
 	// ============================ debug facts ==============================
 
-	// Console overrides (dev harness; tests/infuseSetConfig). A fact set to a
-	// nonzero value overrides the corresponding default. Player-invisible.
-	//   InfCfg_BaseFee      - overrides FEE_FRACTION (value = fraction x 1000)
-	//   InfCfg_MinFee       - overrides MIN_LABOR_FEE
-	//   InfCfg_Salvage      - nonzero disables salvage economically
+	// Console overrides (dev harness; tests/infuseSetConfig). A fact set to
+	// a nonzero value overrides the corresponding default. Player-invisible.
+	//   InfCfg_BaseFee  - overrides the fee fraction (value = fraction x 1000)
+	//   InfCfg_MinFee   - overrides MIN_LABOR_FEE
+	//   InfCfg_Salvage  - nonzero disables salvage economically
 	private const var FACT_BASE_FEE : string;
 	default FACT_BASE_FEE = "InfCfg_BaseFee";
 
@@ -233,7 +232,7 @@ class W3InfusionConfig extends IScriptable
 
 	// The auto-balance anchor: the sacrifice's market value as priced by the
 	// game itself (scales with level/tier; official economy updates flow
-	// through). inv = the inventory holding the sacrifice.
+	// through).
 	public function GetSacrificeValue( inv : CInventoryComponent, sacrificeId : SItemUniqueId ) : int
 	{
 		return inv.GetItemPriceModified( sacrificeId );
@@ -264,13 +263,18 @@ class W3InfusionConfig extends IScriptable
 	}
 
 	// Salvage toggle including the debug override.
-	public function SalvageEnabledNow() : bool
+	public function SalvageEnabled() : bool
 	{
 		if ( FactsQuerySum( FACT_SALVAGE_OFF ) > 0 )
 		{
 			return false;
 		}
 		return ENABLE_SALVAGE;
+	}
+
+	public function RestoreTargetDurability() : bool
+	{
+		return RESTORE_DURABILITY;
 	}
 
 	// =====================================================================
