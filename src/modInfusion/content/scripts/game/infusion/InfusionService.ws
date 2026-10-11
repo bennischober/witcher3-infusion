@@ -1,6 +1,8 @@
 ﻿/***********************************************************************/
-/** 	Witcher Gear Infusion — Milestone 2 prototype
-/** 	Core infusion service: level computation, validation, transaction.
+/** 	Witcher Gear Infusion — core infusion service
+/** 	Level computation, validation, transaction. Reads all balance knobs
+/** 	from W3InfusionConfig (InfusionConfig.ws); contains no balance values
+/** 	itself.
 /**
 /** 	Design constraints (docs/TECHNICAL_DISCOVERY.md):
 /** 	  - No overrides of gameParams.ws / inventoryComponent.ws / playerWitcher.ws
@@ -11,25 +13,34 @@
 /** 	    and has an install-dependent signature).
 /**
 /** 	Spec: INFUSION_SPEC.md §3 (rules), §4 (identity), §5.5 (exploit guards),
-/** 	      §6 (fees), §13 (transaction safety)
+/** 	      §6 (fees), §8.2 (eligibility), §13 (transaction safety)
 /***********************************************************************/
 
 class W3InfusionService extends IScriptable
 {
-	// ----- configuration (M2: script constants; M3+: configuration service) -----
-
-	// Labor fee in crowns for the M2 prototype. Milestone 5 replaces this
-	// with the full formula (BaseFee x tier x tier-mult x level-gap mult).
-	private const var DEBUG_LABOR_FEE : int;
-	default DEBUG_LABOR_FEE = 50;
-
 	// Upper bound for the step-ability loop in Execute(): expected steps
 	// (level gap) plus a small correction budget for rounding/overhaul drift.
 	private const var MAX_CORRECTION_STEPS : int;
 	default MAX_CORRECTION_STEPS = 3;
 
+	// Injected configuration (set by the owner right after construction).
+	// NULL-safe access: lazily creates a default config when unset (debug
+	// harness convenience; production code sets it explicitly).
+	public var config : W3InfusionConfig;
+
+	private function GetConfig() : W3InfusionConfig
+	{
+		if ( !config )
+		{
+			config = new W3InfusionConfig in theGame;
+		}
+		return config;
+	}
+
 	// ---------------------------------------------------------------------
-	// Material requirements (M3, spec §5.4; config service comes in M5)
+	// Material requirements (spec §5.4) — recipes are balance values and live
+	// in the config layer conceptually, but recipes are struct arrays which
+	// the config class stores as per-category constants (see GetRecipeForCategory).
 	// ---------------------------------------------------------------------
 
 	// Base recipe per supported category. Values deliberately overlap with the
@@ -146,6 +157,32 @@ class W3InfusionService extends IScriptable
 			{
 				remaining.PushBack( part );
 			}
+		}
+	}
+
+	// Scales salvage quantities by the configured yield multiplier (spec §10),
+	// rounding down. With salvage disabled economically, zeroes everything.
+	private function ApplySalvageMultiplier( salvaged : array<SItemParts> ) : void
+	{
+		var i : int;
+
+		if ( !GetConfig().enableSalvage )
+		{
+			for ( i = 0; i < salvaged.Size(); i += 1 )
+			{
+				salvaged[i].quantity = 0;
+			}
+			return;
+		}
+
+		if ( GetConfig().salvageYieldMultiplier == 1.0f )
+		{
+			return;
+		}
+
+		for ( i = 0; i < salvaged.Size(); i += 1 )
+		{
+			salvaged[i].quantity = FloorF( salvaged[i].quantity * GetConfig().salvageYieldMultiplier );
 		}
 	}
 
@@ -336,6 +373,9 @@ class W3InfusionService extends IScriptable
 		var targetLevel, sacrificeLevel : int;
 		var gap : int;
 		var remaining : array<SItemParts>;
+		var quality : int;
+		var craftsmanLevel : int;
+		var comp : W3CraftsmanComponent;
 
 		preview.targetId = targetId;
 		preview.sacrificeId = sacrificeId;
@@ -354,10 +394,6 @@ class W3InfusionService extends IScriptable
 			preview.errorCode = IFE_SameItemInstance;
 			return preview.errorCode;
 		}
-
-		// Distinctness on the underlying template too: two instances of the same
-		// item definition are fine (different instances), but guard against
-		// pathological duplicates via instance ids only (SItemUniqueId compare).
 
 		if ( IsExcludedItem( inv, targetId ) || IsExcludedItem( inv, sacrificeId ) )
 		{
@@ -383,8 +419,8 @@ class W3InfusionService extends IScriptable
 			return preview.errorCode;
 		}
 
-		// M2 scope gate: steelswords only (spec §16 Milestone 2).
-		if ( targetData.category != 'steelsword' )
+		// Category feature gate (spec §10).
+		if ( !GetConfig().IsCategoryEnabled( targetData.category ) )
 		{
 			preview.errorCode = IFE_DisabledCategory;
 			return preview.errorCode;
@@ -396,8 +432,19 @@ class W3InfusionService extends IScriptable
 			return preview.errorCode;
 		}
 
+		quality = RoundMath( CalculateAttributeValue( inv.GetItemAttributeValue( targetId, 'quality' ) ) );
+
 		// Craftsman eligibility (M4, spec §8.2) — before costs so an
 		// ineligible craftsman never sees a price.
+		craftsmanLevel = 1;
+		if ( craftsman )
+		{
+			comp = (W3CraftsmanComponent)craftsman.GetComponentByClassName( 'W3CraftsmanComponent' );
+			if ( comp )
+			{
+				craftsmanLevel = comp.GetCraftsmanLevel( ECT_Smith );
+			}
+		}
 		if ( !VerifyCraftsman( inv, targetId, craftsman, preview ) )
 		{
 			return preview.errorCode;
@@ -420,23 +467,26 @@ class W3InfusionService extends IScriptable
 			return preview.errorCode;
 		}
 
-		// Materials (spec §5.2/§5.4): native salvage data as discount.
+		// Materials (spec §5.2/§5.4): native salvage data as discount, scaled
+		// by the configured yield multiplier. Recipes are not gap-dependent
+		// (spec §6.1: no double-charging the same gap).
 		GetRecipeForCategory( targetData.category, preview.materials );
 		GetSalvageYield( inv, sacrificeId, preview.salvaged );
+		ApplySalvageMultiplier( preview.salvaged );
 		remaining.Clear();
 		ComputeRemainingMaterials( preview.materials, preview.salvaged, remaining );
 		preview.materials = remaining;
 
 		preview.stepsToAdd = gap;
 		preview.newLevel = targetLevel + gap;
-		preview.laborFee = GetLaborFee( gap );
+		preview.laborFee = GetLaborFee( gap, quality, craftsmanLevel );
 		preview.errorCode = IFE_Ok;
 		return preview.errorCode;
 	}
 
 	// ---------------------------------------------------------------------
 	// Craftsman eligibility (M4, spec §8.2; data comes from the live NPC's
-	// W3CraftsmanComponent — never hard-coded per NPC)
+	// W3CraftsmanComponent — never hard-coded per NPC; thresholds from config)
 	// ---------------------------------------------------------------------
 
 	// Debug bypass: when true, Preview/Execute run without a craftsman
@@ -444,33 +494,6 @@ class W3InfusionService extends IScriptable
 	// path must always pass a craftsman entity and will not enable this.
 	public var debugBypassCraftsman : bool;
 	default debugBypassCraftsman = true;
-
-	// Target tier requirement. The item's quality attribute (1..5) is the
-	// game's own rarity/tier signal (1-3 ordinary tiers, 4 = relic,
-	// 5 = Witcher gear). Maps to the craftsman level enum values
-	// (ECL_Journeyman=1 ... ECL_Arch_Master=4).
-	private const var CRAFTSMAN_LEVEL_REQUIRED_FOR_WITCHER_GEAR : int;
-	default CRAFTSMAN_LEVEL_REQUIRED_FOR_WITCHER_GEAR = 3;   // ECL_Grand_Master
-
-	private const var CRAFTSMAN_LEVEL_REQUIRED_FOR_RELIC_GEAR : int;
-	default CRAFTSMAN_LEVEL_REQUIRED_FOR_RELIC_GEAR = 2;     // ECL_Master
-
-	private const var CRAFTSMAN_LEVEL_REQUIRED_FOR_ORDINARY_GEAR : int;
-	default CRAFTSMAN_LEVEL_REQUIRED_FOR_ORDINARY_GEAR = 1;  // ECL_Journeyman
-
-	// Returns the craftsman level required for an item with the given quality.
-	private function RequiredCraftsmanLevelForQuality( quality : int ) : int
-	{
-		if ( quality >= 5 )
-		{
-			return CRAFTSMAN_LEVEL_REQUIRED_FOR_WITCHER_GEAR;
-		}
-		if ( quality == 4 )
-		{
-			return CRAFTSMAN_LEVEL_REQUIRED_FOR_RELIC_GEAR;
-		}
-		return CRAFTSMAN_LEVEL_REQUIRED_FOR_ORDINARY_GEAR;
-	}
 
 	// Validates the craftsman against the target item.
 	// craftsman may be NULL when debugBypassCraftsman is enabled.
@@ -521,8 +544,8 @@ class W3InfusionService extends IScriptable
 			return false;
 		}
 
-		// Tier: required level depends on the target's quality tier.
-		requiredLevel = RequiredCraftsmanLevelForQuality( quality );
+		// Tier: required level depends on the target's quality tier (config §8.2).
+		requiredLevel = GetConfig().GetRequiredCraftsmanLevel( quality );
 		craftsmanLevel = comp.GetCraftsmanLevel( requiredType );
 
 		if ( craftsmanLevel < requiredLevel )
@@ -597,18 +620,24 @@ class W3InfusionService extends IScriptable
 	}
 
 	// ---------------------------------------------------------------------
-	// Labor fee (M3 flat formula; M5 full config per spec §6.3)
+	// Labor fee (full formula per spec §6.3; multipliers from config §6.2)
 	// ---------------------------------------------------------------------
 
-	private function GetLaborFee( levelGap : int ) : int
+	private function GetLaborFee( gap : int, quality : int, craftsmanLevel : int ) : int
 	{
-		var fee : int;
-		fee = DEBUG_LABOR_FEE + levelGap * 10;
+		var fee : float;
+		var mult : float;
+
+		mult = GetConfig().GetCraftsmanMultiplier( craftsmanLevel )
+			* GetConfig().GetTargetTierMultiplier( quality )
+			* GetConfig().GetLevelGapMultiplier( gap );
+
+		fee = GetConfig().baseLaborFee * mult;
 		if ( fee < 0 )
 		{
-			fee = 0;
+			fee = 0;   // config validation should prevent this; belt and braces
 		}
-		return fee;
+		return RoundMath( fee );
 	}
 
 	// ---------------------------------------------------------------------
@@ -695,11 +724,14 @@ class W3InfusionService extends IScriptable
 		//    charge money, consume materials, then consume the sacrifice
 		//    (spec §13.2).
 		inv.RemoveMoney( preview.laborFee );
-		RemoveMaterials( inv, preview.materials );
+		if ( GetConfig().enableSalvage )
+		{
+			RemoveMaterials( inv, preview.materials );
+		}
 		inv.RemoveItem( sacrificeId );
 
 		// 6) Restore durability as part of the paid service (spec §3.4).
-		if ( inv.HasItemDurability( targetId ) )
+		if ( GetConfig().restoreTargetDurability && inv.HasItemDurability( targetId ) )
 		{
 			inv.SetItemDurabilityScript( targetId, inv.GetItemMaxDurability( targetId ) );
 		}
