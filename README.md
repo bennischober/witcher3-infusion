@@ -60,8 +60,13 @@ and development milestones.
 - ✅ **Milestone 4** — craftsman eligibility, verified in game (specialization rejection,
   tier acceptance at journeyman and master, real service delivery at spawned craftsman NPCs;
   see docs/CRAFTSMAN_MAP.md)
-- 🔜 **Milestone 5** — pricing balance (real tier multipliers, level-gap curve) and configuration
-- 🔜 **Milestone 6+** — production UI, release packaging
+- ✅ **Milestone 5** — pricing and configuration: economy-anchored fee (fraction of the
+  sacrifice's market value — auto-balances with official economy updates), tier/tier-target/gap
+  multipliers per spec §6.2, curated defaults without a settings menu (Remastered settings UI
+  is broken for mod groups; decision documented), dev-only console overrides for live tuning
+- 🔜 **Milestone 6** — production UI (blacksmith menu integration)
+- 🔜 **Milestone 7** — release packaging
+- 🔜 **Milestone 8** — optional bonus-merging extension (separate module)
 
 ## Repository structure
 
