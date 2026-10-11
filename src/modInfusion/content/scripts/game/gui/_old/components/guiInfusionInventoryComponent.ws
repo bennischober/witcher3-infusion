@@ -15,6 +15,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		var p : SInfusionPreview;
 		var ids : array<SItemUniqueId>;
 		var i : int;
+	var targetCategory : name;
 		var sacrificeFound : bool;
 
 		if ( !infusionService )
@@ -29,12 +30,20 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 			LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " not a supported target (category/exclusion/config)" );
 			return false;
 		}
+		targetCategory = _inv.GetItemCategory( item );
 
 		// Any valid sacrifice for this target in the player inventory?
+		// Pre-filter by category (cheap name compare) before Preview - the
+		// hoarder-inventory case (1000+ items) made the per-item scan the
+		// dominant grid cost.
 		_inv.GetAllItems( ids );
 		for ( i = 0; i < ids.Size(); i += 1 )
 		{
 			if ( ids[i] == item )
+			{
+				continue;
+			}
+			if ( _inv.GetItemCategory( ids[i] ) != targetCategory )
 			{
 				continue;
 			}
@@ -71,6 +80,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		var p : SInfusionPreview;
 		var ids : array<SItemUniqueId>;
 		var i : int;
+	var targetCategory : name;
 		var bestGap : int;
 		var bestFee : int;
 		var isRepairable : bool;

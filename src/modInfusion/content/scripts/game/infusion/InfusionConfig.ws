@@ -35,7 +35,7 @@ class W3InfusionConfig extends IScriptable
 	default ENABLE_SILVER_SWORD = false;
 
 	private const var ENABLE_ARMOR : bool;
-	default ENABLE_ARMOR = false;
+	default ENABLE_ARMOR = true;
 
 	// ========================== craftsman gates ============================
 
