@@ -593,3 +593,173 @@ function CraftsmanLevelToString( level : ECraftsmanLevel ) : string
 	}
 	return "?";
 }
+
+// Integration test for craftsman eligibility (spec §8.2/§16 M4): runs the
+// REAL eligibility path (bypass temporarily off) against the nearest
+// craftsman NPC. Uses a spawned steel-sword pair, so at an ARMORER the
+// specialization check must reject with IFE_WrongCraftsmanType (armorers
+// are smith=none), while a blacksmith would pass specialization and (if
+// tier suffices) perform the infusion for real. Everything is restored
+// afterwards: bypass re-enabled, spawned swords removed, no materials or
+// crowns touched on the rejection path. Result also stored in the
+// 'InfLastTest' fact; run infuseReadLastTest after closing the console.
+exec function infuseTestEligibility()
+{
+	var svc : W3InfusionService;
+	var inv : CInventoryComponent;
+	var t, s : array<SItemUniqueId>;
+	var entities : array<CGameplayEntity>;
+	var comp : W3CraftsmanComponent;
+	var p : SInfusionPreview;
+	var err : EInfusionError;
+	var i : int;
+	var npcName : string;
+	var smithLvl, armorerLvl : ECraftsmanLevel;
+	var found : bool;
+	var expectedReject : bool;
+	var moneyBefore : int;
+	var ok : bool;
+
+	inv = thePlayer.inv;
+	svc = InfusionGetService();
+
+	// Find the nearest craftsman (radius 60m for comfort).
+	FindGameplayEntitiesInSphere( entities, thePlayer.GetWorldPosition(), 60, 30, '', FLAG_OnlyAliveActors );
+	found = false;
+	for ( i = 0; i < entities.Size(); i += 1 )
+	{
+		comp = (W3CraftsmanComponent)entities[i].GetComponentByClassName( 'W3CraftsmanComponent' );
+		if ( comp )
+		{
+			found = true;
+			break;
+		}
+	}
+
+	if ( !found )
+	{
+		FactsSet( "InfLastTest", 0 );
+		LogChannel( 'Infusion', "eligibility test: ABORTED (no craftsman NPC within 60m)" );
+		theGame.GetGuiManager().ShowNotification( "ELIGIBILITY TEST: no craftsman within 60m (visit a smith/armorer first)", 8.0 );
+		theSound.SoundEvent( "gui_global_denied" );
+		return;
+	}
+
+	npcName = ((CNewNPC)entities[i]).GetDisplayName();
+	smithLvl = comp.GetCraftsmanLevel( ECT_Smith );
+	armorerLvl = comp.GetCraftsmanLevel( ECT_Armorer );
+	LogChannel( 'Infusion', "eligibility test: craftsman " + npcName
+		+ " smith=" + CraftsmanLevelToString( smithLvl )
+		+ " armorer=" + CraftsmanLevelToString( armorerLvl ) );
+
+	// Expected outcome: a steel-sword infusion needs ECT_Smith. An armorer
+	// (smith=none) must be rejected with IFE_WrongCraftsmanType; a smith may
+	// pass eligibility (and then really infuses - that is the integration
+	// path and consumes the sacrifice).
+	expectedReject = ( smithLvl == ECL_Undefined );
+
+	// Spawn the test pair quietly.
+	t = inv.AddAnItem( 'Novigraadan sword 1', 1, true, true );
+	s = inv.AddAnItem( 'Novigraadan sword 1', 1, true, true );
+	ok = false;
+	if ( t.Size() == 0 || s.Size() == 0 )
+	{
+		LogChannel( 'Infusion', "eligibility test: ABORTED (spawn failed)" );
+	}
+	else
+	{
+		inv.AddItemTag( t[0], 'InfusionTestItem' );
+		inv.AddItemTag( s[0], 'InfusionTestItem' );
+
+		// Level gap for the sacrifice (deterministic +10).
+		for ( i = 0; i < 10; i += 1 )
+		{
+			inv.AddItemCraftedAbility( s[0], 'autogen_fixed_steel_dmg', true );
+		}
+
+		moneyBefore = inv.GetMoney();
+
+		// Real eligibility path: bypass OFF for this call.
+		svc.debugBypassCraftsman = false;
+		err = svc.Execute( t[0], s[0], p, entities[i] );
+		svc.debugBypassCraftsman = true;
+
+		if ( expectedReject )
+		{
+			LogChannel( 'Infusion', "eligibility test: Execute returned " + InfusionErrorToString( err )
+				+ " (expected: wrong craftsman type)" );
+		}
+		else
+		{
+			LogChannel( 'Infusion', "eligibility test: Execute returned " + InfusionErrorToString( err )
+				+ " (expected: OK or tier error)" );
+		}
+
+		if ( expectedReject )
+		{
+			if ( err == IFE_WrongCraftsmanType )
+			{
+				ok = true;
+				LogChannel( 'Infusion', "eligibility test: PASS (specialization rejection worked, nothing consumed)" );
+			}
+			else
+			{
+				LogChannel( 'Infusion', "eligibility test: FAIL (expected IFE_WrongCraftsmanType)" );
+			}
+		}
+		else
+		{
+			// At a real smith: an OK here is the full integration pass
+			// (infusion performed by the NPC). Tier rejection is also a pass.
+			if ( err == IFE_Ok || err == IFE_CraftsmanLevelTooLow )
+			{
+				ok = true;
+				if ( err == IFE_Ok )
+				{
+					LogChannel( 'Infusion', "eligibility test: PASS (integration infusion performed at the smith)" );
+				}
+				else
+				{
+					LogChannel( 'Infusion', "eligibility test: PASS (tier gate worked, nothing consumed)" );
+				}
+			}
+			else
+			{
+				LogChannel( 'Infusion', "eligibility test: FAIL (unexpected " + InfusionErrorToString( err ) + ")" );
+			}
+		}
+
+		// Cleanup: on the rejection paths nothing was consumed; on a real
+		// infusion the sacrifice is already gone. Remove the leftovers.
+		if ( err != IFE_Ok )
+		{
+			inv.RemoveItem( t[0] );
+			inv.RemoveItem( s[0] );
+		}
+		else
+		{
+			// Keep the infused target (tag cleared), remove other leftovers.
+			inv.RemoveItemTag( t[0], 'InfusionTestItem' );
+			inv.RemoveItem( s[0] );
+		}
+
+		// Restore crowns if the smith charged us.
+		if ( inv.GetMoney() > moneyBefore )
+		{
+			inv.RemoveMoney( inv.GetMoney() - moneyBefore );
+		}
+	}
+
+	if ( ok )
+	{
+		FactsSet( "InfLastTest", 1 );
+		theGame.GetGuiManager().ShowNotification( "ELIGIBILITY TEST at " + npcName + ": PASS", 9.0 );
+		theSound.SoundEvent( "gui_crafting_craft_item" );
+	}
+	else
+	{
+		FactsSet( "InfLastTest", 0 );
+		theGame.GetGuiManager().ShowNotification( "ELIGIBILITY TEST at " + npcName + ": FAIL - run infuseReadLastTest", 9.0 );
+		theSound.SoundEvent( "gui_global_denied" );
+	}
+}
