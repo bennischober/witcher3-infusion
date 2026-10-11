@@ -115,17 +115,6 @@ fills completely).
 5. Check function kind vs. call context (`exec`/`latent`/`quest` rules).
 6. Smallest fix first; recompile; repeat.
 
-### 9. Vanilla-file errors can come from stale mod overrides
-
-When `content0` files report errors about functions that *do exist* in the current vanilla
-sources (e.g. `Could not find function 'OnUseSharpstone'` in `inventoryContext.ws`), suspect a
-**mod overriding that vanilla file with an outdated copy**: the override shadows the current
-vanilla class, so callers in *other* vanilla files fail to find the new members. Real case: a
-pre-5.0 merchant mod reinstalled on 5.01 broke `content0/gui/inventoryContext.ws` and
-`PopupData.ws` compile because its 4.04-era `inventoryMenu.ws` lacked members added in 5.01.
-Check `mods/` for overrides of the file the error points into, and rebase the override on the
-current vanilla version.
-
 ## Remastered 5.01 environment changes (vs Next-Gen 4.04)
 
 ### Reserved keywords: `map` and `set`
