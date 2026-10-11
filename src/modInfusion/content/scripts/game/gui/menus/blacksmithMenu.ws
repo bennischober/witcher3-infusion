@@ -274,10 +274,12 @@ class CR4BlacksmithMenu extends CR4MenuBase
 					if ( _infusionActive )
 					{
 						_curInv = _infusionInv;
+						LogChannel( 'Infusion', "repair state: infusion grid ACTIVE (v2 unified service grid)" );
 					}
 					else
 					{
 						_curInv = _repairInv;
+						LogChannel( 'Infusion', "repair state: vanilla repair grid (infusion disabled)" );
 					}
 					InvalidateInfusionMemo();
 					break;
