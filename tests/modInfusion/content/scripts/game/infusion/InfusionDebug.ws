@@ -741,9 +741,12 @@ exec function infuseTestEligibility()
 	// path and consumes the sacrifice).
 	expectedReject = ( smithLvl == ECL_Undefined );
 
-	// Spawn the test pair quietly.
+	// Spawn the test pair quietly. Sacrifice is a sword 3: its native salvage
+	// (Leather straps x2, Steel ingot x2) fully covers the steel-sword recipe,
+	// so the positive path is not blocked by the material check (the
+	// missing-materials case has its own dedicated test).
 	t = inv.AddAnItem( 'Novigraadan sword 1', 1, true, true );
-	s = inv.AddAnItem( 'Novigraadan sword 1', 1, true, true );
+	s = inv.AddAnItem( 'Novigraadan sword 3', 1, true, true );
 	ok = false;
 	if ( t.Size() == 0 || s.Size() == 0 )
 	{
