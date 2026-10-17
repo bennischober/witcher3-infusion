@@ -7,113 +7,117 @@
 
 class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 {
-	// Injected by the menu (InfusionMenuController).
+	// Injected by the menu.
 	public var infusionService : W3InfusionService;
+	// The NPC the player is talking to. Every grid verdict is computed for
+	// this craftsman, so the grid never lists an item the menu would then
+	// refuse (which used to fall through to the vanilla repair flow and
+	// charge the infusion fee as a repair price).
+	public var craftsman : CGameplayEntity;
 
-	private function CanInfuseHere( item : SItemUniqueId ) : bool
+	// Per-refresh cache of infusion verdicts. The grid queries each item
+	// several times per refresh (filter, price, action label, confirmation)
+	// and each query is an inventory scan. The menu calls InvalidateCache()
+	// before every full grid rebuild and after every inventory change.
+	private var _cacheIds : array<SItemUniqueId>;
+	private var _cacheInfusable : array<bool>;
+	private var _cacheSacrifices : array<SItemUniqueId>;
+	private var _cachePreviews : array<SInfusionPreview>;
+
+	public function InvalidateCache() : void
 	{
-		var p : SInfusionPreview;
-		var ids : array<SItemUniqueId>;
-		var i : int;
-	var targetCategory : name;
-		var sacrificeFound : bool;
-
-		if ( !infusionService )
-		{
-			LogChannel( 'Infusion', "grid: item not shown (no service)" );
-			return false;
-		}
-
-		// Quick gates (cheap first): category support.
-		if ( !infusionService.IsSupportedTarget( item ) )
-		{
-			LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " not a supported target (category/exclusion/config)" );
-			return false;
-		}
-		targetCategory = _inv.GetItemCategory( item );
-
-		// Any valid sacrifice for this target in the player inventory?
-		// Pre-filter by category (cheap name compare) before Preview - the
-		// hoarder-inventory case (1000+ items) made the per-item scan the
-		// dominant grid cost.
-		_inv.GetAllItems( ids );
-		for ( i = 0; i < ids.Size(); i += 1 )
-		{
-			if ( ids[i] == item )
-			{
-				continue;
-			}
-			if ( _inv.GetItemCategory( ids[i] ) != targetCategory )
-			{
-				continue;
-			}
-			if ( infusionService.Preview( item, ids[i], p ) == IFE_Ok )
-			{
-				LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " infusable (sacrifice: " + _inv.GetItemName( ids[i] ) + ", gap " + p.levelGap + ")" );
-				return true;
-			}
-		}
-		LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " has no valid sacrifice (" + ids.Size() + " candidates scanned)" );
-		return false;
+		_cacheIds.Clear();
+		_cacheInfusable.Clear();
+		_cacheSacrifices.Clear();
+		_cachePreviews.Clear();
 	}
 
-	// Show infusion-capable items (damaged or not) — unlike repair, which
-	// only lists damaged equipment. Access modifier matches the ancestor
-	// (protected) — the compiler rejects weaker overrides.
+	// True when the item can be infused by this craftsman right now; returns
+	// the best sacrifice (highest level gap) and its preview. Cached.
+	public function GetInfusionInfo( item : SItemUniqueId, out sacrificeId : SItemUniqueId, out preview : SInfusionPreview ) : bool
+	{
+		var i : int;
+		var infusable : bool;
+		var s : SItemUniqueId;
+		var p : SInfusionPreview;
+
+		for ( i = 0; i < _cacheIds.Size(); i += 1 )
+		{
+			if ( _cacheIds[i] == item )
+			{
+				sacrificeId = _cacheSacrifices[i];
+				preview = _cachePreviews[i];
+				return _cacheInfusable[i];
+			}
+		}
+
+		infusable = false;
+		if ( infusionService && craftsman && infusionService.IsSupportedTarget( item ) )
+		{
+			infusable = infusionService.FindBestSacrifice( _inv, item, s, p, craftsman );
+			if ( infusable )
+			{
+				LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " infusable (sacrifice: " + _inv.GetItemName( s ) + ", gap " + p.levelGap + ", fee " + p.laborFee + ")" );
+			}
+			else
+			{
+				LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " has no valid sacrifice at this craftsman" );
+			}
+		}
+
+		_cacheIds.PushBack( item );
+		_cacheInfusable.PushBack( infusable );
+		_cacheSacrifices.PushBack( s );
+		_cachePreviews.PushBack( p );
+
+		sacrificeId = s;
+		preview = p;
+		return infusable;
+	}
+
+	public function IsInfusable( item : SItemUniqueId ) : bool
+	{
+		var s : SItemUniqueId;
+		var p : SInfusionPreview;
+
+		return GetInfusionInfo( item, s, p );
+	}
+
+	// Damaged items keep the vanilla repair action (repair first, then
+	// infuse); the infusion action applies to undamaged items only.
+	public function IsDamaged( item : SItemUniqueId ) : bool
+	{
+		return _inv.HasItemDurability( item )
+			&& _inv.GetItemDurability( item ) < _inv.GetItemMaxDurability( item );
+	}
+
 	// Unified service grid: shows repairable items (super's filter: damaged
-	// equipment) AND infusion-capable items (even at full durability). The
-	// per-item action label (Repair vs Infuse) and price distinguish them.
+	// equipment) AND infusion-capable items (even at full durability).
+	// Access modifier matches the ancestor (protected) — the compiler
+	// rejects weaker overrides.
 	protected function ShouldShowItem( item : SItemUniqueId ) : bool
 	{
 		if ( super.ShouldShowItem( item ) )
 		{
 			return true;   // damaged: repairable
 		}
-		return CanInfuseHere( item );   // undamaged but infusable
+		return IsInfusable( item );   // undamaged but infusable
 	}
 
 	// Per-item price: repairable items keep the vanilla repair cost (from
 	// super); infusion targets show the infusion labor fee for the best
-	// available sacrifice.
+	// available sacrifice. Flash passes actionPrice back to the menu with
+	// the confirmation request.
 	public function SetInventoryFlashObjectForItem( item : SItemUniqueId, out flashObject : CScriptedFlashObject ) : void
 	{
+		var s : SItemUniqueId;
 		var p : SInfusionPreview;
-		var ids : array<SItemUniqueId>;
-		var i : int;
-	var targetCategory : name;
-		var bestGap : int;
-		var bestFee : int;
-		var isRepairable : bool;
 
 		super.SetInventoryFlashObjectForItem( item, flashObject );
 
-		// Repairable? Then super already set the repair cost — leave it.
-		isRepairable = _inv.HasItemDurability( item )
-			&& _inv.GetItemDurability( item ) < _inv.GetItemMaxDurability( item );
-
-		if ( isRepairable || !infusionService )
+		if ( !IsDamaged( item ) && GetInfusionInfo( item, s, p ) )
 		{
-			return;
-		}
-
-		// Infusion target: show the fee for the best available sacrifice.
-		_inv.GetAllItems( ids );
-		bestGap = 0;
-		for ( i = 0; i < ids.Size(); i += 1 )
-		{
-			if ( ids[i] == item )
-			{
-				continue;
-			}
-			if ( infusionService.Preview( item, ids[i], p ) == IFE_Ok && p.levelGap > bestGap )
-			{
-				bestGap = p.levelGap;
-				bestFee = p.laborFee;
-			}
-		}
-		if ( bestGap > 0 )
-		{
-			flashObject.SetMemberFlashInt( "actionPrice", bestFee );
+			flashObject.SetMemberFlashInt( "actionPrice", p.laborFee );
 		}
 	}
 }

@@ -376,13 +376,21 @@ class W3InfusionService extends IScriptable
 		var p : SInfusionPreview;
 		var i : int;
 		var bestGap : int;
+		var targetCategory : name;
 
 		bestGap = 0;
+		targetCategory = inv.GetItemCategory( targetId );
 		inv.GetAllItems( all );
 
 		for ( i = 0; i < all.Size(); i += 1 )
 		{
 			if ( all[i] == targetId )
+			{
+				continue;
+			}
+			// Cheap pre-filter before the full Preview: hoarder inventories
+			// (1000+ items) made the per-target scan the dominant grid cost.
+			if ( inv.GetItemCategory( all[i] ) != targetCategory )
 			{
 				continue;
 			}

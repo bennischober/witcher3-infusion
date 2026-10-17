@@ -10,6 +10,10 @@
 /** 	     opens the infusion preview popup instead of repairing.
 /** 	  2. The repair grid is replaced by W3GuiInfusionInventoryComponent
 /** 	     (shows infusion targets even at full durability).
+/** 	  3. The Repair panel's button label is swapped per selected item
+/** 	     (Flash hardcodes it; see UpdateInfusionActionLabel).
+/** 	  Flash protocol reference: REDkit r4data\gameplay\gui_new\actionscript\
+/** 	  red\game\witcher3\menus\blacksmith\BlacksmithMenu.as
 /** 	CONFLICT NOTICE: overrides vanilla blacksmithMenu.ws; script merging
 /** 	with other mods touching this file applies (none on this install).
 /***********************************************************************/
@@ -24,6 +28,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 	private var _infusionTargetId 		: SItemUniqueId;
 	private var _infusionSacrificeId 	: SItemUniqueId;
 	private var _infusionActive 		: bool;
+	private var _infusionCraftsman 		: CGameplayEntity;
 	private var _socketInv 				: W3GuiSocketsInventoryComponent;
 	private var _curInv	   				: W3GuiBaseInventoryComponent;
 	private var _addSocketInv   		: W3GuiAddSocketsInventoryComponent;
@@ -114,9 +119,13 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		
 		if( _fixerInventory )
 		{
-			// modInfusion -- begin: infusion service initialization
+			// modInfusion -- begin: infusion service initialization. The
+			// production path always has a craftsman context: the debug
+			// bypass (no-craftsman mode for console tests) stays off here.
 			_infusionService = new W3InfusionService in this;
 			_infusionService.config = new W3InfusionConfig in this;
+			_infusionService.debugBypassCraftsman = false;
+			_infusionCraftsman = l_fixerEntity;
 			// modInfusion -- end
 
 			_repairInv = new W3GuiRepairInventoryComponent in this;
@@ -137,6 +146,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			_infusionInv.repairSwords = true;
 			_infusionInv.masteryLevel = 5;
 			_infusionInv.infusionService = _infusionService;
+			_infusionInv.craftsman = _infusionCraftsman;
 			// modInfusion -- end
 			
 			_socketInv = new W3GuiSocketsInventoryComponent in this;
@@ -266,22 +276,21 @@ class CR4BlacksmithMenu extends CR4MenuBase
 				// modInfusion: the Repair state is the unified service state —
 				// the grid shows repairable AND infusion-capable items; the
 				// per-item action (Repair or Infuse) and price are computed
-				// per item (label in GetItemDefaultActionName, price in the
+				// per item (label in UpdateInfusionActionLabel, price in the
 				// grid component).
 				case 'Repair':
-					_infusionActive = _infusionService
+					_infusionActive = _infusionService && _infusionCraftsman
 						&& _infusionService.GetPublicConfig().EnableInfusion();
 					if ( _infusionActive )
 					{
 						_curInv = _infusionInv;
-						LogChannel( 'Infusion', "repair state: infusion grid ACTIVE (v2 unified service grid)" );
+						LogChannel( 'Infusion', "repair state: infusion grid ACTIVE (v3: craftsman-aware, cached)" );
 					}
 					else
 					{
 						_curInv = _repairInv;
-						LogChannel( 'Infusion', "repair state: vanilla repair grid (infusion disabled)" );
+						LogChannel( 'Infusion', "repair state: vanilla repair grid (infusion disabled or no craftsman)" );
 					}
-					InvalidateInfusionMemo();
 					break;
 				case 'Sockets':
 					_curInv = _socketInv;
@@ -419,13 +428,14 @@ class CR4BlacksmithMenu extends CR4MenuBase
 	{
 		var itemName		: name;
 		
-		// modInfusion -- begin: route infusion-capable items to the infusion
-		// preview popup instead of the repair flow (spec §9). Early return
-		// replaced with if/else — bare 'return;' in a flash-bound event
-		// confuses the compiler's void/Bool handling here.
-		if ( _infusionActive && IsInfusionTarget( itemId )
-			&& ( !_inv.HasItemDurability( itemId )
-				|| _inv.GetItemDurability( itemId ) >= _inv.GetItemMaxDurability( itemId ) ) )
+		// modInfusion -- begin: route undamaged items in the Repair state to the
+		// infusion preview popup instead of the repair flow (spec §9). Every
+		// path must answer Flash with HandleActionConfirmation: Flash waits in
+		// its Confirmation state until confirmAction() arrives (see
+		// BlacksmithMenu.as in REDkit). Early return replaced with if/else —
+		// bare 'return;' in a flash-bound event confuses the compiler's
+		// void/Bool handling here.
+		if ( _infusionActive && m_menuState == 'Repair' && !_infusionInv.IsDamaged( itemId ) )
 		{
 			StartInfusionFlow( itemId );
 		}
@@ -807,7 +817,14 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		_fixerInventory.AddMoney(price);
 		_inv.RemoveMoney(price);
 		
-		if (_inv.GetItemQuantity(item) > 1)
+		// modInfusion: a repaired item that is infusable stays in the grid
+		// (now offered for infusion) instead of being removed.
+		if ( _infusionActive && _infusionInv.IsInfusable( item ) )
+		{
+			UpdateItem(item);
+			UpdateInfusionActionLabel(item);
+		}
+		else if (_inv.GetItemQuantity(item) > 1)
 		{
 			UpdateItem(item);
 		}
@@ -890,12 +907,13 @@ class CR4BlacksmithMenu extends CR4MenuBase
 	event  OnGetItemData(item : SItemUniqueId, compareItemType : int)
 	{
 		ShowItemTooltip(item, compareItemType);
+		// modInfusion: Flash requests the tooltip whenever the selected item
+		// changes - the hook for the per-item action button label.
+		UpdateInfusionActionLabel(item);
 	}
 	
 	event  OnGlobalUpdate()
 	{
-		// modInfusion: inventory may have changed since the last render.
-		InvalidateInfusionMemo();
 		UpdateData();
 	}
 		
@@ -927,6 +945,13 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			l_flashObject = m_flashValueStorage.CreateTempFlashObject();
 			l_flashArray = m_flashValueStorage.CreateTempFlashArray();
 			
+			// modInfusion: full rebuild - the inventory may have changed
+			// since the last render; recompute infusion verdicts.
+			if ( _infusionInv )
+			{
+				_infusionInv.InvalidateCache();
+			}
+
 			_curInv.GetInventoryFlashArray( l_flashArray, l_flashObject );
 			
 			m_flashValueStorage.SetFlashArray( "blacksmith.grid.section", m_sectionsList );
@@ -1041,84 +1066,86 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		var itemAction : EInventoryActionType;
 		itemAction = GetItemDefaultAction(item);
 		
-		// modInfusion: per-item action label. Damaged items keep the vanilla
-		// Repair label (vanilla behavior first). Undamaged infusion-capable
-		// items show the Infuse label (infusion includes full repair, so it
-		// covers the repair outcome anyway).
-		if ( _infusionActive && IsInfusionTarget( item ) )
-		{
-			// Infuse label only for undamaged items; damaged items keep the
-			// vanilla Repair label (repair first, then infuse).
-			if ( !_inv.HasItemDurability( item )
-				|| _inv.GetItemDurability( item ) >= _inv.GetItemMaxDurability( item ) )
-			{
-				return GetLocStringByKeyExt( "panel_button_inventory_infuse" );
-			}
-		}
-		
 		return GetItemActionFriendlyName(itemAction,GetWitcherPlayer().IsItemEquipped(item));
 	}
 	
 	function GetItemDefaultAction( item : SItemUniqueId ) : EInventoryActionType
 	{
-		// modInfusion: keep the repair action type (the grid action plumbing
-		// is shared); the label and the confirmation route distinguish
-		// infusion from repair.
 		return IAT_Repair;
 	}
 
 	// modInfusion -- begin: infusion helpers ------------------------------------------------
 
-	// Per-refresh memo: the grid queries the same item multiple times per
-	// refresh (action label, action price, confirmation). The full check is
-	// an inventory scan; memoize the last queried target.
-	private var _memoTargetId : SItemUniqueId;
-	private var _memoIsTarget : bool;
-	private var _memoHasResult : bool;
-
-	// True when this item is a valid infusion target with an available
-	// sacrifice and an eligible craftsman. Memoized per item.
-	private function IsInfusionTarget( item : SItemUniqueId ) : bool
+	// Label of the Repair panel's execute button. Flash hardcodes it to
+	// "[[panel_button_common_repair]]" in its setMenuState (BlacksmithMenu.as
+	// updateButtonsLabels), so the script swaps it per selected item through
+	// the panel's own setButtonData(label, gamepadNavCode, keyCode) - the
+	// exact call Flash makes (GAMEPAD_A = "enter-gamepad_A", KeyCode.E = 69).
+	private function UpdateInfusionActionLabel( item : SItemUniqueId ) : void
 	{
-		var p : SInfusionPreview;
+		var panel : CScriptedFlashObject;
+		var fxSetButtonData : CScriptedFlashFunction;
+		var label : string;
 
-		if ( !_infusionService || !_infusionActive || !_fixerNpc )
+		if ( m_menuState != 'Repair' || !_infusionInv || !m_flashModule )
 		{
-			return false;
-		}
-		if ( _memoHasResult && _memoTargetId == item )
-		{
-			return _memoIsTarget;
+			return;
 		}
 
-		_memoIsTarget = false;
-		if ( _infusionService.IsSupportedTarget( item ) )
+		if ( _infusionActive && _inv.IsIdValid( item )
+			&& !_infusionInv.IsDamaged( item ) && _infusionInv.IsInfusable( item ) )
 		{
-			_memoIsTarget = _infusionService.FindBestSacrifice( _inv, item, _infusionSacrificeId, p, _fixerNpc );
+			label = GetLocStringByKeyExt( "panel_button_inventory_infuse" );
+		}
+		else
+		{
+			label = "[[panel_button_common_repair]]";
 		}
 
-		_memoTargetId = item;
-		_memoHasResult = true;
-		return _memoIsTarget;
+		panel = m_flashModule.GetMemberFlashObject( "panelRepair" );
+		if ( !panel )
+		{
+			LogChannel( 'Infusion', "label: panelRepair not reachable from script" );
+			return;
+		}
+		fxSetButtonData = panel.GetMemberFlashFunction( "setButtonData" );
+		if ( !fxSetButtonData )
+		{
+			LogChannel( 'Infusion', "label: panelRepair.setButtonData not reachable from script" );
+			return;
+		}
+		fxSetButtonData.InvokeSelfThreeArgs( FlashArgString( label ), FlashArgString( "enter-gamepad_A" ), FlashArgInt( 69 ) );
 	}
 
-	// Invalidates the memo (called when the grid refreshes or the menu
-	// state changes — the inventory may have changed between renders).
-	private function InvalidateInfusionMemo() : void
+	// Ends a confirmation request without a vanilla action. Flash waits in
+	// its Confirmation state after OnRequestConfirmation until confirmAction
+	// arrives; true would make it call OnRepairItem (charging a repair),
+	// false returns it to item selection without side effects.
+	private function EndInfusionRequest() : void
 	{
-		_memoHasResult = false;
+		HandleActionConfirmation( false );
 	}
 
-	// Runs the infusion preview for the clicked item and opens the
-	// confirmation popup with the full cost breakdown (spec §9.2/§9.5).
+	// Runs a fresh infusion preview for the clicked item (spec §9.5: no stale
+	// values) and opens the confirmation popup with the full cost breakdown.
 	private function StartInfusionFlow( item : SItemUniqueId ) : void
 	{
 		var popupData : InfusionConfirmationPopupData;
 
-		if ( !_infusionService.FindBestSacrifice( _inv, item, _infusionSacrificeId, _infusionPreview, _fixerNpc ) )
+		if ( !_infusionService.IsSupportedTarget( item )
+			|| !_infusionService.FindBestSacrifice( _inv, item, _infusionSacrificeId, _infusionPreview, _infusionCraftsman ) )
 		{
 			showNotification( GetLocStringByKeyExt( "panel_infusion_no_sacrifice" ) );
 			OnPlaySoundEvent( "gui_global_denied" );
+			EndInfusionRequest();
+			return;
+		}
+
+		if ( _inv.GetMoney() < _infusionPreview.laborFee )
+		{
+			showNotification( GetLocStringByKeyExt( "panel_shop_notification_not_enough_money" ) );
+			OnPlaySoundEvent( "gui_global_denied" );
+			EndInfusionRequest();
 			return;
 		}
 
@@ -1130,19 +1157,26 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		popupData.targetId = item;
 		popupData.sacrificeId = _infusionSacrificeId;
 		popupData.preview = _infusionPreview;
+		popupData.SetPrice( _infusionPreview.laborFee );
 		RequestSubMenu( 'PopupMenu', popupData );
 	}
 
 	// Executes the confirmed infusion using the menu's craftsman (spec §8.1:
-	// the NPC the player is actually talking to).
+	// the NPC the player is actually talking to). Execute re-validates
+	// everything before committing (spec §13.1).
 	public function ConfirmInfusion() : void
 	{
 		var err : EInfusionError;
 		var p : SInfusionPreview;
 
-		err = _infusionService.Execute( _infusionTargetId, _infusionSacrificeId, p, _fixerNpc );
+		err = _infusionService.Execute( _infusionTargetId, _infusionSacrificeId, p, _infusionCraftsman );
 		if ( err == IFE_Ok )
 		{
+			// The craftsman is paid like for a vanilla repair.
+			if ( _fixerInventory )
+			{
+				_fixerInventory.AddMoney( p.laborFee );
+			}
 			showNotification( GetLocStringByKeyExt( "panel_infusion_done" ) );
 			theSound.SoundEvent( 'gui_crafting_craft_item' );
 		}
@@ -1152,9 +1186,15 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			theSound.SoundEvent( "gui_global_denied" );
 		}
 
-		_infusionActive = m_menuState == 'Repair';
-		InvalidateInfusionMemo();
+		EndInfusionRequest();
 		UpdateData();
+		UpdatePlayerMoney();
+		UpdateInfusionActionLabel( _infusionTargetId );
+	}
+
+	public function DeclineInfusion() : void
+	{
+		EndInfusionRequest();
 	}
 
 	// modInfusion -- end ---------------------------------------------------------------------
@@ -1325,29 +1365,34 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 	}
 
 	// The full transaction summary (spec §9.5). Fresh values from the preview
-	// this popup was opened with.
+	// this popup was opened with. Flash renders TextContent as htmlText
+	// (PriceConfirmationPopup.as) and WitcherScript strings do not process
+	// backslash escapes, so line breaks are <br> tags.
 	private function BuildSummaryText() : string
 	{
 		var inv : CInventoryComponent;
 		var text : string;
+		var parts : string;
 
 		inv = thePlayer.inv;
 
 		text = inv.GetItemLocalizedNameByUniqueID( targetId )
-			+ ": " + preview.targetLevel + " -> " + preview.newLevel + "\n";
+			+ ": " + preview.targetLevel + " -&gt; " + preview.newLevel + "<br>";
 
 		text += inv.GetItemLocalizedNameByUniqueID( sacrificeId )
 			+ " (" + preview.sacrificeLevel + ")";
 
-		if ( preview.salvaged.Size() > 0 )
+		parts = DescribeParts( preview.salvaged );
+		if ( parts != "-" )
 		{
-			text += "\n" + GetLocStringByKeyExt( "panel_infusion_recovered" ) + ": " + DescribeParts( preview.salvaged );
+			text += "<br>" + GetLocStringByKeyExt( "panel_infusion_recovered" ) + ": " + parts;
 		}
-		if ( preview.materials.Size() > 0 )
+		parts = DescribeParts( preview.materials );
+		if ( parts != "-" )
 		{
-			text += "\n" + GetLocStringByKeyExt( "panel_infusion_required" ) + ": " + DescribeParts( preview.materials );
+			text += "<br>" + GetLocStringByKeyExt( "panel_infusion_required" ) + ": " + parts;
 		}
-		text += "\n" + GetLocStringByKeyExt( "panel_infusion_consumed_note" );
+		text += "<br><br>" + GetLocStringByKeyExt( "panel_infusion_consumed_note" );
 
 		return text;
 	}
@@ -1390,6 +1435,7 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 
 	protected function OnUserDecline() : void
 	{
+		menuRef.DeclineInfusion();
 		ClosePopup();
 	}
 }
