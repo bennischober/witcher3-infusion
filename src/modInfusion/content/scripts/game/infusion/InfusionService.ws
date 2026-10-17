@@ -370,6 +370,47 @@ class W3InfusionService extends IScriptable
 
 	// Finds the best valid sacrifice for a target (highest level gap wins;
 	// ties broken by lower fee). Returns false when none exists.
+	// Diagnostics of the last FindBestSacrifice scan (read by the grid log):
+	// same-category candidates and the rejection reasons with their counts.
+	public var lastScanCandidates : int;
+	public var lastScanErrors : array<EInfusionError>;
+	public var lastScanErrorCounts : array<int>;
+
+	private function RecordScanError( err : EInfusionError ) : void
+	{
+		var i : int;
+
+		for ( i = 0; i < lastScanErrors.Size(); i += 1 )
+		{
+			if ( lastScanErrors[i] == err )
+			{
+				lastScanErrorCounts[i] += 1;
+				return;
+			}
+		}
+		lastScanErrors.PushBack( err );
+		lastScanErrorCounts.PushBack( 1 );
+	}
+
+	// Human-readable summary of the last scan, e.g.
+	// "12 candidates: sacrifice must be higher level than target x12".
+	public function DescribeLastScan() : string
+	{
+		var text : string;
+		var i : int;
+
+		if ( lastScanCandidates == 0 )
+		{
+			return "no other item of this category in the inventory";
+		}
+		text = lastScanCandidates + " candidates:";
+		for ( i = 0; i < lastScanErrors.Size(); i += 1 )
+		{
+			text += " " + InfusionErrorToString( lastScanErrors[i] ) + " x" + lastScanErrorCounts[i] + ";";
+		}
+		return text;
+	}
+
 	public function FindBestSacrifice( inv : CInventoryComponent, targetId : SItemUniqueId, out sacrificeId : SItemUniqueId, out preview : SInfusionPreview, optional craftsman : CGameplayEntity ) : bool
 	{
 		var all : array<SItemUniqueId>;
@@ -377,8 +418,12 @@ class W3InfusionService extends IScriptable
 		var i : int;
 		var bestGap : int;
 		var targetCategory : name;
+		var err : EInfusionError;
 
 		bestGap = 0;
+		lastScanCandidates = 0;
+		lastScanErrors.Clear();
+		lastScanErrorCounts.Clear();
 		targetCategory = inv.GetItemCategory( targetId );
 		inv.GetAllItems( all );
 
@@ -394,7 +439,13 @@ class W3InfusionService extends IScriptable
 			{
 				continue;
 			}
-			if ( Preview( targetId, all[i], p, craftsman ) == IFE_Ok && p.levelGap > bestGap )
+			lastScanCandidates += 1;
+			err = Preview( targetId, all[i], p, craftsman );
+			if ( err != IFE_Ok )
+			{
+				RecordScanError( err );
+			}
+			else if ( p.levelGap > bestGap )
 			{
 				bestGap = p.levelGap;
 				sacrificeId = all[i];

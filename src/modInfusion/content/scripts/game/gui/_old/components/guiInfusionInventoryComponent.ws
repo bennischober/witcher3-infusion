@@ -61,7 +61,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 			}
 			else
 			{
-				LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " has no valid sacrifice at this craftsman" );
+				LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " (L" + infusionService.ComputeItemLevel( _inv, item ) + ") not infusable here - " + infusionService.DescribeLastScan() );
 			}
 		}
 
