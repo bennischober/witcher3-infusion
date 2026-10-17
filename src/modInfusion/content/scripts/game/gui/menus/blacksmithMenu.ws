@@ -1575,6 +1575,9 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 		}
 		text += "<br>" + GetLocStringByKeyExt( "panel_infusion_consumed_note" ) + "</font>";
 
+		// Experiment (inline material icons): logged so the exact markup can
+		// be compared with what renders.
+		LogChannel( 'Infusion', "popup html: " + text );
 		return text;
 	}
 
@@ -1594,13 +1597,31 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 			{
 				text += ", ";
 			}
-			text += GetLocStringByKeyExt( thePlayer.inv.GetItemLocalizedNameByName( parts[i].itemName ) ) + " x" + parts[i].quantity;
+			text += MaterialIconHtml( parts[i].itemName )
+				+ GetLocStringByKeyExt( thePlayer.inv.GetItemLocalizedNameByName( parts[i].itemName ) ) + " x" + parts[i].quantity;
 		}
 		if ( text == "" )
 		{
 			text = "-";
 		}
 		return text;
+	}
+
+	// Experiment: small inline item icon like the crafting ingredient list.
+	// Vanilla embeds images in htmlText (localizedContent.ws GetHTMLForItemICO)
+	// but only UI-library symbols; item icons are textures loaded via img://
+	// (PopupData.ws). Whether htmlText resolves img:// textures is what this
+	// tests - if not, the tag renders nothing or an empty box.
+	private function MaterialIconHtml( itemName : name ) : string
+	{
+		var iconPath : string;
+
+		iconPath = thePlayer.inv.GetItemIconPathByName( itemName );
+		if ( iconPath == "" )
+		{
+			return "";
+		}
+		return "<img src='img://" + iconPath + "' width='18' height='18' vspace='-4'> ";
 	}
 
 	protected function GetContentRef() : string
