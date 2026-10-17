@@ -115,6 +115,15 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 
 		super.SetInventoryFlashObjectForItem( item, flashObject );
 
+		// Items without durability (e.g. casual clothes) get a placeholder
+		// durability of 1 from the base component, which the repair panel
+		// renders as "1 %" (ItemRepairInfo.as). The vanilla repair grid never
+		// lists such items; ours does (as infusion targets). 0 hides the line.
+		if ( !_inv.HasItemDurability( item ) )
+		{
+			flashObject.SetMemberFlashNumber( "durability", 0 );
+		}
+
 		if ( !IsDamaged( item ) && GetInfusionInfo( item, s, p ) )
 		{
 			flashObject.SetMemberFlashInt( "actionPrice", p.laborFee );

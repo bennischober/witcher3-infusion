@@ -1368,6 +1368,10 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 	// this popup was opened with. Flash renders TextContent as htmlText
 	// (PriceConfirmationPopup.as) and WitcherScript strings do not process
 	// backslash escapes, so line breaks are <br> tags.
+	// Layout budget (panel_overlay.fla, PriceConfirmationPopup): tfMessage is
+	// 481px wide, font size 24, vertically centered between the title and the
+	// price (~130px). Only the level change uses the full size; the details
+	// use a smaller font so the whole summary fits the frame.
 	private function BuildSummaryText() : string
 	{
 		var inv : CInventoryComponent;
@@ -1376,10 +1380,11 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 
 		inv = thePlayer.inv;
 
-		text = inv.GetItemLocalizedNameByUniqueID( targetId )
-			+ ": " + preview.targetLevel + " -&gt; " + preview.newLevel + "<br>";
+		text = GetLocStringByKeyExt( inv.GetItemLocalizedNameByUniqueID( targetId ) )
+			+ ": " + preview.targetLevel + " -&gt; " + preview.newLevel;
 
-		text += inv.GetItemLocalizedNameByUniqueID( sacrificeId )
+		text += "<br><font size='16'>"
+			+ GetLocStringByKeyExt( inv.GetItemLocalizedNameByUniqueID( sacrificeId ) )
 			+ " (" + preview.sacrificeLevel + ")";
 
 		parts = DescribeParts( preview.salvaged );
@@ -1392,7 +1397,7 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 		{
 			text += "<br>" + GetLocStringByKeyExt( "panel_infusion_required" ) + ": " + parts;
 		}
-		text += "<br><br>" + GetLocStringByKeyExt( "panel_infusion_consumed_note" );
+		text += "<br>" + GetLocStringByKeyExt( "panel_infusion_consumed_note" ) + "</font>";
 
 		return text;
 	}
@@ -1413,7 +1418,7 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 			{
 				text += ", ";
 			}
-			text += thePlayer.inv.GetItemLocalizedNameByName( parts[i].itemName ) + " x" + parts[i].quantity;
+			text += GetLocStringByKeyExt( thePlayer.inv.GetItemLocalizedNameByName( parts[i].itemName ) ) + " x" + parts[i].quantity;
 		}
 		if ( text == "" )
 		{
