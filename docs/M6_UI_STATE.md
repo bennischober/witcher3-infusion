@@ -105,6 +105,27 @@ production path always validates the real craftsman.
   by using `W3InventoryInitData { containerNPC, defaultState = 'Repair' }`, as the game's own
   scenes do (`scene_functions.ws`).
 
+### Second round (same day, with `infuseOpenMenu` fixed and a spawned test pair)
+
+- `infuseOpenMenu(true)` opens the Repair page with the infusion grid ✅
+- Button label swaps to **Infundieren** for infusable items ✅ (`setButtonData` from script works)
+- Popup opens with the fee as price ✅; accept executes ✅ — log:
+  `OK: target Skellige Casual Suit 01 level 61 -> 68, sacrifice Light armor 06 consumed, fee 89`.
+  After the infusion the grid offers the infused shirt (now L68) as a sacrifice for others,
+  i.e. the new level is live in-session.
+- **Bugs found, fixed afterwards:**
+  - Popup showed raw loc keys (`item_name_skellige_suit01`): `GetItemLocalizedNameBy*` return
+    keys, not text; wrapped in `GetLocStringByKeyExt` like vanilla.
+  - Popup text overflowed the frame (9 lines at size 24). Geometry read from
+    `panel_overlay.fla` (`tfMessage` 481px wide, size 24, ~130px between title and price);
+    details now use `<font size='16'>`, the level change stays full size.
+  - "Zustand 1 %" for items without durability (casual clothes): the base component sends a
+    placeholder `durability = 1`, which the repair panel prints. The vanilla repair grid never
+    lists such items; ours hides the line (`durability = 0`). The shirt was never damaged —
+    "not repaired" was correct.
+- Not yet confirmed: persistence after reload (check the shirt's tooltip: required level 68),
+  grid responsiveness after decline.
+
 ## Test checklist for the next game session
 
 Deploy with `tools\deploy-mod.ps1 -Dev`, launch with `tools\launch-debug.bat`. Everything below

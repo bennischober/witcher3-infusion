@@ -579,7 +579,7 @@ function InfusionSpawnTestPair( armor : bool )
 
 	LogChannel( 'Infusion', "test pair: target " + inv.GetItemName( tId ) + " L" + svc.ComputeItemLevel( inv, tId )
 		+ ", sacrifice " + inv.GetItemName( sId ) + " L" + svc.ComputeItemLevel( inv, sId ) );
-	theGame.GetGuiManager().ShowNotification( "TEST PAIR: " + inv.GetItemLocalizedNameByUniqueID( tId ) + " L" + svc.ComputeItemLevel( inv, tId )
+	theGame.GetGuiManager().ShowNotification( "TEST PAIR: " + GetLocStringByKeyExt( inv.GetItemLocalizedNameByUniqueID( tId ) ) + " L" + svc.ComputeItemLevel( inv, tId )
 		+ " + sacrifice L" + svc.ComputeItemLevel( inv, sId ), 8.0 );
 	theSound.SoundEvent( "gui_crafting_craft_item" );
 }
