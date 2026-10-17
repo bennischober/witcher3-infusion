@@ -1,7 +1,7 @@
 # M6 — Production UI: state, findings, open items (updated 2026-10-17)
 
-Status: **two-step flow, popup and persistence verified in game (2026-10-17); cancel/decline
-paths, swordsmith gating and repair regression still to check** (checklist below).
+Status: **functionally complete — the full checklist passed in game (2026-10-17).** Remaining
+work is release polish (see "Open items before release").
 Spec: INFUSION_SPEC.md §9 (UI/interaction), §16 Milestone 6.
 Flash protocol reference: docs/TECHNICAL_DISCOVERY.md §13.
 
@@ -160,10 +160,11 @@ armor 06 consumed (9 x autogen_fixed_armor_armor added), fee 91`.
   sacrifice was selected). Flash sends no selection event to script (verified in the AS
   sources), so this is not fixable without SWF changes; gamepad/keyboard are unaffected
   (selection and tooltip coincide), and mouse clicks activate the clicked item directly.
-- Not exercised yet: Abbrechen (back to step 1), popup decline + immediate next click, gating at
-  a swordsmith, repair / repair-all regression.
+- Fourth round (user-reported): Abbrechen returns to step 1 ✅; popup decline and the next
+  click behave like vanilla (no freeze) ✅; gating at a swordsmith works as intended ✅; repair
+  and repair-all behave like vanilla ✅. Label follows hover, as documented above.
 
-## Test checklist for the next game session
+## Test checklist (all passed 2026-10-17; keep for regression rounds)
 
 Deploy with `tools\deploy-mod.ps1 -Dev`, launch with `tools\launch-debug.bat`. Everything below
 is unverified until checked off. Log lines go to `Documents\The Witcher 3\scriptslog.txt`
@@ -213,10 +214,23 @@ swords.
 
 Cleanup: `infuseDespawnTestSmith`.
 
-## Honest risk assessment
+## Open items before release
 
-Remaining runtime-only unknowns: (a) whether `GetMemberFlashObject("panelRepair")` resolves from
-script (engine import, no vanilla caller — if not, the label stays "Repair" but the flow still
-works, and the log says so); (b) popup layout with multi-line text; (c) `infuseOpenMenu` relies on
-the spawned template being a `W3MerchantNPC` with crafting enabled, like the dialogue NPCs.
-None of these can consume items incorrectly: execution always re-validates in `Execute`.
+1. **Log volume:** the grid writes one `[Infusion] grid:` line per item on every refresh (useful
+   for diagnosis, noisy for players). Gate behind a debug flag before release.
+2. **Error messages are English-only:** `InfusionErrorToString` is used for in-game
+   notifications (e.g. missing materials). Move to w3strings keys (en/de).
+3. **Label follows hover** (cosmetic, not fixable without SWF changes) — mention in known issues.
+4. **Dedicated Infuse tab (optional):** likely feasible after all. The earlier blank page
+   (finding 1) was probably not a missing Flash page: `HaxGetPanelStateName` in `commonMenu.ws`
+   maps unknown tab states to `''`, and the old attempt never added `"Infuse"` there, so the
+   blacksmith menu received an empty state. Needs a `commonMenu.ws` override again (conflict
+   surface) — decide before release.
+5. **M7 work:** release packaging, compatibility notes for the vanilla override
+   (`blacksmithMenu.ws`), installation docs.
+
+## Risk assessment
+
+All runtime unknowns from the Flash analysis resolved in game: `GetMemberFlashObject` /
+`setButtonData` work from script, the popup layout fits, `infuseOpenMenu` opens the real service
+menu. Execution always re-validates in `Execute`, so UI defects cannot consume items incorrectly.

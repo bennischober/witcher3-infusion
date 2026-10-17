@@ -64,7 +64,10 @@ and development milestones.
   sacrifice's market value — auto-balances with official economy updates), tier/tier-target/gap
   multipliers per spec §6.2, curated defaults without a settings menu (Remastered settings UI
   is broken for mod groups; decision documented), dev-only console overrides for live tuning
-- 🔜 **Milestone 6** — production UI (blacksmith menu integration)
+- ✅ **Milestone 6** — production UI, verified in game: two-step infusion (pick target, then
+  sacrifice) inside the blacksmith/armorer Repair tab, confirmation popup with the full cost
+  breakdown, craftsman gating, vanilla repair unaffected, save/reload persistence. Release polish
+  (log volume, localized error messages) tracked in docs/M6_UI_STATE.md
 - 🔜 **Milestone 7** — release packaging
 - 🔜 **Milestone 8** — optional bonus-merging extension (separate module)
 
