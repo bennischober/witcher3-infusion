@@ -52,6 +52,10 @@ preview). Needs 1–2 new strings. One test launch to check line length/wrapping
   material in the popup with `<img src='img://<icon path>' width='20' height='20'
   vspace='-5'>`. Line height grows with the icons, so the popup layout budget (~130px) needs a
   recheck — or show icons only for the additional (paid) materials.
+- **Status 2026-10-17:** experiment in the dev build (`MaterialIconHtml` in the popup class,
+  18×18, `vspace='-4'`). Check in game: icons visible? text still inside the frame? The log line
+  `popup html:` shows the exact markup. If nothing renders, revert or try `img://` without the
+  `.dds` extension / with `.png`.
 
 ## 3. Remastered script annotations instead of full-file overrides (user idea)
 
