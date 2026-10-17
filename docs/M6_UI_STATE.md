@@ -90,6 +90,21 @@ production path always validates the real craftsman.
 - Grid filter detects real infusable items (NG+ Witcher steel swords, spawned armor) ✅
 - Craftsman panel (tier/name/crowns) works with our NPC context ✅
 
+## Test round 2026-10-17 (first launch with the fixes)
+
+- Compile clean ✅ (no script errors in `scriptslog.txt`).
+- Real dialogue, journeyman armorer: Repair tab renders as vanilla, infusion grid active, damaged
+  item shows **Reparieren** with the repair price ✅.
+- **No item was infusable** at that armorer. The log only said "no valid sacrifice"; reasons are
+  now logged per item (`grid: <item> (L<n>) not infusable here - <k> candidates: <reason> xN;`).
+  Most of the inventory is NG+ Witcher gear (quality 5 → needs a grandmaster by default), so
+  this was probably correct behavior, not a bug. Untested parts of the checklist (B–D) remain
+  open; `infuseSpawnTestPair` now provides a guaranteed valid pair.
+- **`infuseOpenMenu` opened the menu without a state** (empty grid, wrong info panel, no
+  `repair state:` log line): passing the bare entity gives `CommonMenu` no default state. Fixed
+  by using `W3InventoryInitData { containerNPC, defaultState = 'Repair' }`, as the game's own
+  scenes do (`scene_functions.ws`).
+
 ## Test checklist for the next game session
 
 Deploy with `tools\deploy-mod.ps1 -Dev`, launch with `tools\launch-debug.bat`. Everything below
@@ -102,7 +117,9 @@ is unverified until checked off. Log lines go to `Documents\The Witcher 3\script
    armorer, Repair tab available. (If it doesn't open: walk to any real armorer instead and
    report what happened.)
 
-**B. Grid + label (armorer, armor with a higher-level armor sacrifice in inventory)**
+**B. Grid + label** — first run `infuseSpawnTestPair(true)` (armor pair) and
+`infuseSpawnTestPair` (sword pair), then `infuseOpenMenu(true)` for armor, `infuseOpenMenu` for
+swords.
 3. The Repair tab lists undamaged armor that has a valid sacrifice.
 4. Selecting such an item → the panel button reads **Infuse** (DE: Infundieren); selecting a
    damaged item → **Repair**. Log shows no `label: ... not reachable` line.
