@@ -214,7 +214,7 @@ swords.
 
 Cleanup: `infuseDespawnTestSmith`.
 
-## Infuse tab prototype (2026-10-17, untested)
+## Infuse tab prototype (2026-10-17, verified in game)
 
 Hypothesis: the blank tab of 2026-10-11 (finding 1) came from `HaxGetPanelStateName` mapping the
 unknown state to `''`, not from a missing SWF page. Prototype:
@@ -238,6 +238,20 @@ Test: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, then
 
 If the page is still blank while the log shows the line from step 1, Flash received `'Infuse'`
 directly (some path bypassing `SetMenuState`) — report it and the tab gets reverted.
+
+**Result (2026-10-17):** the tab renders the grid (no blank page) — hypothesis confirmed: the
+old blank tab came from `HaxGetPanelStateName`, not from the SWF. Two-step flow, Ziel/Opfer
+grid and popup work in the tab. Follow-ups found in this round:
+- The button showed "Reparieren" until the first hover (Flash's `setMenuState` resets it) —
+  fixed: the tab sets the Infuse label right after the state change.
+- Witcher gear was not listed at the journeyman armorer — correct: quality 5 needs a
+  grandmaster by default (log: "this craftsman is not qualified for this equipment").
+- The rejection log exposed a **level-formula bug**: boots/pants/gloves used the chest-armor
+  formula (NG+ Witcher boots computed as L18). Fixed to the per-slot values from
+  `gameParams.ws`; infusions of those slots would previously have aborted (rolled back).
+- Red X on a sacrifice slot is vanilla: the item's required level exceeds Geralt's.
+- Next: decide tab vs. Repair tab and move `commonMenu.ws` to annotations
+  (docs/ROADMAP_IDEAS.md §1, §3).
 
 ## Open items before release
 

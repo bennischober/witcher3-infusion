@@ -49,6 +49,10 @@ it now costs nothing locally and remains essential for distribution:
 - **Never override a base game script file** (`gameParams.ws`, `inventoryComponent.ws`,
   `playerWitcher.ws`, etc.). Ship only new files in new folders. This keeps the mod
   script-merger-free for every user (Next-Gen and Remastered alike).
+- *Update 2026-10-17:* the official REDkit docs describe the annotations (`@wrapMethod`,
+  `@replaceMethod` — also for **global functions** —, `@addMethod`, `@addField`, since the
+  2024-06-06 patch) as written in a new `.ws` file; loose-script support and event wrapping are
+  not stated and need a spike. Migration plan: docs/ROADMAP_IDEAS.md §3.
 - On Remastered, prefer the new conflict-free mechanisms for anything that *must* touch base code:
   script annotations (`@wrapMethod`), scope-based scripting (add functions/vars/enums to a class
   from a separate file), and XML `on_conflict="extend"` definitions. These require cooking a
