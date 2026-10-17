@@ -1,7 +1,7 @@
 # M6 — Production UI: state, findings, open items (updated 2026-10-17)
 
-Status: **two-step flow implemented; single infusion verified in game (2026-10-17); two-step
-flow, popup layout and persistence pending** (checklist below).
+Status: **two-step flow, popup and persistence verified in game (2026-10-17); cancel/decline
+paths, swordsmith gating and repair regression still to check** (checklist below).
 Spec: INFUSION_SPEC.md §9 (UI/interaction), §16 Milestone 6.
 Flash protocol reference: docs/TECHNICAL_DISCOVERY.md §13.
 
@@ -139,6 +139,29 @@ production path always validates the real craftsman.
     "not repaired" was correct.
 - Not yet confirmed: persistence after reload (check the shirt's tooltip: required level 68),
   grid responsiveness after decline.
+
+### Third round (two-step flow)
+
+Run: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, pick *Light armor 01* (Cidarischer
+Gambeson, L52) as target, pick *Light armor 06* (Verdenischer Schützengambeson, L61) as sacrifice,
+accept. Log: `flow: target Light armor 01 picked`, then `OK: ... level 52 -> 61, sacrifice Light
+armor 06 consumed (9 x autogen_fixed_armor_armor added), fee 91`.
+
+- Sacrifice phase renders: headers **Ziel** / **Opfer wählen**, target alone on the left,
+  sacrifices on the right, per-pair price in the panel ✅
+- Popup: **Ziel: Cidarischer Gambeson (52 -> 61)**, **Opfer: Verdenischer Schützengambeson
+  (61)**, recovered + additional materials, note — real names, everything inside the frame ✅
+- Stats recalculated from the target's own definition: armor 286 → 331 (+45 = 9 levels × 5),
+  required level 52 → 61, value 288 → 341; its own resistances (+7/+10/+15 %) unchanged ✅
+- **Persistence:** after save + reload the gambeson still shows 331 armor / level 61 ✅
+- **Known limitation (cosmetic):** the panel button label follows the item whose tooltip is
+  shown (`OnGetItemData`), the panel itself follows the grid selection. With the mouse hovering a
+  different item than the selected one, the label can mismatch (seen: "Abbrechen" while a
+  sacrifice was selected). Flash sends no selection event to script (verified in the AS
+  sources), so this is not fixable without SWF changes; gamepad/keyboard are unaffected
+  (selection and tooltip coincide), and mouse clicks activate the clicked item directly.
+- Not exercised yet: Abbrechen (back to step 1), popup decline + immediate next click, gating at
+  a swordsmith, repair / repair-all regression.
 
 ## Test checklist for the next game session
 
