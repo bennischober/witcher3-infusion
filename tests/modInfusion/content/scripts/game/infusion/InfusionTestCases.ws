@@ -403,36 +403,25 @@ function InfusionTestCaseCraftsmanReport()
 
 // ------------------------- test smith spawning -------------------------
 
-// Spawns a smith NPC from a template 3m in front of the player, tagged
-// 'InfusionTestSmith', self-despawning after 120s. WitcherScript strings do
-// not process backslash escapes - paths use SINGLE backslashes.
-function InfusionSpawnTestSmith( master : bool )
+// Spawns a craftsman NPC from a template 3m in front of the player, tagged
+// 'InfusionTestSmith', self-despawning after lifetime seconds. Returns NULL
+// (with a notification) on failure. WitcherScript strings do not process
+// backslash escapes - paths use SINGLE backslashes.
+function InfusionCreateTestCraftsman( path : string, lifetime : float ) : CEntity
 {
 	var template : CEntityTemplate;
 	var smith : CEntity;
 	var pos : Vector;
 	var rot : EulerAngles;
 	var forward : Vector;
-	var path : string;
 	var tags : array<name>;
-
-	// Verified templates (docs/CRAFTSMAN_MAP.md): Novigrad market smith is a
-	// Master smith; the Crow's Perch Verden Smith is a Journeyman.
-	if ( master )
-	{
-		path = "gameplay\community\shops_and_craftsmen\novigrad\market\novigrad_market_smith_01.w2ent";
-	}
-	else
-	{
-		path = "gameplay\community\shops_and_craftsmen\no_mans_land\snots\snots_blacksmith_01.w2ent";
-	}
 
 	template = (CEntityTemplate)LoadResource( path, true );
 	if ( !template )
 	{
 		LogChannel( 'Infusion', "spawn test smith: template load failed: " + path );
 		theGame.GetGuiManager().ShowNotification( "SMITH SPAWN: template load failed", 6.0 );
-		return;
+		return NULL;
 	}
 
 	pos = thePlayer.GetWorldPosition();
@@ -446,14 +435,111 @@ function InfusionSpawnTestSmith( master : bool )
 	{
 		LogChannel( 'Infusion', "spawn test smith: CreateEntity failed" );
 		theGame.GetGuiManager().ShowNotification( "SMITH SPAWN: entity creation failed", 6.0 );
-		return;
+		return NULL;
 	}
 
-	smith.DestroyAfter( 120.f );
+	smith.DestroyAfter( lifetime );
+	LogChannel( 'Infusion', "spawn test smith: spawned " + path + " tagged InfusionTestSmith (despawns in " + FloatToString( lifetime ) + "s)" );
+	return smith;
+}
 
-	LogChannel( 'Infusion', "spawn test smith: spawned " + path + " tagged InfusionTestSmith (despawns in 120s)" );
-	theGame.GetGuiManager().ShowNotification( "SMITH SPAWNED 3m ahead - run infuseTestEligibility now", 8.0 );
-	theSound.SoundEvent( "gui_crafting_craft_item" );
+// Spawns a smith for the eligibility test (despawns after 120s).
+function InfusionSpawnTestSmith( master : bool )
+{
+	var path : string;
+
+	// Verified templates (docs/CRAFTSMAN_MAP.md): Novigrad market smith is a
+	// Master smith; the Crow's Perch Verden Smith is a Journeyman.
+	if ( master )
+	{
+		path = "gameplay\community\shops_and_craftsmen\novigrad\market\novigrad_market_smith_01.w2ent";
+	}
+	else
+	{
+		path = "gameplay\community\shops_and_craftsmen\no_mans_land\snots\snots_blacksmith_01.w2ent";
+	}
+
+	if ( InfusionCreateTestCraftsman( path, 120.f ) )
+	{
+		theGame.GetGuiManager().ShowNotification( "SMITH SPAWNED 3m ahead - run infuseTestEligibility now", 8.0 );
+		theSound.SoundEvent( "gui_crafting_craft_item" );
+	}
+}
+
+// Opens the blacksmith/armorer service menu (Repair tab = infusion service)
+// anywhere in the world, exactly as the dialogue does: CommonMenu with the
+// NPC entity as init data (vanilla precedent: cookingPlace.ws passes an
+// entity) and BlacksmithMenu as the menu to open. Reuses a spawned test
+// craftsman of the requested kind, otherwise spawns one (despawns after
+// 10 minutes or via infuseDespawnTestSmith).
+//   armorer: armor service (else swordsmith); master: Master tier (else
+//   Journeyman). Templates verified in docs/CRAFTSMAN_MAP.md.
+function InfusionOpenServiceMenu( armorer : bool, master : bool )
+{
+	var existing : array<CEntity>;
+	var smith : CEntity;
+	var comp : W3CraftsmanComponent;
+	var requiredType : ECraftsmanType;
+	var requiredLevel : ECraftsmanLevel;
+	var path : string;
+	var i : int;
+
+	if ( armorer )
+	{
+		requiredType = ECT_Armorer;
+		if ( master )
+		{
+			path = "gameplay\community\shops_and_craftsmen\novigrad\rich_district\novigrad_rich_district_armorer_01.w2ent";
+		}
+		else
+		{
+			path = "gameplay\community\shops_and_craftsmen\no_mans_land\barons_keep\barons_keep_armorer_01.w2ent";
+		}
+	}
+	else
+	{
+		requiredType = ECT_Smith;
+		if ( master )
+		{
+			path = "gameplay\community\shops_and_craftsmen\novigrad\market\novigrad_market_smith_01.w2ent";
+		}
+		else
+		{
+			path = "gameplay\community\shops_and_craftsmen\no_mans_land\snots\snots_blacksmith_01.w2ent";
+		}
+	}
+	if ( master )
+	{
+		requiredLevel = ECL_Master;
+	}
+	else
+	{
+		requiredLevel = ECL_Journeyman;
+	}
+
+	// Reuse a matching spawned craftsman (same type and tier).
+	theGame.GetEntitiesByTag( 'InfusionTestSmith', existing );
+	for ( i = 0; i < existing.Size(); i += 1 )
+	{
+		comp = (W3CraftsmanComponent)existing[i].GetComponentByClassName( 'W3CraftsmanComponent' );
+		if ( comp && comp.IsCraftsmanType( requiredType ) && comp.GetCraftsmanLevel( requiredType ) == requiredLevel )
+		{
+			smith = existing[i];
+			break;
+		}
+	}
+
+	if ( !smith )
+	{
+		smith = InfusionCreateTestCraftsman( path, 600.f );
+		if ( !smith )
+		{
+			return;
+		}
+	}
+
+	LogChannel( 'Infusion', "open service menu with " + path );
+	theGame.RequestMenuWithBackground( 'BlacksmithMenu', 'CommonMenu', smith );
 }
 
 // Removes spawned test smiths (tagged 'InfusionTestSmith') only.

@@ -15,6 +15,8 @@
 /** 	  infuseCraftsmanReport  - report nearby craftsmen (type/tier)
 /** 	  infuseSpawnTestSmith   - spawn a test smith (optional master)
 /** 	  infuseDespawnTestSmith - remove spawned test smiths
+/** 	  infuseOpenMenu         - open the smith/armorer service menu here
+/** 	                           (args: armorer, master - both optional)
 /**
 /** 	Output channels (5.01): LogChannel -> scriptslog.txt (-debugscripts),
 /** 	notifications + HudConsoleMsg on screen, verdicts via sounds. The
@@ -25,7 +27,7 @@
 exec function infuseHelp()
 {
 	theGame.GetGuiManager().ShowNotification(
-		"Infusion: selfTest / cleanTestItems / testMissingMaterials / testEligibility / craftsmanReport / spawnTestSmith / preview / run", 9.0 );
+		"Infusion: selfTest / cleanTestItems / testMissingMaterials / testEligibility / craftsmanReport / spawnTestSmith / openMenu(armorer, master) / preview / run", 9.0 );
 }
 
 exec function infuseStats()
@@ -119,6 +121,17 @@ exec function infuseSpawnTestSmith( optional master : bool )
 exec function infuseDespawnTestSmith()
 {
 	InfusionDespawnTestSmith();
+}
+
+// Opens the service menu (Repair tab = infusion) with a spawned craftsman,
+// anywhere in the world - no travel to an NPC per UI test round.
+//   infuseOpenMenu              journeyman swordsmith
+//   infuseOpenMenu(true)        journeyman armorer
+//   infuseOpenMenu(true, true)  master armorer
+//   infuseOpenMenu(false, true) master swordsmith
+exec function infuseOpenMenu( optional armorer : bool, optional master : bool )
+{
+	InfusionOpenServiceMenu( armorer, master );
 }
 
 // Decisive strings test: looks up our loc keys at runtime and logs the
