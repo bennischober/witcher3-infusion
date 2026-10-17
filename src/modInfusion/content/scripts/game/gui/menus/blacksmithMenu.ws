@@ -225,6 +225,9 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			super.SetMenuState( 'Repair' );
 			m_menuState = 'Infuse';
 			SetInfuseEmptyListText();
+			// Flash's setMenuState just reset the button to "Repair"; in this
+			// tab every listed item is an infusion target.
+			SetRepairPanelButtonLabel( GetLocStringByKeyExt( "panel_button_inventory_infuse" ) );
 		}
 		else
 		{
@@ -1171,8 +1174,6 @@ class CR4BlacksmithMenu extends CR4MenuBase
 	// exact call Flash makes (GAMEPAD_A = "enter-gamepad_A", KeyCode.E = 69).
 	private function UpdateInfusionActionLabel( item : SItemUniqueId ) : void
 	{
-		var panel : CScriptedFlashObject;
-		var fxSetButtonData : CScriptedFlashFunction;
 		var label : string;
 
 		if ( ( m_menuState != 'Repair' && m_menuState != 'Infuse' ) || !_infusionInv || !m_flashModule )
@@ -1201,6 +1202,18 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			label = "[[panel_button_common_repair]]";
 		}
 
+		SetRepairPanelButtonLabel( label );
+	}
+
+	private function SetRepairPanelButtonLabel( label : string ) : void
+	{
+		var panel : CScriptedFlashObject;
+		var fxSetButtonData : CScriptedFlashFunction;
+
+		if ( !m_flashModule )
+		{
+			return;
+		}
 		panel = m_flashModule.GetMemberFlashObject( "panelRepair" );
 		if ( !panel )
 		{
