@@ -46,6 +46,21 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		_sacPreviews.Clear();
 	}
 
+	// Infuse-tab mode (tab prototype): only infusion targets are listed,
+	// damaged ones included (infusion includes the repair); no repair entries.
+	private var _infuseOnly : bool;
+
+	public function SetInfuseOnly( value : bool ) : void
+	{
+		_infuseOnly = value;
+		InvalidateCache();
+	}
+
+	public function IsInfuseOnly() : bool
+	{
+		return _infuseOnly;
+	}
+
 	public function BeginSacrificePhase( target : SItemUniqueId ) : void
 	{
 		_sacrificePhase = true;
@@ -172,6 +187,10 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		{
 			return item == _phaseTarget || GetSacrificeInfo( item, p );
 		}
+		if ( _infuseOnly )
+		{
+			return IsInfusable( item );
+		}
 		if ( super.ShouldShowItem( item ) )
 		{
 			return true;   // damaged: repairable
@@ -220,7 +239,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 			return;
 		}
 
-		if ( !IsDamaged( item ) && GetInfusionInfo( item, s, p ) )
+		if ( ( _infuseOnly || !IsDamaged( item ) ) && GetInfusionInfo( item, s, p ) )
 		{
 			flashObject.SetMemberFlashInt( "actionPrice", p.laborFee );
 		}
