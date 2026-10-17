@@ -266,14 +266,26 @@ class W3InfusionService extends IScriptable
 		category = inv.GetItemCategory( item );
 		quality = RoundMath( CalculateAttributeValue( inv.GetItemAttributeValue( item, 'quality' ) ) );
 
+		// Per-category stat_min / stat_add exactly as gameParams.ws GetItemLevel
+		// (5.01). Boots/pants/gloves used to share the armor formula, which put
+		// their levels at roughly a third of the real value (e.g. NG+ Witcher
+		// boots computed as L18) and broke the step count for those slots.
 		switch ( category )
 		{
 			case 'armor':
-			case 'boots':
-			case 'gloves':
-			case 'pants':
 				stat = inv.GetItemAttributeValue( item, 'armor' );
 				level = FloorF( 1 + ( stat.valueBase - 25 ) / 5 );
+				break;
+
+			case 'boots':
+			case 'pants':
+				stat = inv.GetItemAttributeValue( item, 'armor' );
+				level = FloorF( 1 + ( stat.valueBase - 5 ) / 2 );
+				break;
+
+			case 'gloves':
+				stat = inv.GetItemAttributeValue( item, 'armor' );
+				level = FloorF( 1 + ( stat.valueBase - 1 ) / 2 );
 				break;
 
 			case 'silversword':
