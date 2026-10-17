@@ -19,7 +19,7 @@ was checked against actual script sources or installed files unless explicitly m
 | Script sources | `REDkit\r4data\scripts` (1,525 `.ws` files) matched the game's `content\content0\scripts` before the 5.00 update (MD5-verified). **After 5.00 the game scripts changed** (UTF-8 re-encode + keyword/compiler changes + gameplay changes) — re-verify any API assumption against the *current* game scripts before relying on it; the community changelog (Nexus mod 12945 / GitHub `ElementaryLewis/The-Witcher-3-Remastered-Changelog`) diffs 4.04b → 5.00b → 5.01 file-by-file. |
 | Script deployment | Mods ship **loose `.ws` files** under `mods\modX\content\scripts\...`; the game compiles them at launch. **5.00 requirements: UTF-8 with BOM encoding** (scripts, XML, CSV, w3strings were UTF-16 in Next-Gen); new compiler reserves `map`/`set` as keywords; `precompiled.rsblob` (REDkit-cooked) is the console-safe alternative, optional on PC. |
 | User's installed mods (after 2026-10-10 cleanup) | `modHQFacesV3` (texture/mesh assets — unaffected by 5.00), `modRealWeather` (CSV weather assets + `DLC\RealWeather` bundle half — kept, verify in game), `modInfusion` (this project). **Removed:** `modFCR3_2_Nitpicker` + `modFCR3_3_Padlock` (FCR3 is bundled with the game since 4.0), `modLevelingGear` (abandonware, keyword-broken), `mod0000_MergedFiles` (merger output for the two above), `modMoreMoneyForTraders` (UTF-16 script, unfixable), `modOver9000ngplus` (unverified NG+ data mod). Full rationale in `docs/PATCH_NOTES_2026-10-10_scripts.md` and `docs/MOD_CLEANUP_2026-10-10.md`. |
-| UI assets | All menus are compiled Flash SWFs inside cooked bundles (e.g. `gameplay\gui_new\swf\repair\panel_blacksmith.redswf`). **No SWF sources (`.fla`) are shipped** — modifying existing menus visually requires community SWF tools and is high-risk. |
+| UI assets | All menus are compiled Flash SWFs inside cooked bundles (e.g. `gameplay\gui_new\swf\repair\panel_blacksmith.redswf`). **Corrected 2026-10-17: REDkit ships the Flash sources** — `REDkit\r4data\gameplay\gui_new\actionscript\` (873 `.as` files, incl. `red\game\witcher3\menus\blacksmith\*.as` and `menus\overlay\PriceConfirmationPopup.as`) and `...\gui_new\fla\` (e.g. `fla\witcher3\menus\repair\panel_blacksmith.fla`). The sources reference Switch 2 input types, i.e. they are current (Remastered era), not 2015 leftovers. They make the script↔Flash protocol verifiable offline (§13). Editing menus visually still needs Adobe Animate + REDkit cooking — out of scope for v1. |
 | Localization | Game uses compiled `.w3strings`; REDkit ships `REDstrings.exe` (bin\tools\RedStrings_internal) for string database work. Community encoders exist for adding strings. |
 | Console | Not enabled in `user.settings`; enabling requires `DBGConsoleOn=true` (commonly via registry `AllowConsole=1`). **Unverified on this machine** — to be enabled for prototype testing. |
 | In-game mod browser | 5.00 integrates the mod.io SDK (Mod Hub) with a curated, platform-validated mod list; Nexus remains usable but only "Remastered Compatible"-tagged mods should be installed. `ModsConfig.json` referenced by the exe (not yet created on this install). |
@@ -244,6 +244,8 @@ item picking from the player inventory — a candidate for sacrifice selection i
 8. **UI without SWF editing** — a fully custom menu has no Flash asset to bind; solution for MVP is
    script-driven interaction (popup-based or debug exec), production UI in a later milestone using
    option 2 or a SWF from a compatible community framework. Documented as §9.4 limitation.
+   *Update 2026-10-17:* the ActionScript/FLA sources ship with REDkit (§1, §13) — Flash behavior
+   is now read from source instead of guessed; SWF *editing* remains out of scope.
 9. **In-game testing not yet performed** — everything above is static verification. Milestone 2
    includes the first in-game validation (console + debug commands).
 
@@ -300,8 +302,9 @@ within the same architecture.
 3. §2.2 reference mods: Leveling Gear's source was studied before its removal (it demonstrated the
    level-derivation technique). For future Remastered-era reference, use the community changelog
    (Nexus 12945 / GitHub) and Remastered-tagged mods.
-4. §9: "extend the repair interface" is only feasible via script-level menu overrides (no SWF
-   sources); MVP uses script-only UI paths. SWF editing explicitly out of scope for v1.
+4. §9: "extend the repair interface" is only feasible via script-level menu overrides; MVP uses
+   script-only UI paths. SWF editing explicitly out of scope for v1 (the `.fla` sources exist in
+   REDkit, but rebuilding/cooking SWFs adds a toolchain and a conflict surface we avoid).
 5. §5.2: salvage uses native `recycling_parts` directly — the configurable salvage mapping is a
    fallback for items lacking data, not the primary path.
 6. §13.2: engine-level atomic inventory transactions do not exist; safety comes from the
@@ -309,3 +312,28 @@ within the same architecture.
 
 None of these change the gameplay model: sacrifice-based level transfer, no bonus merging, no
 automatic scaling, existing craftsmen only.
+
+## 13. Blacksmith menu Flash protocol (verified from REDkit ActionScript sources, 2026-10-17)
+
+Source files (REDkit `r4data\gameplay\gui_new\actionscript\red\game\witcher3\`):
+`menus\blacksmith\BlacksmithMenu.as`, `BlacksmithItemPanel.as`, `ItemRepairInfo.as`,
+`ModuleBlacksmithGrid.as`, `menus\overlay\PriceConfirmationPopup.as`,
+`managers\ContextInfoManager.as`. Static reading only — runtime behavior of the items marked
+*(runtime)* still needs an in-game check.
+
+| Topic | Verified behavior | Consequence for the mod |
+| --- | --- | --- |
+| Action flow | Flash state machine `Selection → Confirmation → Waiting`. Activating an item calls `OnRequestConfirmation(id, actionPrice)` and **waits** in `Confirmation` until script calls `confirmAction(bool)`. `true` → progress animation → `OnRepairItem(id, actionPrice)` (Repair tab); `false` → back to `Selection`, no side effects. | Every script path that handles a confirmation request must call `HandleActionConfirmation`. The infusion flow ends with `false` (never `true`, which would trigger a repair charge). Missing it freezes the grid until a tab switch. |
+| `actionPrice` | Flash passes the item's `actionPrice` back with the request and with `OnRepairItem`; the info panel shows it (red when unaffordable). | The grid component overwrites it with the infusion fee for undamaged infusion targets. Undamaged items in the Repair tab must never reach the vanilla repair path (it would charge that fee). |
+| Grid filtering | `ModuleBlacksmithGrid` renders whatever array arrives on `repair.grid.player`; the only per-item gate is `disableAction` (repair component: quality > `masteryLevel` = 5). | Grid visibility is fully script-controlled — no slot-count/frame limit to work around. |
+| Panel button label | Hardcoded in Flash: `setMenuState` → `panelRepair.setButtonData("[[panel_button_common_repair]]", GAMEPAD_A, KeyCode.E)`. | The script swaps it via `GetMemberFlashObject("panelRepair").GetMemberFlashFunction("setButtonData")` with `"enter-gamepad_A"` / `69`. *(runtime: `GetMemberFlashObject` is an engine import with no vanilla caller.)* |
+| `GetItemDefaultActionName` | Defined in `blacksmithMenu.ws` but **never called** anywhere in the game scripts. | Not usable as a label hook. Restored to vanilla. |
+| Selection hook | The tooltip manager calls `OnGetItemData(item, compareType)` whenever the selected/hovered item's tooltip is requested (blacksmith menu has no mouse override). | Used to update the button label per item. |
+| Price popup | `PriceConfirmationPopup.populateData`: `tfMessage.htmlText = TextContent`; price shown only when `ItempPrice > 0`. Message field grows with text, background does not. | Popup text uses `<br>` (also: WitcherScript strings do not process `\n` escapes); price set via `SetPrice`; summary kept short. *(runtime: layout with 4–6 lines.)* |
+| Menu with NPC context | `CommonMenu` derives the NPC context from its init data (`W3InventoryInitData.containerNPC` or the entity itself); `BlacksmithMenu` takes the same object as `_fixerNpc`. Vanilla `cookingPlace.ws` passes an entity directly to `RequestMenuWithBackground`. | Dev command `infuseOpenMenu` opens the real service menu anywhere with a spawned craftsman. *(runtime)* |
+
+**Technical body items.** The player inventory contains hidden body meshes such as
+`Body torso medalion` (`_technical_items_defs.xml`: `category="armor"`, tags `NoDrop,NoShow,Body`).
+They pass category checks as armor and were selected as sacrifices by the M6 grid (seen in
+`scriptslog.txt`, 2026-10-11). `IsExcludedItem` now rejects `Body`, `NoShow` and
+`NoShowInPlayersInventory` — the same tags the vanilla inventory UI hides.
