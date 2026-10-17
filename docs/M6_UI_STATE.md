@@ -1,7 +1,7 @@
 # M6 — Production UI: state, findings, open items (updated 2026-10-17)
 
-Status: **core flow implemented; Flash protocol verified from source; in-game verification of the
-2026-10-17 fixes pending** (checklist below).
+Status: **two-step flow implemented; single infusion verified in game (2026-10-17); two-step
+flow, popup layout and persistence pending** (checklist below).
 Spec: INFUSION_SPEC.md §9 (UI/interaction), §16 Milestone 6.
 Flash protocol reference: docs/TECHNICAL_DISCOVERY.md §13.
 
@@ -10,17 +10,31 @@ Flash protocol reference: docs/TECHNICAL_DISCOVERY.md §13.
 ### Entry point and flow (in the blacksmith service UI)
 
 The **Repair tab of the existing blacksmith/armorer menu doubles as the infusion service**
-(spec §9.1: extend the existing service interface). Per item in the grid:
+(spec §9.1: extend the existing service interface). Infusion is a **two-step flow** — the player
+picks both items (spec §9.1); the sacrifice is never chosen automatically.
 
-| Item state | Panel button | Price shown | Confirm does |
+**Step 1 — target selection** (normal Repair tab):
+
+| Item state | Panel button | Price shown | Activating does |
 | --- | --- | --- | --- |
 | Damaged | Repair (vanilla) | repair cost | vanilla repair |
-| Full durability + valid sacrifice + eligible craftsman | **Infuse** (swapped via Flash `setButtonData`) | infusion fee | infusion confirmation popup |
+| Full durability + at least one valid sacrifice + eligible craftsman | **Infuse** (swapped via Flash `setButtonData`) | fee with the highest-level sacrifice | picks it as the target → step 2 |
 | Damaged *and* infusable | Repair | repair cost | vanilla repair; the item then stays in the grid as an infusion target |
 | Full durability, not infusable here | — (not listed) | — | — |
 
-Confirming an infusion opens `InfusionConfirmationPopupData` — a vanilla
-`PriceConfirmationPopup` carrying the §9.5 summary (target level change, sacrifice + its level,
+**Step 2 — sacrifice selection** (same grid, rebuilt): section headers become **Target** (the
+picked item) and **Choose a sacrifice** (every valid sacrifice for it at this craftsman); "Repair
+all" is hidden.
+
+| Item | Panel button | Price shown | Activating does |
+| --- | --- | --- | --- |
+| The target (section "Target") | **Cancel** (vanilla `panel_common_cancel`) | — | back to step 1 |
+| A sacrifice | **Infuse** | fee for this exact pair | confirmation popup |
+
+Switching tabs also returns to step 1; a successful infusion returns to step 1, a failed one stays
+in step 2. Confirming opens `InfusionConfirmationPopupData` — a vanilla
+`PriceConfirmationPopup` carrying the §9.5 summary with labeled roles ("Target: … (61 -> 68)",
+"Sacrifice: … (68)"), 
 recovered materials, remaining requirements, permanent-consumption + full-repair note) and the
 fee as the popup price. Accept executes via `W3InfusionService.Execute(..., craftsman)` with the
 NPC the player is talking to (spec §8.1); the craftsman receives the fee, as with vanilla repairs.
@@ -148,25 +162,31 @@ swords.
 6. The log has no `sacrifice: Body ...` lines; the popup never names a body/hidden item as
    the sacrifice.
 
-**C. Popup + handshake**
-7. Activate an Infuse item → popup shows title, 3–5 readable lines (no literal `\n`, no `<br>`
-   text), fee with coin icon, text fits inside the frame.
-8. Decline → back in the grid; immediately activate another item → it reacts (no freeze).
-9. Activate again → Accept → "Infusion complete", target level = sacrifice level, sacrifice
-   gone, durability 100 %, crowns deducted; top-bar crowns updated; grid still responsive.
+**C. Two-step flow + popup + handshake**
+7. Activate an Infuse item (e.g. Light armor 01) → the grid rebuilds: left header **Ziel** with
+   only that item, right header **Opfer wählen** with its valid sacrifices (e.g. Light armor 06),
+   each with its own price; "Repair all" is gone.
+8. Select the target → button reads **Abbrechen**; activate it → back to the normal grid.
+9. Pick the target again, activate a sacrifice → popup: **Ziel: <name> (53 -> 68)** in large
+   font, **Opfer: <name> (68)** + materials + note in smaller font, real item names (no
+   `item_name_...`), all text inside the frame, fee with coin icon.
+10. Decline → still in the sacrifice grid; activate another item → it reacts (no freeze).
+11. Accept → "Infusion abgeschlossen", target level = sacrifice level, sacrifice gone,
+    durability 100 % (for items with durability), crowns deducted (top bar too), grid back in
+    target selection and responsive.
 
 **D. Craftsman gating**
-10. `infuseOpenMenu` (journeyman swordsmith): no armor listed for infusion; undamaged armor never
+12. `infuseOpenMenu` (journeyman swordsmith): no armor listed for infusion; undamaged armor never
     shows a price; clicking items charges nothing unexpected.
-11. Witcher gear at a journeyman: not listed (needs grandmaster by default).
+13. Witcher gear at a journeyman: not listed (needs grandmaster by default).
 
 **E. Repair still works**
-12. A damaged item: Repair → repaired and charged the repair cost; if infusable it stays in the
+14. A damaged item: Repair → repaired and charged the repair cost; if infusable it stays in the
     grid with the Infuse label, otherwise it disappears (vanilla).
-13. "Repair all" (Space / X) still works.
+15. "Repair all" (Space / X) still works.
 
 **F. Persistence**
-14. Save, reload: infused item keeps its level and stats; sacrifice still gone; no duplicate.
+16. Save, reload: infused item keeps its level and stats; sacrifice still gone; no duplicate.
 
 Cleanup: `infuseDespawnTestSmith`.
 
