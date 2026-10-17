@@ -17,6 +17,7 @@
 /** 	  infuseDespawnTestSmith - remove spawned test smiths
 /** 	  infuseOpenMenu         - open the smith/armorer service menu here
 /** 	                           (args: armorer, master - both optional)
+/** 	  infuseSpawnTestPair    - spawn a valid target + sacrifice (optional armor)
 /**
 /** 	Output channels (5.01): LogChannel -> scriptslog.txt (-debugscripts),
 /** 	notifications + HudConsoleMsg on screen, verdicts via sounds. The
@@ -27,7 +28,7 @@
 exec function infuseHelp()
 {
 	theGame.GetGuiManager().ShowNotification(
-		"Infusion: selfTest / cleanTestItems / testMissingMaterials / testEligibility / craftsmanReport / spawnTestSmith / openMenu(armorer, master) / preview / run", 9.0 );
+		"Infusion: selfTest / cleanTestItems / testMissingMaterials / testEligibility / craftsmanReport / spawnTestSmith / openMenu(armorer, master) / spawnTestPair(armor) / preview / run", 9.0 );
 }
 
 exec function infuseStats()
@@ -132,6 +133,13 @@ exec function infuseDespawnTestSmith()
 exec function infuseOpenMenu( optional armorer : bool, optional master : bool )
 {
 	InfusionOpenServiceMenu( armorer, master );
+}
+
+// Spawns a valid infusion pair (ordinary gear, sacrifice +10 levels) so the
+// service grid has something to show. infuseSpawnTestPair(true) = armor.
+exec function infuseSpawnTestPair( optional armor : bool )
+{
+	InfusionSpawnTestPair( armor );
 }
 
 // Decisive strings test: looks up our loc keys at runtime and logs the

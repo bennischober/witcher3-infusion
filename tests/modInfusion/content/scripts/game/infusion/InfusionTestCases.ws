@@ -483,6 +483,8 @@ function InfusionOpenServiceMenu( armorer : bool, master : bool )
 	var requiredLevel : ECraftsmanLevel;
 	var path : string;
 	var i : int;
+	var initData : W3InventoryInitData;
+	var merchant : W3MerchantNPC;
 
 	if ( armorer )
 	{
@@ -538,8 +540,48 @@ function InfusionOpenServiceMenu( armorer : bool, master : bool )
 		}
 	}
 
+	// Same init data as the game's scenes (scene_functions.ws ShowCraftingPanel
+	// / OpenInventoryForScene): W3InventoryInitData with the NPC and an
+	// explicit default state. Passing the bare entity opened the menu without
+	// a state (no Repair page, empty grid - verified in game 2026-10-17).
+	initData = new W3InventoryInitData in theGame.GetGuiManager();
+	initData.containerNPC = (CGameplayEntity)smith;
+	initData.setDefaultState( 'Repair' );
+	merchant = (W3MerchantNPC)smith;
+	if ( merchant )
+	{
+		merchant.SetCraftingEnabled( true );
+	}
+
 	LogChannel( 'Infusion', "open service menu with " + path );
-	theGame.RequestMenuWithBackground( 'BlacksmithMenu', 'CommonMenu', smith );
+	theGame.GetGuiManager().SetLastOpenedCommonMenuName( 'None' );
+	theGame.RequestMenuWithBackground( 'BlacksmithMenu', 'CommonMenu', initData );
+}
+
+// Spawns a valid infusion pair for UI tests: an ordinary target and a
+// same-category sacrifice boosted by 10 levels (both tagged
+// 'InfusionTestItem', removable with infuseCleanTestItems). Ordinary gear,
+// so a journeyman of the matching specialization can infuse it.
+function InfusionSpawnTestPair( armor : bool )
+{
+	var svc : W3InfusionService;
+	var inv : CInventoryComponent;
+	var tId, sId : SItemUniqueId;
+
+	inv = thePlayer.inv;
+	svc = InfusionGetService();
+
+	if ( !InfusionSpawnTestSword( tId, false, 0, armor ) || !InfusionSpawnTestSword( sId, true, 10, armor ) )
+	{
+		theGame.GetGuiManager().ShowNotification( "TEST PAIR: spawn failed", 6.0 );
+		return;
+	}
+
+	LogChannel( 'Infusion', "test pair: target " + inv.GetItemName( tId ) + " L" + svc.ComputeItemLevel( inv, tId )
+		+ ", sacrifice " + inv.GetItemName( sId ) + " L" + svc.ComputeItemLevel( inv, sId ) );
+	theGame.GetGuiManager().ShowNotification( "TEST PAIR: " + inv.GetItemLocalizedNameByUniqueID( tId ) + " L" + svc.ComputeItemLevel( inv, tId )
+		+ " + sacrifice L" + svc.ComputeItemLevel( inv, sId ), 8.0 );
+	theSound.SoundEvent( "gui_crafting_craft_item" );
 }
 
 // Removes spawned test smiths (tagged 'InfusionTestSmith') only.
