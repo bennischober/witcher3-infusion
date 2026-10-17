@@ -51,8 +51,8 @@ Accept, decline and every rejection answer Flash with `confirmAction(false)`.
 | `tools/w3stringsr/` | The community Remastered strings encoder (user-provided; not committed). |
 | `tests/.../InfusionDebug.ws` → `infuseOpenMenu` | Dev command: open the real service menu anywhere with a spawned craftsman. |
 
-`commonMenu.ws` is **no longer overridden** (removed 2026-10-17; it differed from vanilla only by
-comments after the Infuse tab was reverted).
+`commonMenu.ws` is overridden again **for the Infuse-tab prototype only** (2026-10-17, see
+"Infuse tab prototype"); if the Repair-tab variant wins, the override goes away.
 
 ### Service API used by the UI
 
@@ -213,6 +213,31 @@ swords.
 16. Save, reload: infused item keeps its level and stats; sacrifice still gone; no duplicate.
 
 Cleanup: `infuseDespawnTestSmith`.
+
+## Infuse tab prototype (2026-10-17, untested)
+
+Hypothesis: the blank tab of 2026-10-11 (finding 1) came from `HaxGetPanelStateName` mapping the
+unknown state to `''`, not from a missing SWF page. Prototype:
+
+- `commonMenu.ws` override: **Infusion** tab after Repair (`panel_title_infusion`, repair icon);
+  `"Infuse"` added to `HaxGetPanelStateName`.
+- `blacksmithMenu.ws`: script state `'Infuse'`, Flash state `'Repair'` (`SetMenuState`,
+  `RefreshMenuState`) — the repair page renders with our grid; the empty-grid text says
+  "Kein geeignetes Opferitem verfügbar".
+- Infuse tab: infusion targets only, **damaged ones included** (infusion includes the repair),
+  same two-step flow, no "Repair all". The Repair tab keeps the unified behavior so both
+  variants can be compared side by side.
+
+Test: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, then
+1. A sixth tab **Infusion** appears next to Reparieren; switching to it shows the grid (not a
+   blank page). Log: `infuse state: infusion-only grid ACTIVE (tab prototype)`.
+2. Only infusable items are listed (damaged ones too), all with the Infundieren label and fee.
+3. Two-step flow + popup + accept work as in the Repair tab.
+4. Switching Infusion ↔ Reparieren works both ways; Reparieren still repairs.
+5. Close and reopen the menu while on the Infusion tab — it reopens there without a blank page.
+
+If the page is still blank while the log shows the line from step 1, Flash received `'Infuse'`
+directly (some path bypassing `SetMenuState`) — report it and the tab gets reverted.
 
 ## Open items before release
 
