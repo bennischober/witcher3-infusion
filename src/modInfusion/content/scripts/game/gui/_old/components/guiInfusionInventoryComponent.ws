@@ -1,7 +1,10 @@
 ﻿/***********************************************************************/
 /** 	Witcher Gear Infusion — Infusion inventory grid component (M6)
-/** 	Extends the repair grid component: shows infusion-capable items
-/** 	(including undamaged ones) and displays the infusion fee per item.
+/** 	Extends the repair grid component. Two phases (spec §9.1: the
+/** 	player selects both items):
+/** 	  1. target phase: repairable items + infusion-capable targets
+/** 	  2. sacrifice phase: the chosen target (section 0) + every valid
+/** 	     sacrifice for it (section 1), each priced for that pair
 /** 	New class in a new file — no vanilla file override.
 /***********************************************************************/
 
@@ -24,12 +27,78 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 	private var _cacheSacrifices : array<SItemUniqueId>;
 	private var _cachePreviews : array<SInfusionPreview>;
 
+	// Sacrifice phase: the target the player picked, and per-refresh cached
+	// verdicts for each candidate sacrifice (target + candidate preview).
+	private var _sacrificePhase : bool;
+	private var _phaseTarget : SItemUniqueId;
+	private var _sacIds : array<SItemUniqueId>;
+	private var _sacValid : array<bool>;
+	private var _sacPreviews : array<SInfusionPreview>;
+
 	public function InvalidateCache() : void
 	{
 		_cacheIds.Clear();
 		_cacheInfusable.Clear();
 		_cacheSacrifices.Clear();
 		_cachePreviews.Clear();
+		_sacIds.Clear();
+		_sacValid.Clear();
+		_sacPreviews.Clear();
+	}
+
+	public function BeginSacrificePhase( target : SItemUniqueId ) : void
+	{
+		_sacrificePhase = true;
+		_phaseTarget = target;
+		InvalidateCache();
+	}
+
+	public function EndSacrificePhase() : void
+	{
+		_sacrificePhase = false;
+		InvalidateCache();
+	}
+
+	public function IsInSacrificePhase() : bool
+	{
+		return _sacrificePhase;
+	}
+
+	public function GetPhaseTarget() : SItemUniqueId
+	{
+		return _phaseTarget;
+	}
+
+	// Sacrifice phase: true when the item is a valid sacrifice for the phase
+	// target at this craftsman; returns the preview for that exact pair.
+	public function GetSacrificeInfo( item : SItemUniqueId, out preview : SInfusionPreview ) : bool
+	{
+		var i : int;
+		var valid : bool;
+		var p : SInfusionPreview;
+
+		for ( i = 0; i < _sacIds.Size(); i += 1 )
+		{
+			if ( _sacIds[i] == item )
+			{
+				preview = _sacPreviews[i];
+				return _sacValid[i];
+			}
+		}
+
+		valid = false;
+		if ( _sacrificePhase && infusionService && craftsman && item != _phaseTarget
+			&& _inv.GetItemCategory( item ) == _inv.GetItemCategory( _phaseTarget ) )
+		{
+			valid = infusionService.Preview( _phaseTarget, item, p, craftsman ) == IFE_Ok;
+		}
+
+		_sacIds.PushBack( item );
+		_sacValid.PushBack( valid );
+		_sacPreviews.PushBack( p );
+
+		preview = p;
+		return valid;
 	}
 
 	// True when the item can be infused by this craftsman right now; returns
@@ -97,6 +166,12 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 	// rejects weaker overrides.
 	protected function ShouldShowItem( item : SItemUniqueId ) : bool
 	{
+		var p : SInfusionPreview;
+
+		if ( _sacrificePhase )
+		{
+			return item == _phaseTarget || GetSacrificeInfo( item, p );
+		}
 		if ( super.ShouldShowItem( item ) )
 		{
 			return true;   // damaged: repairable
@@ -122,6 +197,27 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		if ( !_inv.HasItemDurability( item ) )
 		{
 			flashObject.SetMemberFlashNumber( "durability", 0 );
+		}
+
+		if ( _sacrificePhase )
+		{
+			// Section 0 ("Target") holds the picked target - activating it
+			// cancels the selection; section 1 ("Sacrifice") the candidates,
+			// each priced for this exact pair.
+			if ( item == _phaseTarget )
+			{
+				flashObject.SetMemberFlashInt( "sectionId", 0 );
+				flashObject.SetMemberFlashInt( "actionPrice", 0 );
+			}
+			else
+			{
+				flashObject.SetMemberFlashInt( "sectionId", 1 );
+				if ( GetSacrificeInfo( item, p ) )
+				{
+					flashObject.SetMemberFlashInt( "actionPrice", p.laborFee );
+				}
+			}
+			return;
 		}
 
 		if ( !IsDamaged( item ) && GetInfusionInfo( item, s, p ) )

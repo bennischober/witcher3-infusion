@@ -277,8 +277,13 @@ class CR4BlacksmithMenu extends CR4MenuBase
 				// the grid shows repairable AND infusion-capable items; the
 				// per-item action (Repair or Infuse) and price are computed
 				// per item (label in UpdateInfusionActionLabel, price in the
-				// grid component).
+				// grid component). Any state change ends a pending sacrifice
+				// selection (two-step flow, see EnterSacrificePhase).
 				case 'Repair':
+					if ( _infusionInv )
+					{
+						_infusionInv.EndSacrificePhase();
+					}
 					_infusionActive = _infusionService && _infusionCraftsman
 						&& _infusionService.GetPublicConfig().EnableInfusion();
 					if ( _infusionActive )
@@ -319,6 +324,19 @@ class CR4BlacksmithMenu extends CR4MenuBase
 	protected function SetSectionsDataList( newState : name ) : void
 	{
 		var curDataObject : CScriptedFlashObject;
+		
+		// modInfusion: sacrifice phase of the two-step infusion flow - the
+		// grid sections become "Target" (the picked item) and "Choose a
+		// sacrifice" (its valid sacrifices).
+		if ( newState == 'Repair' && _infusionInv && _infusionInv.IsInSacrificePhase() )
+		{
+			m_sectionsList = m_flashValueStorage.CreateTempFlashArray();
+			curDataObject = CreateSectionsData( 0, 0, 3, GetLocStringByKeyExt( "panel_infusion_target" ) );
+			m_sectionsList.PushBackFlashObject( curDataObject );
+			curDataObject = CreateSectionsData( 1, 4, 8, GetLocStringByKeyExt( "panel_infusion_choose_sacrifice" ) );
+			m_sectionsList.PushBackFlashObject( curDataObject );
+			return;
+		}
 		
 		// modInfusion: in non-standalone mode the Repair state uses the
 		// infusion grid when infusion is enabled (handled in ApplyMenuState).
@@ -379,7 +397,8 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		
 		repairString = "";
 		
-		if (newState == 'Repair')
+		// modInfusion: no "repair all" while choosing a sacrifice.
+		if (newState == 'Repair' && !( _infusionInv && _infusionInv.IsInSacrificePhase() ))
 		{
 			totalRepairCost = _repairInv.GetTotalRepairCost();
 			
@@ -428,16 +447,18 @@ class CR4BlacksmithMenu extends CR4MenuBase
 	{
 		var itemName		: name;
 		
-		// modInfusion -- begin: route undamaged items in the Repair state to the
-		// infusion preview popup instead of the repair flow (spec §9). Every
-		// path must answer Flash with HandleActionConfirmation: Flash waits in
-		// its Confirmation state until confirmAction() arrives (see
-		// BlacksmithMenu.as in REDkit). Early return replaced with if/else —
-		// bare 'return;' in a flash-bound event confuses the compiler's
-		// void/Bool handling here.
-		if ( _infusionActive && m_menuState == 'Repair' && !_infusionInv.IsDamaged( itemId ) )
+		// modInfusion -- begin: in the Repair state, undamaged items start the
+		// two-step infusion flow (pick target, then sacrifice; spec §9.1)
+		// instead of the repair flow; in the sacrifice phase every click
+		// belongs to the infusion flow. Every path must answer Flash with
+		// HandleActionConfirmation: Flash waits in its Confirmation state
+		// until confirmAction() arrives (see BlacksmithMenu.as in REDkit).
+		// Early return replaced with if/else — bare 'return;' in a
+		// flash-bound event confuses the compiler's void/Bool handling here.
+		if ( _infusionActive && m_menuState == 'Repair'
+			&& ( _infusionInv.IsInSacrificePhase() || !_infusionInv.IsDamaged( itemId ) ) )
 		{
-			StartInfusionFlow( itemId );
+			HandleInfusionClick( itemId );
 		}
 		else if( m_menuState == 'Disassemble' && m_standaloneMode && _inv.GetItemQuantity(itemId) == 1 )
 		{
@@ -1092,7 +1113,17 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			return;
 		}
 
-		if ( _infusionActive && _inv.IsIdValid( item )
+		if ( _infusionActive && _infusionInv.IsInSacrificePhase() && _inv.IsIdValid( item )
+			&& item == _infusionInv.GetPhaseTarget() )
+		{
+			// Activating the picked target again cancels the selection.
+			label = GetLocStringByKeyExt( "panel_common_cancel" );
+		}
+		else if ( _infusionActive && _infusionInv.IsInSacrificePhase() && _inv.IsIdValid( item ) )
+		{
+			label = GetLocStringByKeyExt( "panel_button_inventory_infuse" );
+		}
+		else if ( _infusionActive && _inv.IsIdValid( item )
 			&& !_infusionInv.IsDamaged( item ) && _infusionInv.IsInfusable( item ) )
 		{
 			label = GetLocStringByKeyExt( "panel_button_inventory_infuse" );
@@ -1126,16 +1157,73 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		HandleActionConfirmation( false );
 	}
 
-	// Runs a fresh infusion preview for the clicked item (spec §9.5: no stale
-	// values) and opens the confirmation popup with the full cost breakdown.
-	private function StartInfusionFlow( item : SItemUniqueId ) : void
+	// Two-step infusion flow (spec §9.1: the player selects target AND
+	// sacrifice). Step 1: the clicked undamaged item becomes the target and
+	// the grid switches to its valid sacrifices. Step 2: the clicked
+	// sacrifice opens the confirmation popup; clicking the target again
+	// cancels. Every path ends the Flash confirmation request.
+	private function HandleInfusionClick( item : SItemUniqueId ) : void
 	{
-		var popupData : InfusionConfirmationPopupData;
+		if ( !_infusionInv.IsInSacrificePhase() )
+		{
+			EnterSacrificePhase( item );
+		}
+		else if ( item == _infusionInv.GetPhaseTarget() )
+		{
+			EndInfusionRequest();
+			ExitSacrificePhase();
+		}
+		else
+		{
+			StartInfusionFlow( item );
+		}
+	}
 
-		if ( !_infusionService.IsSupportedTarget( item )
-			|| !_infusionService.FindBestSacrifice( _inv, item, _infusionSacrificeId, _infusionPreview, _infusionCraftsman ) )
+	private function EnterSacrificePhase( target : SItemUniqueId ) : void
+	{
+		if ( !_infusionService.IsSupportedTarget( target ) || !_infusionInv.IsInfusable( target ) )
 		{
 			showNotification( GetLocStringByKeyExt( "panel_infusion_no_sacrifice" ) );
+			OnPlaySoundEvent( "gui_global_denied" );
+			EndInfusionRequest();
+			return;
+		}
+
+		_infusionTargetId = target;
+		_infusionInv.BeginSacrificePhase( target );
+		LogChannel( 'Infusion', "flow: target " + _inv.GetItemName( target ) + " picked - choose a sacrifice" );
+
+		EndInfusionRequest();
+		SetSectionsDataList( 'Repair' );
+		UpdateRepairAllInputFeedback( 'Repair' );
+		InventoryUpdateAll();
+		UpdateInfusionActionLabel( target );
+		OnPlaySoundEvent( "gui_global_submenu_whoosh" );
+	}
+
+	private function ExitSacrificePhase() : void
+	{
+		_infusionInv.EndSacrificePhase();
+		LogChannel( 'Infusion', "flow: back to target selection" );
+
+		SetSectionsDataList( 'Repair' );
+		UpdateRepairAllInputFeedback( 'Repair' );
+		InventoryUpdateAll();
+		UpdateInfusionActionLabel( _infusionTargetId );
+	}
+
+	// Runs a fresh preview for the picked target and the clicked sacrifice
+	// (spec §9.5: no stale values) and opens the confirmation popup with
+	// the full cost breakdown.
+	private function StartInfusionFlow( sacrifice : SItemUniqueId ) : void
+	{
+		var popupData : InfusionConfirmationPopupData;
+		var err : EInfusionError;
+
+		err = _infusionService.Preview( _infusionTargetId, sacrifice, _infusionPreview, _infusionCraftsman );
+		if ( err != IFE_Ok )
+		{
+			showNotification( InfusionErrorToString( err ) );
 			OnPlaySoundEvent( "gui_global_denied" );
 			EndInfusionRequest();
 			return;
@@ -1149,12 +1237,12 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			return;
 		}
 
-		_infusionTargetId = item;
+		_infusionSacrificeId = sacrifice;
 
 		popupData = new InfusionConfirmationPopupData in this;
 		popupData.menuRef = this;
 		popupData.BlurBackground = true;
-		popupData.targetId = item;
+		popupData.targetId = _infusionTargetId;
 		popupData.sacrificeId = _infusionSacrificeId;
 		popupData.preview = _infusionPreview;
 		popupData.SetPrice( _infusionPreview.laborFee );
@@ -1179,6 +1267,11 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			}
 			showNotification( GetLocStringByKeyExt( "panel_infusion_done" ) );
 			theSound.SoundEvent( 'gui_crafting_craft_item' );
+
+			// Done: back to target selection (a failed attempt stays in the
+			// sacrifice phase so another sacrifice can be picked).
+			_infusionInv.EndSacrificePhase();
+			SetSectionsDataList( 'Repair' );
 		}
 		else
 		{
@@ -1189,6 +1282,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		EndInfusionRequest();
 		UpdateData();
 		UpdatePlayerMoney();
+		UpdateRepairAllInputFeedback( m_menuState );
 		UpdateInfusionActionLabel( _infusionTargetId );
 	}
 
@@ -1380,10 +1474,11 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 
 		inv = thePlayer.inv;
 
-		text = GetLocStringByKeyExt( inv.GetItemLocalizedNameByUniqueID( targetId ) )
-			+ ": " + preview.targetLevel + " -&gt; " + preview.newLevel;
+		text = GetLocStringByKeyExt( "panel_infusion_target" ) + ": "
+			+ GetLocStringByKeyExt( inv.GetItemLocalizedNameByUniqueID( targetId ) )
+			+ " (" + preview.targetLevel + " -&gt; " + preview.newLevel + ")";
 
-		text += "<br><font size='16'>"
+		text += "<br><font size='16'>" + GetLocStringByKeyExt( "panel_infusion_sacrifice" ) + ": "
 			+ GetLocStringByKeyExt( inv.GetItemLocalizedNameByUniqueID( sacrificeId ) )
 			+ " (" + preview.sacrificeLevel + ")";
 
