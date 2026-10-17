@@ -407,6 +407,17 @@ class W3InfusionService extends IScriptable
 		{
 			return true;
 		}
+		// Technical body items (e.g. 'Body torso medalion': category armor,
+		// tags NoDrop,NoShow,Body) are Geralt's own body meshes. They live in
+		// the player inventory but are never shown to the player; consuming
+		// one as a sacrifice would delete a body part. Same filters the
+		// vanilla inventory UI applies (W3GuiBaseInventoryComponent).
+		if ( inv.IsItemBody( item )
+			|| inv.ItemHasTag( item, theGame.params.TAG_DONT_SHOW )
+			|| inv.ItemHasTag( item, theGame.params.TAG_DONT_SHOW_ONLY_IN_PLAYERS ) )
+		{
+			return true;
+		}
 		// Aerondight grows through its own quest mechanic (effects/other/aerondight.ws).
 		if ( inv.ItemHasTag( item, 'Aerondight' ) )
 		{
