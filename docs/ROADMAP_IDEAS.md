@@ -36,6 +36,23 @@ Plan (small): in the sacrifice phase, after `GetTooltipData`, set `WarningMessag
 sacrifices to e.g. "Wird verbraucht · Zusätzlich: Lederstücke x2, Zwirn x1" (from the pair's
 preview). Needs 1–2 new strings. One test launch to check line length/wrapping.
 
+### 2b. Material icons like the crafting menu (user idea)
+
+- The crafting menu's icon list is a Flash module (`RequiredIngredientsListModule`, used by
+  `CraftingMenu.as`, `AlchemyMenu.as`, `EnchantingMenu.as`). It is **not** in
+  `panel_blacksmith.fla` or `panel_overlay.fla` (popup) — reusing it would mean SWF editing
+  (out of scope).
+- **Inline icons in text are plausible:** both the popup message and the tooltip warning line
+  are `htmlText`, and vanilla embeds images in such text (`localizedContent.ws`
+  `GetHTMLForItemICO`: `<img src="ICO_....png" vspace="-10" />`). Those are UI-library symbols,
+  though; item icons are textures loaded at runtime via `img://` + `GetItemIconPathByName`
+  (`PopupData.ws`, `W3UILoader.as`). Whether Scaleform resolves `<img src="img://icons/...">`
+  inside `htmlText` in this engine is **unverified**.
+- Experiment (small, harmless if unsupported — worst case an empty box or nothing): prefix each
+  material in the popup with `<img src='img://<icon path>' width='20' height='20'
+  vspace='-5'>`. Line height grows with the icons, so the popup layout budget (~130px) needs a
+  recheck — or show icons only for the additional (paid) materials.
+
 ## 3. Remastered script annotations instead of full-file overrides (user idea)
 
 Official REDkit docs ([WS Script Compilation Errors / overrides](https://cdprojektred.atlassian.net/wiki/spaces/W3REDkit/pages/36241598/WS+Script+Compilation+Errors+overrides),
