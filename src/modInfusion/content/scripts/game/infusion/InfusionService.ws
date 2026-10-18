@@ -65,15 +65,13 @@ class W3InfusionService extends IScriptable
 		var i : int;
 
 		parts = inv.GetItemRecyclingParts( targetId );
-		if ( parts.Size() == 0 )
-		{
-			return GetRecipeForCategory( category, recipe );
-		}
-
 		sets = GetConfig().GetLevelGapMultiplier( gap );
 		for ( i = 0; i < parts.Size(); i += 1 )
 		{
-			if ( parts[i].quantity <= 0 )
+			// Only real materials: dismantle data also lists junk (faction
+			// insignia, hafts), whole items (Geralt Shirt) and even food -
+			// unique or odd components that would block an infusion.
+			if ( parts[i].quantity <= 0 || !IsRecipeMaterial( parts[i].itemName ) )
 			{
 				continue;
 			}
@@ -85,7 +83,22 @@ class W3InfusionService extends IScriptable
 			}
 			recipe.PushBack( part );
 		}
+		if ( recipe.Size() == 0 )
+		{
+			return GetRecipeForCategory( category, recipe );
+		}
 		return true;
+	}
+
+	// Crafting and alchemy ingredients (verified 2026-10-18 over all gear
+	// dismantle data: crafting_ingredient 3037 entries, alchemy_ingredient 39,
+	// junk 18, armor 6, edibles 1).
+	private function IsRecipeMaterial( itemName : name ) : bool
+	{
+		var category : name;
+
+		category = theGame.GetDefinitionsManager().GetItemCategory( itemName );
+		return category == 'crafting_ingredient' || category == 'alchemy_ingredient';
 	}
 
 	// Fallback recipe per supported category for targets without dismantle

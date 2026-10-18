@@ -5,7 +5,7 @@ Reads the item definitions shipped with REDkit (uncooked XML under
 r4data) and applies the same balancing formulas as the mod
 (src/modInfusion/.../InfusionService.ws + InfusionConfig.ws):
 
-  recipe    = target's recycling_parts x gapFactor (ceil, >= 1 each)
+  recipe    = target's recycling_parts (crafting/alchemy ingredients only) x gapFactor (ceil, >= 1 each)
   gapFactor = min(gap / LEVELS_PER_FULL_SET, MAX_SETS)
   covered   = min(sacrifice salvage, recipe) per recipe material
   remaining = recipe - covered
@@ -108,11 +108,19 @@ def gap_factor(gap):
     return min(gap / LEVELS_PER_FULL_SET, MAX_SETS)
 
 
+# Only these count as recipe materials (InfusionService.IsRecipeMaterial):
+# dismantle data also lists junk (insignia, hafts), whole items and food.
+RECIPE_CATEGORIES = {"crafting_ingredient", "alchemy_ingredient"}
+ITEMS = {}  # filled by main(); used for the material category filter
+
+
 def recipe_for(item, gap):
     """(recipe, from_dismantle_data)"""
-    if item["parts"]:
-        sets = gap_factor(gap)
-        return [(n, max(1, math.ceil(q * sets))) for n, q in item["parts"] if q > 0], True
+    sets = gap_factor(gap)
+    recipe = [(n, max(1, math.ceil(q * sets))) for n, q in item["parts"]
+              if q > 0 and ITEMS.get(n, {}).get("category") in RECIPE_CATEGORIES]
+    if recipe:
+        return recipe, True
     return list(FALLBACK_RECIPES.get(item["category"], [])), False
 
 
@@ -211,6 +219,7 @@ def main():
     args = ap.parse_args()
 
     items = load_items(args.redkit)
+    ITEMS.update(items)
     if not items:
         sys.exit(f"no item definitions found under {args.redkit}\\r4data - set --redkit or W3_REDKIT")
 
