@@ -86,6 +86,12 @@ Verified call chain (REDkit sources):
 - The stat values come from the item's **ability list**: base abilities from the item definition
   (e.g. `Bear Armor 4 _Stats` → `armor type="base" min="240"`) plus **runtime-added crafted abilities**.
 
+*Update 2026-10-18 (patch safety):* the mod no longer duplicates these formulas. Below the
+player's max level it uses `inv.GetItemLevel` directly; near/above the cap it takes the
+uncapped `baseItemLevel` from `theGame.params.GetItemLevel` plus the adjustment block
+(`InfusionService.ComputeItemLevel` / `ComputeUncappedItemLevel`). Official changes to the
+per-slot formulas therefore flow through automatically.
+
 **The autogen system** (vanilla loot leveling; inventoryComponent.ws `GenerateItemLevel`):
 
 - Loot items tagged `Autogen` get `autogen_steel_base`/`autogen_steel_dmg` (etc.) abilities added at
