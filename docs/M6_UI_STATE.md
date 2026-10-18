@@ -274,13 +274,25 @@ Test: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, Infusion tab:
 3. Popup lists each material once.
 4. If the panel shows "cannot be dismantled" warnings or the Zerlegen label, report it.
 
+## Consistency round (2026-10-18)
+
+User report: the panel showed different materials than the popup, and the E label still
+followed hover.
+- Materials were consistent but misleading: the panel shows what the player pays; the popup's
+  "recovered" line listed the sacrifice's full breakdown, most of which the recipe doesn't use
+  (discarded, spec §5.4). The popup now shows only the covered part ("Durch Opfer gedeckt",
+  `preview.covered`) next to "Zusätzliche Materialien" — the same numbers as the panel.
+- Infuse tab buttons: E is always "Infundieren"; **Space / X = "Abbrechen"** while choosing a
+  sacrifice (second key, label + event script-controlled). No more hover dependency in this
+  tab. Check in game that the "Abbrechen" hint is visible (key-hint bar) on the Disassemble page.
+
 ## Open items before release
 
 1. **Log volume:** the grid writes one `[Infusion] grid:` line per item on every refresh (useful
    for diagnosis, noisy for players). Gate behind a debug flag before release.
 2. **Error messages are English-only:** `InfusionErrorToString` is used for in-game
    notifications (e.g. missing materials). Move to w3strings keys (en/de).
-3. **Label follows hover** (cosmetic, not fixable without SWF changes) — mention in known issues.
+3. **Label follows hover** — only left in the Repair tab's mixed grid; the Infuse tab uses constant labels + Space to cancel.
 4. **Dedicated Infuse tab (optional):** likely feasible after all. The earlier blank page
    (finding 1) was probably not a missing Flash page: `HaxGetPanelStateName` in `commonMenu.ws`
    maps unknown tab states to `''`, and the old attempt never added `"Infuse"` there, so the
