@@ -52,10 +52,14 @@ preview). Needs 1–2 new strings. One test launch to check line length/wrapping
   material in the popup with `<img src='img://<icon path>' width='20' height='20'
   vspace='-5'>`. Line height grows with the icons, so the popup layout budget (~130px) needs a
   recheck — or show icons only for the additional (paid) materials.
-- **Status 2026-10-17:** experiment in the dev build (`MaterialIconHtml` in the popup class,
-  18×18, `vspace='-4'`). Check in game: icons visible? text still inside the frame? The log line
-  `popup html:` shows the exact markup. If nothing renders, revert or try `img://` without the
-  `.dds` extension / with `.png`.
+- **Result 2026-10-18:** inline `img://` item icons **render** in the popup's `htmlText`
+  (18×18, `vspace='-4'`) — verified in game. The same round showed every material listed twice
+  (root cause: `Preview` appended to reused arrays — fixed in the service).
+- **Crafting-style cost row (user idea, built 2026-10-18, untested):** the Infuse tab now
+  renders Flash's **Disassemble** page, whose info panel lists `item.partList` as icon slots
+  (`ItemDisassembleInfo.as`, max 5) and follows the grid *selection*. The grid fills it with
+  the materials still to pay: icon, name, and `quantity` as htmlText
+  `<font color='#57D338|#EC1212'>have/need</font>` (green/red like crafting).
 
 ## 3. Remastered script annotations instead of full-file overrides (user idea)
 

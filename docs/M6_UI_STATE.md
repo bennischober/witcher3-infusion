@@ -253,6 +253,23 @@ grid and popup work in the tab. Follow-ups found in this round:
 - Next: decide tab vs. Repair tab and move `commonMenu.ws` to annotations
   (docs/ROADMAP_IDEAS.md §1, §3).
 
+## Cost display round (2026-10-18)
+
+- Popup: inline material icons render ✅. Bug: each material listed twice — `Preview`
+  appended to reused arrays (menu's stored preview, `FindBestSacrifice`'s loop, the dev
+  self-test's `Execute`). Fixed by clearing the lists in `Preview`; in-game menu infusions were
+  charged correctly (fresh struct in `ConfirmInfusion`).
+- Infuse tab now uses Flash's **Disassemble** page: the info panel shows the materials still
+  to pay as icon slots with green/red "have/need", following the selection (untested).
+
+Test: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, Infusion tab:
+1. Info panel (right) shows item icon, price and up to 5 material slots under it with icon,
+   name and a green/red `have/need` (e.g. `61/2`); the button reads Infundieren.
+2. Step 2 (after picking the target): the slots change per selected sacrifice; the target
+   itself shows no slots.
+3. Popup lists each material once.
+4. If the panel shows "cannot be dismantled" warnings or the Zerlegen label, report it.
+
 ## Open items before release
 
 1. **Log volume:** the grid writes one `[Infusion] grid:` line per item on every refresh (useful
