@@ -524,6 +524,13 @@ class W3InfusionService extends IScriptable
 		preview.sacrificeId = sacrificeId;
 		preview.errorCode = IFE_Ok;
 
+		// The material helpers append to these arrays. Callers may pass a
+		// reused struct (the menu keeps one across clicks), so start empty -
+		// otherwise lists accumulate (seen in game: every material listed
+		// twice) and Execute would verify/remove duplicated requirements.
+		preview.materials.Clear();
+		preview.salvaged.Clear();
+
 		inv = GetWitcherPlayer().inv;
 
 		if ( !inv.IsIdValid( targetId ) || !inv.IsIdValid( sacrificeId ) )
