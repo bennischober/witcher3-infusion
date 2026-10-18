@@ -267,7 +267,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 	private function SetCostPartList( out flashObject : CScriptedFlashObject, parts : array<SItemParts> ) : void
 	{
 		var list : CScriptedFlashArray;
-		var entry : CScriptedFlashObject;
+		var partData : CScriptedFlashObject;
 		var i : int;
 		var have : int;
 		var color : string;
@@ -288,11 +288,11 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 			{
 				color = "#EC1212";
 			}
-			entry = flashObject.CreateFlashObject();
-			entry.SetMemberFlashString( "name", GetLocStringByKeyExt( _inv.GetItemLocalizedNameByName( parts[i].itemName ) ) );
-			entry.SetMemberFlashString( "iconPath", _inv.GetItemIconPathByName( parts[i].itemName ) );
-			entry.SetMemberFlashString( "quantity", "<font color='" + color + "'>" + have + "/" + parts[i].quantity + "</font>" );
-			list.PushBackFlashObject( entry );
+			partData = flashObject.CreateFlashObject();
+			partData.SetMemberFlashString( "name", GetLocStringByKeyExt( _inv.GetItemLocalizedNameByName( parts[i].itemName ) ) );
+			partData.SetMemberFlashString( "iconPath", _inv.GetItemIconPathByName( parts[i].itemName ) );
+			partData.SetMemberFlashString( "quantity", "<font color='" + color + "'>" + have + "/" + parts[i].quantity + "</font>" );
+			list.PushBackFlashObject( partData );
 		}
 		flashObject.SetMemberFlashArray( "partList", list );
 	}
