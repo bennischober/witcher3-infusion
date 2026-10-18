@@ -10,7 +10,8 @@ regardless of tier (user feedback 2026-10-18).
 | --- | --- | --- |
 | Gap factor | `min(gap / 10, 3)` — 10 levels = 1 "set", capped at 3 | `InfusionConfig.GetLevelGapMultiplier` (`LEVELS_PER_FULL_SET`, `MAX_SETS`) |
 | Recipe | the **target's own dismantle data** (`recycling_parts`, what the item is made of) × gap factor, rounded up per material, at least 1 each | `InfusionService.GetRecipeForTarget` |
-| Fallback recipe | old per-category table, only for targets without dismantle data | `GetRecipeForCategory` |
+| Material filter | only `crafting_ingredient` / `alchemy_ingredient` parts count (dismantle data also lists junk like faction insignia, hafts, whole items, food) | `IsRecipeMaterial` |
+| Fallback recipe | old per-category table, only for targets without usable dismantle data | `GetRecipeForCategory` |
 | Salvage | the sacrifice's dismantle data × `SALVAGE_YIELD_MULT` (1.0) | `GetSalvageYield`, `ApplySalvageMultiplier` |
 | Covered / you pay | per recipe material: covered = `min(salvage, recipe)`, pay = `recipe − salvage`; salvage of non-recipe materials is discarded (spec §5.4) | `ComputeRemainingMaterials` (`preview.covered`, `preview.materials`) |
 | Fee | `max(10, round(targetValue × 0.25 × gapFactor × craftsman × tier))`; `targetValue` = `GetItemPriceModified(target)` (native, level/NG+-scaled) | `GetLaborFee`, `GetTargetValue` |

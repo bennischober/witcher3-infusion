@@ -292,6 +292,11 @@ New model (docs/BALANCING.md) verified in game with Zireael armor (61 → 65): r
 own components, sacrifice covers silk/straps, panel and popup agree, fee 165. Found: the popup
 still opened with a material shortfall (glowing ingot 1/3) → fixed: missing materials stop the
 flow before the popup with a localized notification naming them.
+- Follow-ups: the notification overlay briefly covered the menu (felt like flicker) →
+  sacrifices with missing materials are now disabled (`disableAction`: greyed panel, no E
+  button, denied sound, warning line "Fehlende Materialien" on the Disassemble page). A
+  Redanian armor's recipe asked for a unique insignia → recipes keep only crafting/alchemy
+  ingredients (docs/BALANCING.md).
 
 ## Open items before release
 
