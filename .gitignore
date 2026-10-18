@@ -33,3 +33,6 @@ tools/w3strings-tool/strings-cli/target/
 # Downloaded third-party tools (keep locally, never commit)
 tools/*.zip
 tools/w3stringsr*/
+
+# Pycache
+__pycache__/
