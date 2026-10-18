@@ -132,6 +132,16 @@ Fix: rename the identifier (`map` → `itemsMap` — the name CDPR itself used i
 `set` → `setType`). The other new tokens (`add`, `addfield`, `replace`, `wrap`, `enum_type`)
 remain usable as identifiers in practice.
 
+**Older keywords bite too** (verified 2026-10-18: `var entry : CScriptedFlashObject;` →
+`unexpected TOKEN_ENTRY, expecting TOKEN_IDENT, near 'entry'`). The full token table in
+`witcher3.exe` (5.01, `grep -a -o "TOKEN_[A-Z_0-9]*"`) contains these word tokens besides the
+obvious language keywords — never use them as identifiers:
+`any`, `autobind`, `cleanup`, `def`, `defaults`, `editable`, `enter`, `entry`, `hint`, `in`,
+`inlined`, `local`, `map`, `parent`, `quest`, `reward`, `saved`, `savepoint`, `scene`, `set`,
+`single`, `timer`, `virtual_parent` (plus `theGame`/`thePlayer`-style globals: `GET_GAME`,
+`GET_PLAYER`, `GET_CAMERA`, `GET_SOUND`, `GET_DEBUG`, `GET_INPUT`, `GET_TIMER`, `GET_TELEMETRY`).
+Re-run the grep after game updates.
+
 ### Encoding: UTF-8 with BOM
 
 All text files (`.ws`, `.xml`, `.csv`, `.w3strings`) must be **UTF-8 with BOM** (Next-Gen used
