@@ -61,6 +61,8 @@ struct SInfusionPreview
 	// Material model (spec §5.4): AdditionalRequired = max(0, RecipeRequired - Salvaged)
 	var materials : array<SItemParts>;   // remaining requirements AFTER the salvage discount
 	var salvaged : array<SItemParts>;    // recovered from the sacrifice (excess discarded, §5.4)
+	var covered : array<SItemParts>;     // part of the salvage that actually reduces the recipe
+	                                     // (recipe materials only, capped at the recipe amount)
 }
 
 function InfusionErrorToString( err : EInfusionError ) : string

@@ -135,11 +135,12 @@ class W3InfusionService extends IScriptable
 
 	// Remaining material requirements after applying the sacrifice's salvage
 	// as a discount (spec §5.4). Excess salvage is discarded, never refunded.
-	private function ComputeRemainingMaterials( recipe, salvaged : array<SItemParts>, out remaining : array<SItemParts> ) : void
+	private function ComputeRemainingMaterials( recipe, salvaged : array<SItemParts>, out remaining : array<SItemParts>, out covered : array<SItemParts> ) : void
 	{
 		var i, j : int;
 		var salvagedQty : int;
 		var part : SItemParts;
+		var coveredPart : SItemParts;
 
 		for ( i = 0; i < recipe.Size(); i += 1 )
 		{
@@ -151,6 +152,14 @@ class W3InfusionService extends IScriptable
 					salvagedQty = salvaged[j].quantity;
 					break;
 				}
+			}
+
+			// What the salvage really pays for (UI: "covered by sacrifice").
+			if ( salvagedQty > 0 )
+			{
+				coveredPart.itemName = recipe[i].itemName;
+				coveredPart.quantity = Min( salvagedQty, recipe[i].quantity );
+				covered.PushBack( coveredPart );
 			}
 
 			part.itemName = recipe[i].itemName;
@@ -168,7 +177,7 @@ class W3InfusionService extends IScriptable
 
 	// Scales salvage quantities by the configured yield multiplier (spec §10),
 	// rounding down. With salvage disabled economically, zeroes everything.
-	private function ApplySalvageMultiplier( salvaged : array<SItemParts> ) : void
+	private function ApplySalvageMultiplier( out salvaged : array<SItemParts> ) : void
 	{
 		var i : int;
 
@@ -530,6 +539,7 @@ class W3InfusionService extends IScriptable
 		// twice) and Execute would verify/remove duplicated requirements.
 		preview.materials.Clear();
 		preview.salvaged.Clear();
+		preview.covered.Clear();
 
 		inv = GetWitcherPlayer().inv;
 
@@ -624,7 +634,7 @@ class W3InfusionService extends IScriptable
 		GetSalvageYield( inv, sacrificeId, preview.salvaged );
 		ApplySalvageMultiplier( preview.salvaged );
 		remaining.Clear();
-		ComputeRemainingMaterials( preview.materials, preview.salvaged, remaining );
+		ComputeRemainingMaterials( preview.materials, preview.salvaged, remaining, preview.covered );
 		preview.materials = remaining;
 
 		preview.stepsToAdd = gap;

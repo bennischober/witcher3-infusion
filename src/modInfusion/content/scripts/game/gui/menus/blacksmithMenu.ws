@@ -1575,7 +1575,10 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 			+ GetLocStringByKeyExt( inv.GetItemLocalizedNameByUniqueID( sacrificeId ) )
 			+ " (" + preview.sacrificeLevel + ")";
 
-		parts = DescribeParts( preview.salvaged );
+		// Only the salvage that actually reduces the recipe; the rest of the
+		// sacrifice's breakdown is discarded (spec §5.4) and listing it read
+		// like a discount that does not exist.
+		parts = DescribeParts( preview.covered );
 		if ( parts != "-" )
 		{
 			text += "<br>" + GetLocStringByKeyExt( "panel_infusion_recovered" ) + ": " + parts;
