@@ -437,8 +437,14 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		
 		repairString = "";
 		
-		// modInfusion: no "repair all" while choosing a sacrifice.
-		if (newState == 'Repair' && !( _infusionInv && _infusionInv.IsInSacrificePhase() ))
+		// modInfusion: the Infuse tab uses the second key (Space / X, "repair
+		// all" in the Repair tab) to cancel the sacrifice choice; no "repair
+		// all" while choosing a sacrifice.
+		if ( newState == 'Infuse' && _infusionInv && _infusionInv.IsInSacrificePhase() )
+		{
+			repairString = GetLocStringByKeyExt( "panel_common_cancel" );
+		}
+		else if (newState == 'Repair' && !( _infusionInv && _infusionInv.IsInSacrificePhase() ))
 		{
 			totalRepairCost = _repairInv.GetTotalRepairCost();
 			
@@ -926,7 +932,16 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		
 		totalRepairCost = _repairInv.GetTotalRepairCost();
 		
-		if (_inv.GetMoney() < totalRepairCost) 
+		// modInfusion: in the Infuse tab this key cancels the sacrifice choice
+		// (if/else instead of an early return - see OnRequestConfirmation).
+		if ( m_menuState == 'Infuse' )
+		{
+			if ( _infusionInv && _infusionInv.IsInSacrificePhase() )
+			{
+				ExitSacrificePhase();
+			}
+		}
+		else if (_inv.GetMoney() < totalRepairCost) 
 		{
 			showNotification( GetLocStringByKeyExt( "panel_shop_notification_not_enough_money" ) );
 			HandleActionConfirmation(false);
@@ -1180,6 +1195,16 @@ class CR4BlacksmithMenu extends CR4MenuBase
 
 		if ( ( m_menuState != 'Repair' && m_menuState != 'Infuse' ) || !_infusionInv || !m_flashModule )
 		{
+			return;
+		}
+
+		// Infuse tab: one constant label. Flash only tells script which item
+		// is hovered (OnGetItemData), not which one is selected, so any
+		// per-item label can mismatch with the mouse; cancelling the target
+		// choice lives on the second key instead (UpdateRepairAllInputFeedback).
+		if ( m_menuState == 'Infuse' )
+		{
+			SetRepairPanelButtonLabel( GetLocStringByKeyExt( "panel_button_inventory_infuse" ) );
 			return;
 		}
 
