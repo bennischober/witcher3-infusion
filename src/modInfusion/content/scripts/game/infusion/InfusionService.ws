@@ -287,117 +287,109 @@ class W3InfusionService extends IScriptable
 	// Level computation (side-effect free replication of the game's derivation)
 	// ---------------------------------------------------------------------
 
-	// Computes the level the game would display for this item WITHOUT mutating it.
-	// Replicates inventoryComponent.GetItemLevel + gameParams.GetItemLevel
-	// (verified identical in vanilla 4.04c and in this install's merged scripts,
-	// for the categories supported here; bolts/crossbows are not supported).
-	//
-	// Deliberately UNCAPPED at the upper end (no maxLevel clamp): the add-until-equal
-	// loop in Execute relies on uncapped equality, and uncapped equality of two items
-	// implies equality of their clamped tooltip levels on every install variant
-	// (vanilla NG+ uncaps tooltips; the merged scripts cap them — both are monotonic).
-	// The lower clamp (>= 1) matches vanilla semantics on both sides.
+	// Item level as the game shows it, without a level cap (spec §8.3).
+	// Below the player's max level the game's own GetItemLevel is used as-is -
+	// all of CDPR's formulas and adjustments apply, and official patches to
+	// them flow through. Only near/above the cap (where GetItemLevel clamps to
+	// GetMaxLevel, blocking NG+ progression) the uncapped value is taken from
+	// theGame.params.GetItemLevel's baseItemLevel output, plus the small
+	// adjustment block of inventoryComponent.GetItemLevel (5.01). The margin
+	// covers those adjustments (largest: -3 OlgierdSabre, -1 EP1), which the
+	// game applies after its cap.
 	public function ComputeItemLevel( inv : CInventoryComponent, item : SItemUniqueId ) : int
 	{
-		var category : name;
-		var quality : int;
 		var level : int;
-		var stat : SAbilityAttributeValue;
-		var statF : float;
+		var maxLevel : int;
 
-		if ( !inv.IsIdValid( item ) )
+		if ( !inv.IsIdValid( item ) || !IsLeveledCategory( inv.GetItemCategory( item ) ) )
 		{
-			return 0;
+			return 0;   // unsupported category: no meaningful level
 		}
 
-		category = inv.GetItemCategory( item );
-		quality = RoundMath( CalculateAttributeValue( inv.GetItemAttributeValue( item, 'quality' ) ) );
+		level = inv.GetItemLevel( item );
+		maxLevel = GetWitcherPlayer().GetMaxLevel();
+		if ( level < maxLevel - LEVEL_CAP_MARGIN )
+		{
+			return level;
+		}
+		return ComputeUncappedItemLevel( inv, item );
+	}
 
-		// Per-category stat_min / stat_add exactly as gameParams.ws GetItemLevel
-		// (5.01). Boots/pants/gloves used to share the armor formula, which put
-		// their levels at roughly a third of the real value (e.g. NG+ Witcher
-		// boots computed as L18) and broke the step count for those slots.
+	private const var LEVEL_CAP_MARGIN : int;
+	default LEVEL_CAP_MARGIN = 5;
+
+	private function IsLeveledCategory( category : name ) : bool
+	{
+		return category == 'armor' || category == 'boots' || category == 'gloves' || category == 'pants'
+			|| category == 'steelsword' || category == 'silversword';
+	}
+
+	// Uncapped variant of inventoryComponent.GetItemLevel: same attribute
+	// list for theGame.params.GetItemLevel, its uncapped baseItemLevel, then
+	// the same adjustments - without the final clamp to the player's max level.
+	private function ComputeUncappedItemLevel( inv : CInventoryComponent, item : SItemUniqueId ) : int
+	{
+		var category : name;
+		var attributes : array<SAbilityAttributeValue>;
+		var quality : int;
+		var level : int;
+		var baseLevel : int;
+
+		category = inv.GetItemCategory( item );
 		switch ( category )
 		{
 			case 'armor':
-				stat = inv.GetItemAttributeValue( item, 'armor' );
-				level = FloorF( 1 + ( stat.valueBase - 25 ) / 5 );
-				break;
-
 			case 'boots':
-			case 'pants':
-				stat = inv.GetItemAttributeValue( item, 'armor' );
-				level = FloorF( 1 + ( stat.valueBase - 5 ) / 2 );
-				break;
-
 			case 'gloves':
-				stat = inv.GetItemAttributeValue( item, 'armor' );
-				level = FloorF( 1 + ( stat.valueBase - 1 ) / 2 );
+			case 'pants':
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'armor' ) );
 				break;
 
 			case 'silversword':
-				statF = SumWeaponDamage( inv, item, true );
-				level = CeilF( 1 + ( 1 + statF - 90 ) / 10 );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'SilverDamage' ) );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'BludgeoningDamage' ) );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'RendingDamage' ) );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'ElementalDamage' ) );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'FireDamage' ) );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'PiercingDamage' ) );
 				break;
 
 			case 'steelsword':
-				statF = SumWeaponDamage( inv, item, false );
-				level = CeilF( 1 + ( 1 + statF - 25 ) / 8 );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'SlashingDamage' ) );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'BludgeoningDamage' ) );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'RendingDamage' ) );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'ElementalDamage' ) );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'FireDamage' ) );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'SilverDamage' ) );
+				attributes.PushBack( inv.GetItemAttributeValue( item, 'PiercingDamage' ) );
 				break;
-
-			default:
-				return 0; // unsupported category: no meaningful level
 		}
 
-		level = level - 1;
+		theGame.params.GetItemLevel( category, attributes, inv.GetItemName( item ), baseLevel );
+		level = baseLevel;
 
-		// Quality adjustments (inventoryComponent.GetItemLevel):
-		if ( quality == 5 ) level -= 2;   // Witcher gear
-		if ( quality == 4 ) level -= 1;   // relic gear
-
-		if ( inv.ItemHasTag( item, 'OlgierdSabre' ) ) level -= 3;
-		if ( ( quality == 4 || quality == 5 ) && inv.ItemHasTag( item, 'EP1' ) ) level -= 1;
-
-		if ( level < 1 ) level = 1;
-
+		quality = RoundMath( CalculateAttributeValue( inv.GetItemAttributeValue( item, 'quality' ) ) );
+		if ( quality == 5 )
+		{
+			level -= 2;   // Witcher gear
+		}
+		else if ( quality == 4 )
+		{
+			level -= 1;   // relic gear
+		}
+		if ( level < 1 )
+		{
+			level = 1;
+		}
+		if ( inv.ItemHasTag( item, 'OlgierdSabre' ) )
+		{
+			level -= 3;
+		}
+		if ( ( quality == 4 || quality == 5 ) && inv.ItemHasTag( item, 'EP1' ) )
+		{
+			level -= 1;
+		}
 		return level;
-	}
-
-	// Sum of damage attributes used by the level formula.
-	// silversword: SilverDamage + Bludgeoning + Rending + Elemental + Fire + Piercing
-	// steelsword : SlashingDamage + Bludgeoning + Rending + Elemental + Fire + Silver + Piercing
-	private function SumWeaponDamage( inv : CInventoryComponent, item : SItemUniqueId, isSilver : bool ) : float
-	{
-		var sum : float;
-		var stat : SAbilityAttributeValue;
-
-		if ( isSilver )
-		{
-			sum += GetAttrBase( inv, item, 'SilverDamage' ) - 1;
-			sum += GetAttrBase( inv, item, 'BludgeoningDamage' ) - 1;
-			sum += GetAttrBase( inv, item, 'RendingDamage' ) - 1;
-			sum += GetAttrBase( inv, item, 'ElementalDamage' ) - 1;
-			sum += GetAttrBase( inv, item, 'FireDamage' ) - 1;
-			sum += GetAttrBase( inv, item, 'PiercingDamage' ) - 1;
-		}
-		else
-		{
-			sum += GetAttrBase( inv, item, 'SlashingDamage' ) - 1;
-			sum += GetAttrBase( inv, item, 'BludgeoningDamage' ) - 1;
-			sum += GetAttrBase( inv, item, 'RendingDamage' ) - 1;
-			sum += GetAttrBase( inv, item, 'ElementalDamage' ) - 1;
-			sum += GetAttrBase( inv, item, 'FireDamage' ) - 1;
-			sum += GetAttrBase( inv, item, 'SilverDamage' ) - 1;
-			sum += GetAttrBase( inv, item, 'PiercingDamage' ) - 1;
-		}
-		return sum;
-	}
-
-	private function GetAttrBase( inv : CInventoryComponent, item : SItemUniqueId, attributeName : name ) : float
-	{
-		var stat : SAbilityAttributeValue;
-		stat = inv.GetItemAttributeValue( item, attributeName );
-		return stat.valueBase;
 	}
 
 	// ---------------------------------------------------------------------
