@@ -218,11 +218,13 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		}
 		
 		// modInfusion: the Infuse tab has no page of its own in the SWF - Flash
-		// receives 'Repair' (same grid + info panel), the script state stays
-		// 'Infuse' so ApplyMenuState and the confirmation routing know it.
+		// receives 'Disassemble' (same grid; its info panel shows a per-item
+		// icon list, used for the infusion costs - see SetCostPartList in the
+		// grid component). The script state stays 'Infuse' so ApplyMenuState
+		// and the confirmation routing know it.
 		if ( newState == 'Infuse' )
 		{
-			super.SetMenuState( 'Repair' );
+			super.SetMenuState( 'Disassemble' );
 			m_menuState = 'Infuse';
 			SetInfuseEmptyListText();
 			// Flash's setMenuState just reset the button to "Repair"; in this
@@ -1142,7 +1144,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 	{
 		if ( m_menuState == 'Infuse' )
 		{
-			m_fxSetState.InvokeSelfOneArg( FlashArgString( "Repair" ) );
+			m_fxSetState.InvokeSelfOneArg( FlashArgString( "Disassemble" ) );
 		}
 		else
 		{
@@ -1209,21 +1211,31 @@ class CR4BlacksmithMenu extends CR4MenuBase
 	{
 		var panel : CScriptedFlashObject;
 		var fxSetButtonData : CScriptedFlashFunction;
+		var panelName : string;
 
 		if ( !m_flashModule )
 		{
 			return;
 		}
-		panel = m_flashModule.GetMemberFlashObject( "panelRepair" );
+		// The Infuse tab renders the Disassemble page (see SetMenuState).
+		if ( m_menuState == 'Infuse' )
+		{
+			panelName = "panelDisassemble";
+		}
+		else
+		{
+			panelName = "panelRepair";
+		}
+		panel = m_flashModule.GetMemberFlashObject( panelName );
 		if ( !panel )
 		{
-			LogChannel( 'Infusion', "label: panelRepair not reachable from script" );
+			LogChannel( 'Infusion', "label: " + panelName + " not reachable from script" );
 			return;
 		}
 		fxSetButtonData = panel.GetMemberFlashFunction( "setButtonData" );
 		if ( !fxSetButtonData )
 		{
-			LogChannel( 'Infusion', "label: panelRepair.setButtonData not reachable from script" );
+			LogChannel( 'Infusion', "label: " + panelName + ".setButtonData not reachable from script" );
 			return;
 		}
 		fxSetButtonData.InvokeSelfThreeArgs( FlashArgString( label ), FlashArgString( "enter-gamepad_A" ), FlashArgInt( 69 ) );

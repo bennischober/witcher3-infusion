@@ -227,6 +227,10 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 			{
 				flashObject.SetMemberFlashInt( "sectionId", 0 );
 				flashObject.SetMemberFlashInt( "actionPrice", 0 );
+				if ( _infuseOnly )
+				{
+					flashObject.SetMemberFlashArray( "partList", flashObject.CreateFlashArray() );
+				}
 			}
 			else
 			{
@@ -234,6 +238,10 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 				if ( GetSacrificeInfo( item, p ) )
 				{
 					flashObject.SetMemberFlashInt( "actionPrice", p.laborFee );
+					if ( _infuseOnly )
+					{
+						SetCostPartList( flashObject, p.materials );
+					}
 				}
 			}
 			return;
@@ -242,6 +250,50 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		if ( ( _infuseOnly || !IsDamaged( item ) ) && GetInfusionInfo( item, s, p ) )
 		{
 			flashObject.SetMemberFlashInt( "actionPrice", p.laborFee );
+			if ( _infuseOnly )
+			{
+				SetCostPartList( flashObject, p.materials );
+			}
 		}
+	}
+
+	// Infuse tab: the materials still to pay (after the salvage discount),
+	// shown like the crafting menu's ingredient row. The tab renders Flash's
+	// Disassemble page, whose info panel lists item.partList as icon slots
+	// (ItemDisassembleInfo.as, max 5; name/iconPath/quantity as in
+	// guiDisassembleInventoryComponent.ws). The slot renders quantity as
+	// htmlText (InventorySlotOverlay.SetQuantity), so it carries a crafting-
+	// style "have/need" in green or red.
+	private function SetCostPartList( out flashObject : CScriptedFlashObject, parts : array<SItemParts> ) : void
+	{
+		var list : CScriptedFlashArray;
+		var entry : CScriptedFlashObject;
+		var i : int;
+		var have : int;
+		var color : string;
+
+		list = flashObject.CreateFlashArray();
+		for ( i = 0; i < parts.Size(); i += 1 )
+		{
+			if ( parts[i].quantity <= 0 )
+			{
+				continue;
+			}
+			have = _inv.GetItemQuantityByName( parts[i].itemName );
+			if ( have >= parts[i].quantity )
+			{
+				color = "#57D338";
+			}
+			else
+			{
+				color = "#EC1212";
+			}
+			entry = flashObject.CreateFlashObject();
+			entry.SetMemberFlashString( "name", GetLocStringByKeyExt( _inv.GetItemLocalizedNameByName( parts[i].itemName ) ) );
+			entry.SetMemberFlashString( "iconPath", _inv.GetItemIconPathByName( parts[i].itemName ) );
+			entry.SetMemberFlashString( "quantity", "<font color='" + color + "'>" + have + "/" + parts[i].quantity + "</font>" );
+			list.PushBackFlashObject( entry );
+		}
+		flashObject.SetMemberFlashArray( "partList", list );
 	}
 }
