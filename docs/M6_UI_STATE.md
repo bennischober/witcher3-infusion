@@ -286,6 +286,13 @@ followed hover.
   sacrifice (second key, label + event script-controlled). No more hover dependency in this
   tab. Check in game that the "Abbrechen" hint is visible (key-hint bar) on the Disassemble page.
 
+## Balancing round (2026-10-18)
+
+New model (docs/BALANCING.md) verified in game with Zireael armor (61 → 65): recipe from its
+own components, sacrifice covers silk/straps, panel and popup agree, fee 165. Found: the popup
+still opened with a material shortfall (glowing ingot 1/3) → fixed: missing materials stop the
+flow before the popup with a localized notification naming them.
+
 ## Open items before release
 
 1. **Log volume:** the grid writes one `[Infusion] grid:` line per item on every refresh (useful
