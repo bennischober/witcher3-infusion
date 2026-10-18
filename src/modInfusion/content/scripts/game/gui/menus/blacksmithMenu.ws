@@ -1337,6 +1337,9 @@ class CR4BlacksmithMenu extends CR4MenuBase
 	{
 		var popupData : InfusionConfirmationPopupData;
 		var err : EInfusionError;
+		var missing : array<SItemParts>;
+		var missingText : string;
+		var i : int;
 
 		err = _infusionService.Preview( _infusionTargetId, sacrifice, _infusionPreview, _infusionCraftsman );
 		if ( err != IFE_Ok )
@@ -1350,6 +1353,26 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		if ( _inv.GetMoney() < _infusionPreview.laborFee )
 		{
 			showNotification( GetLocStringByKeyExt( "panel_shop_notification_not_enough_money" ) );
+			OnPlaySoundEvent( "gui_global_denied" );
+			EndInfusionRequest();
+			return;
+		}
+
+		// Missing materials stop the flow here, before the confirmation
+		// (Execute would refuse anyway); the notification names what and how
+		// many are missing.
+		if ( _infusionService.GetMissingMaterials( _inv, _infusionPreview.materials, missing ) )
+		{
+			missingText = "";
+			for ( i = 0; i < missing.Size(); i += 1 )
+			{
+				if ( missingText != "" )
+				{
+					missingText += ", ";
+				}
+				missingText += GetLocStringByKeyExt( _inv.GetItemLocalizedNameByName( missing[i].itemName ) ) + " x" + missing[i].quantity;
+			}
+			showNotification( GetLocStringByKeyExt( "panel_infusion_missing" ) + ": " + missingText );
 			OnPlaySoundEvent( "gui_global_denied" );
 			EndInfusionRequest();
 			return;

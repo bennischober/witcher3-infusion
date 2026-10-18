@@ -764,6 +764,32 @@ class W3InfusionService extends IScriptable
 
 	// True when the inventory holds at least the required quantity of every
 	// remaining material.
+	// UI pre-check (same rule as VerifyMaterials in Execute): which remaining
+	// materials the player lacks, and how many. True when anything is missing.
+	public function GetMissingMaterials( inv : CInventoryComponent, required : array<SItemParts>, out missing : array<SItemParts> ) : bool
+	{
+		var i : int;
+		var have : int;
+		var part : SItemParts;
+
+		missing.Clear();
+		for ( i = 0; i < required.Size(); i += 1 )
+		{
+			if ( required[i].quantity <= 0 )
+			{
+				continue;
+			}
+			have = inv.GetItemQuantityByName( required[i].itemName );
+			if ( have < required[i].quantity )
+			{
+				part.itemName = required[i].itemName;
+				part.quantity = required[i].quantity - have;
+				missing.PushBack( part );
+			}
+		}
+		return missing.Size() > 0;
+	}
+
 	private function VerifyMaterials( inv : CInventoryComponent, required : array<SItemParts> ) : bool
 	{
 		var i : int;
