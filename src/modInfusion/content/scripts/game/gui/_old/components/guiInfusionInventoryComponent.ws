@@ -206,6 +206,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 	{
 		var s : SItemUniqueId;
 		var p : SInfusionPreview;
+		var missing : array<SItemParts>;
 
 		super.SetInventoryFlashObjectForItem( item, flashObject );
 
@@ -241,6 +242,15 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 					if ( _infuseOnly )
 					{
 						SetCostPartList( flashObject, p.materials );
+						// Like a disabled craft button: a sacrifice whose
+						// remaining materials are missing cannot be activated.
+						// Flash then greys the panel, hides the E button,
+						// plays the denied sound and shows the page's warning
+						// line (text set by the menu) - all selection-driven.
+						if ( infusionService.GetMissingMaterials( _inv, p.materials, missing ) )
+						{
+							flashObject.SetMemberFlashBool( "disableAction", true );
+						}
 					}
 				}
 			}

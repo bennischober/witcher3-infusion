@@ -227,6 +227,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			super.SetMenuState( 'Disassemble' );
 			m_menuState = 'Infuse';
 			SetInfuseEmptyListText();
+			SetDisassembleWarningText( GetLocStringByKeyExt( "panel_infusion_missing" ) );
 			// Flash's setMenuState just reset the button to "Repair"; in this
 			// tab every listed item is an infusion target.
 			SetRepairPanelButtonLabel( GetLocStringByKeyExt( "panel_button_inventory_infuse" ) );
@@ -234,6 +235,11 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		else
 		{
 			super.SetMenuState(newState);
+			// The real Disassemble tab gets its vanilla warning back.
+			if ( newState == 'Disassemble' )
+			{
+				SetDisassembleWarningText( GetLocStringByKeyExt( "panel_blacksmith_items_cant_disassemble" ) );
+			}
 		}
 		if (m_menuInited)
 		{
@@ -1164,6 +1170,39 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		else
 		{
 			super.RefreshMenuState();
+		}
+	}
+
+	// The Disassemble page's warning line (warningDisassemble.container.
+	// textField, BlacksmithMenu.as) appears for items with disableAction. Flash
+	// sets its text once at construction; the Infuse tab uses it for
+	// "missing materials", the Disassemble tab restores the vanilla text.
+	private function SetDisassembleWarningText( text : string ) : void
+	{
+		var warning : CScriptedFlashSprite;
+		var container : CScriptedFlashSprite;
+		var tf : CScriptedFlashTextField;
+
+		if ( !m_flashModule )
+		{
+			return;
+		}
+		warning = m_flashModule.GetChildFlashSprite( "warningDisassemble" );
+		if ( warning )
+		{
+			container = warning.GetChildFlashSprite( "container" );
+		}
+		if ( container )
+		{
+			tf = container.GetChildFlashTextField( "textField" );
+		}
+		if ( tf )
+		{
+			tf.SetText( text );
+		}
+		else
+		{
+			LogChannel( 'Infusion', "warning text: warningDisassemble.container.textField not reachable" );
 		}
 	}
 
