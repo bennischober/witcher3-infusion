@@ -260,7 +260,11 @@ grid and popup work in the tab. Follow-ups found in this round:
   self-test's `Execute`). Fixed by clearing the lists in `Preview`; in-game menu infusions were
   charged correctly (fresh struct in `ConfirmInfusion`).
 - Infuse tab now uses Flash's **Disassemble** page: the info panel shows the materials still
-  to pay as icon slots with green/red "have/need", following the selection (untested).
+  to pay as icon slots with green/red "have/need", following the selection. **Verified in
+  game:** e.g. Lederstücke 5/2 (recipe 2, no salvage) and Zwirn 112/1 (recipe 4 − 3 salvaged),
+  same row in step 1 and step 2 for identical sacrifices. Layout trade-offs of the Disassemble
+  page: pliers icon in the middle column, no item picture/condition in the panel, price box at
+  the bottom. (A compile error on the first try — `entry` is a reserved word — was fixed.)
 
 Test: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, Infusion tab:
 1. Info panel (right) shows item icon, price and up to 5 material slots under it with icon,
