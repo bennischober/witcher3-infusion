@@ -141,7 +141,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 			infusable = infusionService.FindBestSacrifice( _inv, item, s, p, craftsman );
 			if ( infusable )
 			{
-				LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " infusable (sacrifice: " + _inv.GetItemName( s ) + ", gap " + p.levelGap + ", fee " + p.laborFee + ")" );
+				LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " infusable (sacrifice: " + _inv.GetItemName( s ) + ", gap " + p.levelGap + ", fee " + p.laborFee + ", target value " + infusionService.GetPublicConfig().GetTargetValue( _inv, item ) + ")" );
 			}
 			else
 			{

@@ -49,9 +49,47 @@ class W3InfusionService extends IScriptable
 	// the config class stores as per-category constants (see GetRecipeForCategory).
 	// ---------------------------------------------------------------------
 
-	// Base recipe per supported category. Values deliberately overlap with the
-	// category's typical sacrifice yields so the salvage discount is exercised.
-	// These are prototype balance values, not final decisions (spec §16 M3).
+	// Recipe for a target and level gap (balancing model 2026-10-18): the
+	// target's OWN components - its vanilla dismantle data (recycling_parts),
+	// i.e. what the item is made of - scaled by the level gap: 10 levels = one
+	// full set (rounded up per material, at least 1 each), capped at
+	// MAX_SETS. Ordinary gear needs ordinary materials, Witcher gear needs
+	// its rare ones (chitin, infused dust, dwimeryte, glowing ore, ...), all
+	// from game data. Items without dismantle data fall back to the old
+	// per-category table.
+	private function GetRecipeForTarget( inv : CInventoryComponent, targetId : SItemUniqueId, category : name, gap : int, out recipe : array<SItemParts> ) : bool
+	{
+		var parts : array<SItemParts>;
+		var part : SItemParts;
+		var sets : float;
+		var i : int;
+
+		parts = inv.GetItemRecyclingParts( targetId );
+		if ( parts.Size() == 0 )
+		{
+			return GetRecipeForCategory( category, recipe );
+		}
+
+		sets = GetConfig().GetLevelGapMultiplier( gap );
+		for ( i = 0; i < parts.Size(); i += 1 )
+		{
+			if ( parts[i].quantity <= 0 )
+			{
+				continue;
+			}
+			part.itemName = parts[i].itemName;
+			part.quantity = CeilF( parts[i].quantity * sets );
+			if ( part.quantity < 1 )
+			{
+				part.quantity = 1;
+			}
+			recipe.PushBack( part );
+		}
+		return true;
+	}
+
+	// Fallback recipe per supported category for targets without dismantle
+	// data (prototype values from M3).
 	private function GetRecipeForCategory( category : name, out recipe : array<SItemParts> ) : bool
 	{
 		var part : SItemParts;
@@ -627,10 +665,13 @@ class W3InfusionService extends IScriptable
 			return preview.errorCode;
 		}
 
-		// Materials (spec §5.2/§5.4): native salvage data as discount, scaled
-		// by the configured yield multiplier. Recipes are not gap-dependent
-		// (spec §6.1: no double-charging the same gap).
-		GetRecipeForCategory( targetData.category, preview.materials );
+		// Materials (spec §5.2/§5.4): the target's own components scaled by
+		// the gap (GetRecipeForTarget); the sacrifice's native salvage data is
+		// the discount, scaled by the configured yield multiplier. Deliberate
+		// deviation from "recipes are not gap-dependent": both the fee
+		// (labor) and the materials (physical work per level) grow with the
+		// gap - a 1-level touch-up must not cost the same as a 30-level jump.
+		GetRecipeForTarget( inv, targetId, targetData.category, gap, preview.materials );
 		GetSalvageYield( inv, sacrificeId, preview.salvaged );
 		ApplySalvageMultiplier( preview.salvaged );
 		remaining.Clear();
@@ -639,7 +680,7 @@ class W3InfusionService extends IScriptable
 
 		preview.stepsToAdd = gap;
 		preview.newLevel = targetLevel + gap;
-		preview.laborFee = GetLaborFee( inv, sacrificeId, gap, quality, craftsmanLevel );
+		preview.laborFee = GetLaborFee( inv, targetId, gap, quality, craftsmanLevel );
 		preview.errorCode = IFE_Ok;
 		return preview.errorCode;
 	}
@@ -784,24 +825,25 @@ class W3InfusionService extends IScriptable
 	// scaled by craftsman tier, target tier, and level gap — spec §6.2/§6.3)
 	// ---------------------------------------------------------------------
 
-	private function GetLaborFee( inv : CInventoryComponent, sacrificeId : SItemUniqueId, gap : int, quality : int, craftsmanLevel : int ) : int
+	private function GetLaborFee( inv : CInventoryComponent, targetId : SItemUniqueId, gap : int, quality : int, craftsmanLevel : int ) : int
 	{
 		var fee : float;
 		var mult : float;
-		var sacrificeValue : int;
+		var targetValue : int;
 		var minFee : int;
 
-		// Anchor: the sacrifice's market value (auto-balances with the game's
-		// economy — official updates to item prices/loot scaling flow through).
-		sacrificeValue = GetConfig().GetSacrificeValue( inv, sacrificeId );
+		// Anchor: the TARGET's market value - upgrading valuable gear costs
+		// more; auto-balances with the game's economy (official updates to
+		// item prices flow through).
+		targetValue = GetConfig().GetTargetValue( inv, targetId );
 
 		mult = GetConfig().GetCraftsmanMultiplier( craftsmanLevel )
 			* GetConfig().GetTargetTierMultiplier( quality )
 			* GetConfig().GetLevelGapMultiplier( gap );
 
-		fee = sacrificeValue * GetConfig().GetFeeFraction() * mult;
+		fee = targetValue * GetConfig().GetFeeFraction() * mult;
 
-		// Labor floor: even a zero-value sacrifice costs the craftsman's time.
+		// Labor floor: small upgrades of cheap items still cost labor.
 		minFee = GetConfig().GetMinLaborFee();
 		if ( fee < minFee )
 		{

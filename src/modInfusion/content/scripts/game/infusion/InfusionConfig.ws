@@ -53,9 +53,13 @@ class W3InfusionConfig extends IScriptable
 
 	// ============================= labor fees ==============================
 
-	// Fee as a fraction of the sacrifice's market value (auto-balance anchor).
-	private const var FEE_FRACTION_OF_SACRIFICE_VALUE : float;
-	default FEE_FRACTION_OF_SACRIFICE_VALUE = 0.10f;   // 10% of the sacrifice's value
+	// Balancing model (2026-10-18): the fee is anchored to the TARGET's market
+	// value (the item being upgraded), not the sacrifice's - sacrifices are
+	// usually cheap loot, which made large upgrades of valuable gear nearly
+	// free. fee = targetValue * fraction * gapFactor * craftsman * tier.
+	// At a 10-level gap the fee is 25% of the target's current value.
+	private const var FEE_FRACTION_OF_TARGET_VALUE : float;
+	default FEE_FRACTION_OF_TARGET_VALUE = 0.25f;
 
 	// Floor so tiny/zero-value sacrifices still cost something (labor!).
 	private const var MIN_LABOR_FEE : int;
@@ -74,30 +78,34 @@ class W3InfusionConfig extends IScriptable
 	private const var MULT_ARCH_MASTER : float;
 	default MULT_ARCH_MASTER = 2.5f;
 
-	// Target tier multipliers by item quality (1..5).
+	// Target tier multipliers by item quality (1..5) (spec §6.3 knob). 1.0 by
+	// default: the target's market value already scales with its tier
+	// (Witcher armor ~4,500 base vs ~250 for ordinary armor).
 	private const var TIER_MULT_1 : float;
 	default TIER_MULT_1 = 1.0f;
 
 	private const var TIER_MULT_2 : float;
-	default TIER_MULT_2 = 1.2f;
+	default TIER_MULT_2 = 1.0f;
 
 	private const var TIER_MULT_3 : float;
-	default TIER_MULT_3 = 1.5f;
+	default TIER_MULT_3 = 1.0f;
 
 	private const var TIER_MULT_4 : float;
-	default TIER_MULT_4 = 2.0f;
+	default TIER_MULT_4 = 1.0f;
 
 	private const var TIER_MULT_5 : float;
-	default TIER_MULT_5 = 3.0f;
+	default TIER_MULT_5 = 1.0f;
 
-	// Level-gap cost curve (spec §7.1): multiplier = 1 + gap/gapDivisor,
-	// capped at gapMaxMult (spec §7.2: cap so master services are not
-	// mandatory for every upgrade).
-	private const var GAP_DIVISOR : float;
-	default GAP_DIVISOR = 10.0f;
+	// Level-gap factor (spec §7.1), shared by the fee and the material
+	// recipe: gapFactor = gap / LEVELS_PER_FULL_SET, capped at MAX_SETS.
+	// 10 levels = one full set of the target's components and 1x the fee
+	// fraction; the cap keeps huge NG+ jumps bounded (spec §8.3: no level
+	// cap, but costs must stay valid).
+	private const var LEVELS_PER_FULL_SET : float;
+	default LEVELS_PER_FULL_SET = 10.0f;
 
-	private const var GAP_MAX_MULT : float;
-	default GAP_MAX_MULT = 3.0f;
+	private const var MAX_SETS : float;
+	default MAX_SETS = 3.0f;
 
 	// ============================== salvage ================================
 
@@ -196,20 +204,21 @@ class W3InfusionConfig extends IScriptable
 		return TIER_MULT_5;
 	}
 
-	// Level-gap multiplier (spec §7.1): 1 + gap/divisor, capped.
+	// Level-gap factor (spec §7.1): gap / LEVELS_PER_FULL_SET, capped at
+	// MAX_SETS. Used for the fee and for the material recipe.
 	public function GetLevelGapMultiplier( levelGap : int ) : float
 	{
 		var mult : float;
 
 		if ( levelGap <= 0 )
 		{
-			return 1.0f;
+			return 0.0f;
 		}
 
-		mult = 1.0f + levelGap / GAP_DIVISOR;
-		if ( mult > GAP_MAX_MULT )
+		mult = levelGap / LEVELS_PER_FULL_SET;
+		if ( mult > MAX_SETS )
 		{
-			mult = GAP_MAX_MULT;
+			mult = MAX_SETS;
 		}
 		return mult;
 	}
@@ -230,12 +239,12 @@ class W3InfusionConfig extends IScriptable
 
 	// --------------------------- fee anchors -----------------------------
 
-	// The auto-balance anchor: the sacrifice's market value as priced by the
-	// game itself (scales with level/tier; official economy updates flow
+	// The auto-balance anchor: the target's market value as priced by the
+	// game itself (scales with level and tier; official economy updates flow
 	// through).
-	public function GetSacrificeValue( inv : CInventoryComponent, sacrificeId : SItemUniqueId ) : int
+	public function GetTargetValue( inv : CInventoryComponent, targetId : SItemUniqueId ) : int
 	{
-		return inv.GetItemPriceModified( sacrificeId );
+		return inv.GetItemPriceModified( targetId );
 	}
 
 	public function GetFeeFraction() : float
@@ -247,7 +256,7 @@ class W3InfusionConfig extends IScriptable
 		{
 			return factVal / 1000.0f;   // fact stores fraction x 1000
 		}
-		return FEE_FRACTION_OF_SACRIFICE_VALUE;
+		return FEE_FRACTION_OF_TARGET_VALUE;
 	}
 
 	public function GetMinLaborFee() : int
