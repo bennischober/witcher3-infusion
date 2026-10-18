@@ -314,6 +314,10 @@ within the same architecture.
 6. §13.2: engine-level atomic inventory transactions do not exist; safety comes from the
    validate-verify-consume order plus `StartInvUpdateTransaction` (verified pattern above).
 
+7. §5.4/§6.1/§7.1 (2026-10-18, user-approved): the recipe is the target's own dismantle data
+   scaled by the level gap, and the fee is anchored to the target's value — both scale with the
+   gap (deliberate double scaling: labor vs. physical work). Details: docs/BALANCING.md.
+
 None of these change the gameplay model: sacrifice-based level transfer, no bonus merging, no
 automatic scaling, existing craftsmen only.
 
