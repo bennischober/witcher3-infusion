@@ -12,15 +12,24 @@
 #              are deployed to mods/modInfusion, tests files win.
 #
 # -Uninstall removes the deployed mod folder entirely.
+#
+# Game folder: auto-detected from the Steam libraries (tools\w3paths.ps1);
+# override with -GameDir or the W3_GAME_DIR environment variable.
 
 param(
-    [string]$GameDir = "E:\SteamLibrary\steamapps\common\The Witcher 3",
+    [string]$GameDir = "",
     [string]$RepoRoot = (Split-Path -Parent $PSScriptRoot),
     [switch]$Dev,
     [switch]$Uninstall
 )
 
 $ErrorActionPreference = "Stop"
+. "$PSScriptRoot\w3paths.ps1"
+
+if (-not $GameDir) { $GameDir = Get-W3GameDir }
+if (-not $GameDir) {
+    Write-Error "The Witcher 3 not found in the Steam libraries - pass -GameDir or set W3_GAME_DIR"
+}
 
 $modName = "modInfusion"
 $srcRoot = Join-Path $RepoRoot "src\$modName"
@@ -53,12 +62,6 @@ if (Test-Path (Join-Path $dstRoot "content")) {
     Remove-Item -Recurse -Force (Join-Path $dstRoot "content")
 }
 Copy-Item -Recurse -Force -Path (Join-Path $srcRoot "*") -Destination $dstRoot
-
-# The settings-menu XML is intentionally NOT deployed: the Remastered
-# settings UI is broken for mod groups (invisible entries, unresolved
-# '##option_' labels) and the decision is curated defaults without a menu
-# (spec §10 fallback path). See docs/TECHNICAL_DISCOVERY.md - the XML source
-# is kept in the repo for a future re-enable if CDPR fixes the UI.
 
 # Dev mode: overlay tests tree into the SAME mod folder (files win over src).
 # Kept as one folder so the script set compiles exactly as in release,

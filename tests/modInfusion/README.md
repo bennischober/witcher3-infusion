@@ -53,7 +53,7 @@ enchantment and all previous abilities intact, crowns charged = fee, materials u
 Scenarios 1–9 run without a craftsman (eligibility bypass, mechanics only); 10–11 and the three
 craftsman rejections spawn journeyman/master test craftsmen (despawn after 5 min). SKIP means a
 precondition did not hold (game data differs, a freshly spawned craftsman was not ready yet —
-run again). Still manual: everything visual in the menu (docs/M6_UI_STATE.md checklists).
+run again). Still manual: everything visual in the menu (docs/UI.md checklists).
 
 ## Console output caveat (Remastered 5.01)
 

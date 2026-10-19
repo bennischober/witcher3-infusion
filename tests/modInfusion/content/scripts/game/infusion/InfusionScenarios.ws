@@ -8,7 +8,7 @@
 /** 	materials restored to the exact amounts from before the scenario.
 /**
 /** 	Spec coverage: §3.2-3.4, §4.1-4.4, §5.4-5.5, §6.2, §8.2-8.3, §13,
-/** 	§15.1-15.5. UI behavior stays manual (docs/M6_UI_STATE.md).
+/** 	§15.1-15.5. UI behavior stays manual (docs/UI.md).
 /**
 /** 	Item names and qualities verified against the REDkit item XML
 /** 	(quality 5 = Witcher gear, 4 = relic); scenarios re-check the quality

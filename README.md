@@ -67,7 +67,7 @@ and development milestones.
 - ✅ **Milestone 6** — production UI, verified in game: a dedicated **Infusion tab** in the
   blacksmith/armorer menu, two-step infusion (pick target, then sacrifice) with a crafting-style
   material row, confirmation popup with the full cost breakdown, craftsman gating, vanilla
-  Repair tab untouched, save/reload persistence (docs/M6_UI_STATE.md). Spec coverage and the
+  Repair tab untouched, save/reload persistence (docs/UI.md). Spec coverage and the
   remaining gaps: docs/SPEC_COVERAGE.md
 - 🔜 **Milestone 7** — release packaging
 - 🔜 **Milestone 8** — optional bonus-merging extension (separate module)
@@ -77,24 +77,16 @@ and development milestones.
 ```
 INFUSION_SPEC.md                 Authoritative design specification (milestones, rules, acceptance criteria)
 docs/
-  TECHNICAL_DISCOVERY.md         Verified game internals (APIs, level system, salvage data)
-  SCRIPT_TEST_BENCH_RESEARCH.md  Why there is no out-of-game test bench (research notes)
-  MOD_CLEANUP_2026-10-10.md      Remastered 5.01 environment setup record
-  PATCH_NOTES_2026-10-10_scripts.md  5.01 script-compiler keyword fixes for installed mods
-src/
-  modInfusion/                   RELEASE mod source — ships to players
-    content/scripts/game/infusion/
-      InfusionTypes.ws           Error codes, preview data, category table
-      InfusionService.ws         Level computation, validation, transaction
-tests/
-  modInfusion/                   DEV-ONLY overlay — never shipped
-    content/scripts/game/infusion/
-      InfusionDebug.ws           Debug console commands and in-game self test
-tools/
-  deploy-mod.ps1                 Deploys the mod (default: release, -Dev: with tests)
-  launch-debug.bat               Launches the game with script logging
-  console-toggle.ahk             Fallback console hotkey for keyboard layouts
-backups/                         Local game-folder backups (not committed)
+  TECHNICAL_DISCOVERY.md         Verified engine/toolchain facts (annotations, item levels, APIs)
+  UI.md                          Infusion tab: design, Flash constraints, manual checklist
+  BALANCING.md                   Cost model and offline tuning
+  SPEC_COVERAGE.md               Spec section by section: done, verified, open
+  CRAFTSMAN_MAP.md               Craftsman tiers extracted from game data
+  ROADMAP_IDEAS.md               Open ideas
+  SCRIPT_TEST_BENCH_RESEARCH.md  Why there is no out-of-game test bench
+src/modInfusion/                 RELEASE mod source — ships to players
+tests/modInfusion/               DEV-ONLY overlay (console commands, scenario tests) — never shipped
+tools/                           Deploy/launch scripts, cost table, string sources (tools/README.md)
 ```
 
 ### Why `src` and `tests` are separate

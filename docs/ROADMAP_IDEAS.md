@@ -6,7 +6,7 @@ all at once. Nothing here is implemented unless stated.
 ## 1. UI: Infuse tab vs. Repair tab
 
 **Decided 2026-10-19: Infuse tab.** Infusion was stripped from the Repair tab, which is vanilla
-again (docs/M6_UI_STATE.md). Moving the `commonMenu.ws` change to annotations (§3) is still open.
+again (docs/UI.md). Moving the `commonMenu.ws` change to annotations (§3) is still open.
 The options as they were weighed:
 
 - **Infuse tab:** clearer (infusion is its own service, Repair stays vanilla, damaged items can
@@ -86,7 +86,7 @@ Migration plan, smallest first (one test launch each):
    may need an insert into `m_menuData` instead of an append.
 2. **`blacksmithMenu.ws` → annotations — implemented 2026-10-19, in-game test pending.** Events
    can't be annotated (parser expects `function` after the annotation); each event hook moved to
-   a function vanilla calls from it (docs/M6_UI_STATE.md, "Annotation port"). Space-to-cancel
+   a function vanilla calls from it (docs/UI.md, "Annotation port"). Space-to-cancel
    was dropped (native `RequestSubMenu`).
 3. Update the skill reference (`.opencode/skills/witcher-script/references/debugging-and-remaster.md`)
    with the verified facts.

@@ -53,7 +53,27 @@ FALLBACK_RECIPES = {
 }
 SUPPORTED = set(FALLBACK_RECIPES)
 
-DEFAULT_REDKIT = r"E:\SteamLibrary\steamapps\common\The Witcher 3 REDkit"
+def find_redkit():
+    """W3_REDKIT, else 'The Witcher 3 REDkit' in the Steam libraries
+    (registry HKCU Software/Valve/Steam SteamPath -> steamapps/libraryfolders.vdf)."""
+    if os.environ.get("W3_REDKIT"):
+        return os.environ["W3_REDKIT"]
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam") as key:
+            steam = winreg.QueryValueEx(key, "SteamPath")[0]
+    except (ImportError, OSError):
+        return None
+    libs = [steam]
+    vdf = os.path.join(steam, "steamapps", "libraryfolders.vdf")
+    if os.path.exists(vdf):
+        text = open(vdf, encoding="utf-8", errors="replace").read()
+        libs += [m.replace("\\\\", "\\") for m in re.findall(r'"path"\s+"([^"]+)"', text)]
+    for lib in libs:
+        path = os.path.join(lib, "steamapps", "common", "The Witcher 3 REDkit")
+        if os.path.isdir(path):
+            return path
+    return None
 
 ITEM_RE = re.compile(r"<item\s(?P<attrs>[^>]*?)>(?P<body>.*?)</item>", re.S)
 ATTR_RE = re.compile(r'(\w+)\s*=\s*"([^"]*)"')
@@ -206,7 +226,7 @@ def cmd_table(items, args):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--redkit", default=os.environ.get("W3_REDKIT", DEFAULT_REDKIT), help="REDkit install folder")
+    ap.add_argument("--redkit", default=None, help="REDkit install folder (default: W3_REDKIT or auto-detected from Steam)")
     ap.add_argument("--target")
     ap.add_argument("--sacrifice")
     ap.add_argument("--gap", type=int, default=10, help="level gap (sacrifice level - target level)")
@@ -218,6 +238,10 @@ def main():
     ap.add_argument("--find", metavar="TEXT", help="list item names containing TEXT")
     args = ap.parse_args()
 
+    if not args.redkit:
+        args.redkit = find_redkit()
+    if not args.redkit:
+        sys.exit("REDkit not found in the Steam libraries - pass --redkit or set W3_REDKIT")
     items = load_items(args.redkit)
     ITEMS.update(items)
     if not items:

@@ -27,9 +27,6 @@ test-results/
 # Local backups of game folders (proprietary game/mod assets)
 backups/
 
-# Rust build output
-tools/w3strings-tool/strings-cli/target/
-
 # Downloaded third-party tools (keep locally, never commit)
 tools/*.zip
 tools/w3stringsr*/
