@@ -5,7 +5,7 @@
 /***********************************************************************/
 /** 	modInfusion: this file overrides the vanilla blacksmithMenu.ws.
 /** 	Changes (search 'modInfusion'):
-/** 	  1. New 'Infuse' tab (registered in commonMenu.ws): Flash renders
+/** 	  1. New 'Infuse' tab (registered in InfusionMenuTab.ws): Flash renders
 /** 	     its Disassemble page, the script keeps the state 'Infuse'.
 /** 	  2. The tab's grid is W3GuiInfusionInventoryComponent: two-step
 /** 	     flow (pick target, then sacrifice), per-pair fee and cost row.
