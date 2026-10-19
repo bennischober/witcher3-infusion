@@ -5,13 +5,12 @@
 /***********************************************************************/
 /** 	modInfusion: this file overrides the vanilla blacksmithMenu.ws.
 /** 	Changes (search 'modInfusion'):
-/** 	  1. The Repair state doubles as the Infusion service: infusion-capable
-/** 	     items show an "Infuse" action with the infusion fee; confirming
-/** 	     opens the infusion preview popup instead of repairing.
-/** 	  2. The repair grid is replaced by W3GuiInfusionInventoryComponent
-/** 	     (shows infusion targets even at full durability).
-/** 	  3. The Repair panel's button label is swapped per selected item
-/** 	     (Flash hardcodes it; see UpdateInfusionActionLabel).
+/** 	  1. New 'Infuse' tab (registered in commonMenu.ws): Flash renders
+/** 	     its Disassemble page, the script keeps the state 'Infuse'.
+/** 	  2. The tab's grid is W3GuiInfusionInventoryComponent: two-step
+/** 	     flow (pick target, then sacrifice), per-pair fee and cost row.
+/** 	  3. Confirming opens the infusion summary popup; the Repair,
+/** 	     Disassemble and Sockets tabs stay vanilla.
 /** 	  Flash protocol reference: REDkit r4data\gameplay\gui_new\actionscript\
 /** 	  red\game\witcher3\menus\blacksmith\BlacksmithMenu.as
 /** 	CONFLICT NOTICE: overrides vanilla blacksmithMenu.ws; script merging
@@ -21,7 +20,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 {
 	private var _disassembleInv 		: W3GuiDisassembleInventoryComponent;
 	private var _repairInv 				: W3GuiRepairInventoryComponent;
-	// modInfusion: infusion grid (replaces the plain repair grid).
+	// modInfusion: infusion grid of the Infuse tab.
 	private var _infusionInv 			: W3GuiInfusionInventoryComponent;
 	private var _infusionService 		: W3InfusionService;
 	private var _infusionPreview 		: SInfusionPreview;
@@ -138,7 +137,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			_repairInv.masteryLevel = 5;
 			
 			
-			// modInfusion -- begin: infusion grid shares the repair grid slot
+			// modInfusion -- begin: infusion grid (Infuse tab)
 			_infusionInv = new W3GuiInfusionInventoryComponent in this;
 			_infusionInv.Initialize( _inv );
 			_infusionInv.merchantInv = _fixerInventory;
@@ -296,51 +295,27 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			
 			switch( newState )
 			{
-				// modInfusion: the Repair state is the unified service state —
-				// the grid shows repairable AND infusion-capable items; the
-				// per-item action (Repair or Infuse) and price are computed
-				// per item (label in UpdateInfusionActionLabel, price in the
-				// grid component). Any state change ends a pending sacrifice
-				// selection (two-step flow, see EnterSacrificePhase).
-				// modInfusion: dedicated Infuse tab - infusion only (damaged
-				// items too: infusion includes the repair), no repair actions.
+				// modInfusion: Infuse tab - infusion targets only (damaged
+				// items too: infusion includes the repair). Entering the tab
+				// always starts at target selection. Without a craftsman or
+				// with infusion disabled the grid stays empty and clicks are
+				// refused (OnRequestConfirmation).
 				case 'Infuse':
 					if ( _infusionInv )
 					{
 						_infusionInv.EndSacrificePhase();
-						_infusionInv.SetInfuseOnly( true );
-					}
-					_infusionActive = _infusionService && _infusionCraftsman
-						&& _infusionService.GetPublicConfig().EnableInfusion();
-					if ( _infusionActive )
-					{
 						_curInv = _infusionInv;
-						LogChannel( 'Infusion', "infuse state: infusion-only grid ACTIVE (tab prototype)" );
 					}
 					else
 					{
 						_curInv = _repairInv;
-						LogChannel( 'Infusion', "infuse state: infusion disabled or no craftsman - repair grid" );
 					}
+					_infusionActive = _infusionInv && _infusionService && _infusionCraftsman
+						&& _infusionService.GetPublicConfig().EnableInfusion();
 					break;
 				case 'Repair':
-					if ( _infusionInv )
-					{
-						_infusionInv.EndSacrificePhase();
-						_infusionInv.SetInfuseOnly( false );
-					}
-					_infusionActive = _infusionService && _infusionCraftsman
-						&& _infusionService.GetPublicConfig().EnableInfusion();
-					if ( _infusionActive )
-					{
-						_curInv = _infusionInv;
-						LogChannel( 'Infusion', "repair state: infusion grid ACTIVE (v3: craftsman-aware, cached)" );
-					}
-					else
-					{
-						_curInv = _repairInv;
-						LogChannel( 'Infusion', "repair state: vanilla repair grid (infusion disabled or no craftsman)" );
-					}
+					_curInv = _repairInv;
+					_infusionActive = false;
 					break;
 				case 'Sockets':
 					_curInv = _socketInv;
@@ -373,7 +348,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		// modInfusion: sacrifice phase of the two-step infusion flow - the
 		// grid sections become "Target" (the picked item) and "Choose a
 		// sacrifice" (its valid sacrifices).
-		if ( ( newState == 'Repair' || newState == 'Infuse' ) && _infusionInv && _infusionInv.IsInSacrificePhase() )
+		if ( newState == 'Infuse' && _infusionInv && _infusionInv.IsInSacrificePhase() )
 		{
 			m_sectionsList = m_flashValueStorage.CreateTempFlashArray();
 			curDataObject = CreateSectionsData( 0, 0, 3, GetLocStringByKeyExt( "panel_infusion_target" ) );
@@ -383,16 +358,14 @@ class CR4BlacksmithMenu extends CR4MenuBase
 			return;
 		}
 		
-		// modInfusion: in non-standalone mode the Repair state uses the
-		// infusion grid when infusion is enabled (handled in ApplyMenuState).
-			// modInfusion: Infuse state removed (no Flash page exists for
-			// unknown states); the Repair state is the unified service state.
-			switch( newState )
-			{
-				case 'Sockets':
-				case 'Repair':
-				case 'Infuse':
-				case 'AddSockets':
+		// modInfusion: target selection in the Infuse tab uses the Repair
+		// tab's sections (equipped / other).
+		switch( newState )
+		{
+			case 'Sockets':
+			case 'Repair':
+			case 'Infuse':
+			case 'AddSockets':
 				
 				m_sectionsList = m_flashValueStorage.CreateTempFlashArray();
 				curDataObject = CreateSectionsData( 0, 0, 3, GetLocStringByKeyExt( "panel_blacksmith_equipped" ) );
@@ -444,13 +417,12 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		repairString = "";
 		
 		// modInfusion: the Infuse tab uses the second key (Space / X, "repair
-		// all" in the Repair tab) to cancel the sacrifice choice; no "repair
-		// all" while choosing a sacrifice.
+		// all" in the Repair tab) to cancel the sacrifice choice.
 		if ( newState == 'Infuse' && _infusionInv && _infusionInv.IsInSacrificePhase() )
 		{
 			repairString = GetLocStringByKeyExt( "panel_common_cancel" );
 		}
-		else if (newState == 'Repair' && !( _infusionInv && _infusionInv.IsInSacrificePhase() ))
+		else if (newState == 'Repair')
 		{
 			totalRepairCost = _repairInv.GetTotalRepairCost();
 			
@@ -499,20 +471,26 @@ class CR4BlacksmithMenu extends CR4MenuBase
 	{
 		var itemName		: name;
 		
-		// modInfusion -- begin: in the Repair state, undamaged items start the
-		// two-step infusion flow (pick target, then sacrifice; spec §9.1)
-		// instead of the repair flow; in the sacrifice phase every click
-		// belongs to the infusion flow. Every path must answer Flash with
-		// HandleActionConfirmation: Flash waits in its Confirmation state
-		// until confirmAction() arrives (see BlacksmithMenu.as in REDkit).
+		// modInfusion -- begin: every click in the Infuse tab belongs to the
+		// two-step infusion flow (pick target, then sacrifice; spec §9.1).
+		// Every path must answer Flash with HandleActionConfirmation: Flash
+		// waits in its Confirmation state until confirmAction() arrives (see
+		// BlacksmithMenu.as in REDkit). The tab never reaches the vanilla
+		// path: Flash shows its Disassemble page there, so a vanilla "true"
+		// would dismantle the item.
 		// Early return replaced with if/else — bare 'return;' in a
 		// flash-bound event confuses the compiler's void/Bool handling here.
-		if ( _infusionActive
-			&& ( m_menuState == 'Infuse'
-				|| ( m_menuState == 'Repair'
-					&& ( _infusionInv.IsInSacrificePhase() || !_infusionInv.IsDamaged( itemId ) ) ) ) )
+		if ( m_menuState == 'Infuse' )
 		{
-			HandleInfusionClick( itemId );
+			if ( _infusionActive )
+			{
+				HandleInfusionClick( itemId );
+			}
+			else
+			{
+				EndInfusionRequest();
+				OnPlaySoundEvent( "gui_global_denied" );
+			}
 		}
 		else if( m_menuState == 'Disassemble' && m_standaloneMode && _inv.GetItemQuantity(itemId) == 1 )
 		{
@@ -892,14 +870,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		_fixerInventory.AddMoney(price);
 		_inv.RemoveMoney(price);
 		
-		// modInfusion: a repaired item that is infusable stays in the grid
-		// (now offered for infusion) instead of being removed.
-		if ( _infusionActive && _infusionInv.IsInfusable( item ) )
-		{
-			UpdateItem(item);
-			UpdateInfusionActionLabel(item);
-		}
-		else if (_inv.GetItemQuantity(item) > 1)
+		if (_inv.GetItemQuantity(item) > 1)
 		{
 			UpdateItem(item);
 		}
@@ -991,9 +962,9 @@ class CR4BlacksmithMenu extends CR4MenuBase
 	event  OnGetItemData(item : SItemUniqueId, compareItemType : int)
 	{
 		ShowItemTooltip(item, compareItemType);
-		// modInfusion: Flash requests the tooltip whenever the selected item
-		// changes - the hook for the per-item action button label.
-		UpdateInfusionActionLabel(item);
+		// modInfusion: re-applies the Infuse tab's button label in case
+		// Flash reset it to "Repair" (it does so in setMenuState).
+		UpdateInfusionActionLabel();
 	}
 	
 	event  OnGlobalUpdate()
@@ -1223,54 +1194,25 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		}
 	}
 
-	// Label of the Repair panel's execute button. Flash hardcodes it to
-	// "[[panel_button_common_repair]]" in its setMenuState (BlacksmithMenu.as
-	// updateButtonsLabels), so the script swaps it per selected item through
-	// the panel's own setButtonData(label, gamepadNavCode, keyCode) - the
-	// exact call Flash makes (GAMEPAD_A = "enter-gamepad_A", KeyCode.E = 69).
-	private function UpdateInfusionActionLabel( item : SItemUniqueId ) : void
+	// Infuse tab: one constant "Infuse" label on the execute button. Flash
+	// only tells script which item is hovered (OnGetItemData), not which one
+	// is selected, so any per-item label could mismatch with the mouse;
+	// cancelling the target choice lives on the second key instead
+	// (UpdateRepairAllInputFeedback).
+	private function UpdateInfusionActionLabel() : void
 	{
-		var label : string;
-
-		if ( ( m_menuState != 'Repair' && m_menuState != 'Infuse' ) || !_infusionInv || !m_flashModule )
-		{
-			return;
-		}
-
-		// Infuse tab: one constant label. Flash only tells script which item
-		// is hovered (OnGetItemData), not which one is selected, so any
-		// per-item label can mismatch with the mouse; cancelling the target
-		// choice lives on the second key instead (UpdateRepairAllInputFeedback).
 		if ( m_menuState == 'Infuse' )
 		{
 			SetRepairPanelButtonLabel( GetLocStringByKeyExt( "panel_button_inventory_infuse" ) );
-			return;
 		}
-
-		if ( _infusionActive && _infusionInv.IsInSacrificePhase() && _inv.IsIdValid( item )
-			&& item == _infusionInv.GetPhaseTarget() )
-		{
-			// Activating the picked target again cancels the selection.
-			label = GetLocStringByKeyExt( "panel_common_cancel" );
-		}
-		else if ( _infusionActive && _infusionInv.IsInSacrificePhase() && _inv.IsIdValid( item ) )
-		{
-			label = GetLocStringByKeyExt( "panel_button_inventory_infuse" );
-		}
-		else if ( _infusionActive && _inv.IsIdValid( item )
-			&& ( _infusionInv.IsInfuseOnly() || !_infusionInv.IsDamaged( item ) )
-			&& _infusionInv.IsInfusable( item ) )
-		{
-			label = GetLocStringByKeyExt( "panel_button_inventory_infuse" );
-		}
-		else
-		{
-			label = "[[panel_button_common_repair]]";
-		}
-
-		SetRepairPanelButtonLabel( label );
 	}
 
+	// Label of the execute button on the panel the Infuse tab shows (Flash's
+	// Disassemble page, see SetMenuState). Flash hardcodes the label in its
+	// setMenuState (BlacksmithMenu.as updateButtonsLabels), so the script
+	// sets it through the panel's own setButtonData(label, gamepadNavCode,
+	// keyCode) - the exact call Flash makes (GAMEPAD_A = "enter-gamepad_A",
+	// KeyCode.E = 69).
 	private function SetRepairPanelButtonLabel( label : string ) : void
 	{
 		var panel : CScriptedFlashObject;
@@ -1281,15 +1223,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		{
 			return;
 		}
-		// The Infuse tab renders the Disassemble page (see SetMenuState).
-		if ( m_menuState == 'Infuse' )
-		{
-			panelName = "panelDisassemble";
-		}
-		else
-		{
-			panelName = "panelRepair";
-		}
+		panelName = "panelDisassemble";
 		panel = m_flashModule.GetMemberFlashObject( panelName );
 		if ( !panel )
 		{
@@ -1354,7 +1288,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		SetSectionsDataList( m_menuState );
 		UpdateRepairAllInputFeedback( m_menuState );
 		InventoryUpdateAll();
-		UpdateInfusionActionLabel( target );
+		UpdateInfusionActionLabel();
 		OnPlaySoundEvent( "gui_global_submenu_whoosh" );
 	}
 
@@ -1366,7 +1300,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		SetSectionsDataList( m_menuState );
 		UpdateRepairAllInputFeedback( m_menuState );
 		InventoryUpdateAll();
-		UpdateInfusionActionLabel( _infusionTargetId );
+		UpdateInfusionActionLabel();
 	}
 
 	// Runs a fresh preview for the picked target and the clicked sacrifice
@@ -1383,7 +1317,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		err = _infusionService.Preview( _infusionTargetId, sacrifice, _infusionPreview, _infusionCraftsman );
 		if ( err != IFE_Ok )
 		{
-			showNotification( InfusionErrorToString( err ) );
+			showNotification( InfusionErrorToLocString( err ) );
 			OnPlaySoundEvent( "gui_global_denied" );
 			EndInfusionRequest();
 			return;
@@ -1455,7 +1389,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		}
 		else
 		{
-			showNotification( InfusionErrorToString( err ) );
+			showNotification( InfusionErrorToLocString( err ) );
 			theSound.SoundEvent( "gui_global_denied" );
 		}
 
@@ -1463,7 +1397,7 @@ class CR4BlacksmithMenu extends CR4MenuBase
 		UpdateData();
 		UpdatePlayerMoney();
 		UpdateRepairAllInputFeedback( m_menuState );
-		UpdateInfusionActionLabel( _infusionTargetId );
+		UpdateInfusionActionLabel();
 	}
 
 	public function DeclineInfusion() : void

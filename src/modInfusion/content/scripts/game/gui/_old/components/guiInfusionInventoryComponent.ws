@@ -1,8 +1,9 @@
 ﻿/***********************************************************************/
 /** 	Witcher Gear Infusion — Infusion inventory grid component (M6)
-/** 	Extends the repair grid component. Two phases (spec §9.1: the
-/** 	player selects both items):
-/** 	  1. target phase: repairable items + infusion-capable targets
+/** 	Grid of the Infuse tab (extends the repair grid component). Two
+/** 	phases (spec §9.1: the player selects both items):
+/** 	  1. target phase: infusion-capable targets (damaged ones too -
+/** 	     infusion includes the repair)
 /** 	  2. sacrifice phase: the chosen target (section 0) + every valid
 /** 	     sacrifice for it (section 1), each priced for that pair
 /** 	New class in a new file — no vanilla file override.
@@ -44,21 +45,6 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		_sacIds.Clear();
 		_sacValid.Clear();
 		_sacPreviews.Clear();
-	}
-
-	// Infuse-tab mode (tab prototype): only infusion targets are listed,
-	// damaged ones included (infusion includes the repair); no repair entries.
-	private var _infuseOnly : bool;
-
-	public function SetInfuseOnly( value : bool ) : void
-	{
-		_infuseOnly = value;
-		InvalidateCache();
-	}
-
-	public function IsInfuseOnly() : bool
-	{
-		return _infuseOnly;
 	}
 
 	public function BeginSacrificePhase( target : SItemUniqueId ) : void
@@ -139,13 +125,17 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		if ( infusionService && craftsman && infusionService.IsSupportedTarget( item ) )
 		{
 			infusable = infusionService.FindBestSacrifice( _inv, item, s, p, craftsman );
-			if ( infusable )
+			// One line per item and refresh: only with debug logging on.
+			if ( infusionService.GetPublicConfig().DebugLogging() )
 			{
-				LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " infusable (sacrifice: " + _inv.GetItemName( s ) + ", gap " + p.levelGap + ", fee " + p.laborFee + ", target value " + infusionService.GetPublicConfig().GetTargetValue( _inv, item ) + ")" );
-			}
-			else
-			{
-				LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " (L" + infusionService.ComputeItemLevel( _inv, item ) + ") not infusable here - " + infusionService.DescribeLastScan() );
+				if ( infusable )
+				{
+					LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " infusable (sacrifice: " + _inv.GetItemName( s ) + ", gap " + p.levelGap + ", fee " + p.laborFee + ", target value " + infusionService.GetPublicConfig().GetTargetValue( _inv, item ) + ")" );
+				}
+				else
+				{
+					LogChannel( 'Infusion', "grid: " + _inv.GetItemName( item ) + " (L" + infusionService.ComputeItemLevel( _inv, item ) + ") not infusable here - " + infusionService.DescribeLastScan() );
+				}
 			}
 		}
 
@@ -167,18 +157,9 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		return GetInfusionInfo( item, s, p );
 	}
 
-	// Damaged items keep the vanilla repair action (repair first, then
-	// infuse); the infusion action applies to undamaged items only.
-	public function IsDamaged( item : SItemUniqueId ) : bool
-	{
-		return _inv.HasItemDurability( item )
-			&& _inv.GetItemDurability( item ) < _inv.GetItemMaxDurability( item );
-	}
-
-	// Unified service grid: shows repairable items (super's filter: damaged
-	// equipment) AND infusion-capable items (even at full durability).
-	// Access modifier matches the ancestor (protected) — the compiler
-	// rejects weaker overrides.
+	// Only infusion targets (phase 1) or the target plus its valid
+	// sacrifices (phase 2); no repair entries. Access modifier matches the
+	// ancestor (protected) - the compiler rejects weaker overrides.
 	protected function ShouldShowItem( item : SItemUniqueId ) : bool
 	{
 		var p : SInfusionPreview;
@@ -187,21 +168,12 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		{
 			return item == _phaseTarget || GetSacrificeInfo( item, p );
 		}
-		if ( _infuseOnly )
-		{
-			return IsInfusable( item );
-		}
-		if ( super.ShouldShowItem( item ) )
-		{
-			return true;   // damaged: repairable
-		}
-		return IsInfusable( item );   // undamaged but infusable
+		return IsInfusable( item );
 	}
 
-	// Per-item price: repairable items keep the vanilla repair cost (from
-	// super); infusion targets show the infusion labor fee for the best
-	// available sacrifice. Flash passes actionPrice back to the menu with
-	// the confirmation request.
+	// Per-item price and cost row: phase 1 shows the fee and materials for
+	// the best available sacrifice, phase 2 those of each exact pair. Flash
+	// passes actionPrice back to the menu with the confirmation request.
 	public function SetInventoryFlashObjectForItem( item : SItemUniqueId, out flashObject : CScriptedFlashObject ) : void
 	{
 		var s : SItemUniqueId;
@@ -228,10 +200,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 			{
 				flashObject.SetMemberFlashInt( "sectionId", 0 );
 				flashObject.SetMemberFlashInt( "actionPrice", 0 );
-				if ( _infuseOnly )
-				{
-					flashObject.SetMemberFlashArray( "partList", flashObject.CreateFlashArray() );
-				}
+				flashObject.SetMemberFlashArray( "partList", flashObject.CreateFlashArray() );
 			}
 			else
 			{
@@ -239,31 +208,25 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 				if ( GetSacrificeInfo( item, p ) )
 				{
 					flashObject.SetMemberFlashInt( "actionPrice", p.laborFee );
-					if ( _infuseOnly )
+					SetCostPartList( flashObject, p.materials );
+					// Like a disabled craft button: a sacrifice whose
+					// remaining materials are missing cannot be activated.
+					// Flash then greys the panel, hides the E button,
+					// plays the denied sound and shows the page's warning
+					// line (text set by the menu) - all selection-driven.
+					if ( infusionService.GetMissingMaterials( _inv, p.materials, missing ) )
 					{
-						SetCostPartList( flashObject, p.materials );
-						// Like a disabled craft button: a sacrifice whose
-						// remaining materials are missing cannot be activated.
-						// Flash then greys the panel, hides the E button,
-						// plays the denied sound and shows the page's warning
-						// line (text set by the menu) - all selection-driven.
-						if ( infusionService.GetMissingMaterials( _inv, p.materials, missing ) )
-						{
-							flashObject.SetMemberFlashBool( "disableAction", true );
-						}
+						flashObject.SetMemberFlashBool( "disableAction", true );
 					}
 				}
 			}
 			return;
 		}
 
-		if ( ( _infuseOnly || !IsDamaged( item ) ) && GetInfusionInfo( item, s, p ) )
+		if ( GetInfusionInfo( item, s, p ) )
 		{
 			flashObject.SetMemberFlashInt( "actionPrice", p.laborFee );
-			if ( _infuseOnly )
-			{
-				SetCostPartList( flashObject, p.materials );
-			}
+			SetCostPartList( flashObject, p.materials );
 		}
 	}
 
