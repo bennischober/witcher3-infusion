@@ -289,7 +289,8 @@ class W3InfusionScenarioRunner extends IScriptable
 		{
 			return ISS_Fail;
 		}
-		detail = "" + spec.targetName + " L" + before.level + " -> L" + p.newLevel + ", fee " + p.laborFee + DescribeKept( before );
+		detail = "" + spec.targetName + " L" + before.level + " -> L" + p.newLevel + ", " + p.statAttribute + " "
+			+ RoundMath( p.statBefore ) + " -> " + RoundMath( p.statAfter ) + ", fee " + p.laborFee + DescribeKept( before );
 		return ISS_Pass;
 	}
 
@@ -298,6 +299,8 @@ class W3InfusionScenarioRunner extends IScriptable
 		var after : SInfScnItemState;
 		var i : int;
 		var used : int;
+		var statValue : SAbilityAttributeValue;
+		var actualStat : float;
 
 		if ( !inv.IsIdValid( t ) )
 		{
@@ -323,6 +326,19 @@ class W3InfusionScenarioRunner extends IScriptable
 		if ( after.stat <= before.stat )
 		{
 			detail = "primary stat did not rise (" + FloatToString( before.stat ) + " -> " + FloatToString( after.stat ) + ")";
+			return false;
+		}
+		// The popup's projected stat (spec §9.2) must match the result.
+		if ( p.statAttribute == '' )
+		{
+			detail = "no stat projection";
+			return false;
+		}
+		statValue = inv.GetItemAttributeValue( t, p.statAttribute );
+		actualStat = statValue.valueBase;
+		if ( AbsF( actualStat - p.statAfter ) > 0.5f )
+		{
+			detail = "projected " + p.statAttribute + " " + FloatToString( p.statAfter ) + ", got " + FloatToString( actualStat );
 			return false;
 		}
 		if ( inv.HasItemDurability( t ) && inv.GetItemDurability( t ) < inv.GetItemMaxDurability( t ) - 0.5f )

@@ -36,7 +36,8 @@ sacrifice and pressing E opens the confirmation; selecting the target again, or 
 returns to step 1. A sacrifice whose remaining materials are missing is **disabled** (greyed
 panel, no E button, denied sound, warning "Fehlende Materialien").
 
-**Confirmation popup** (vanilla price popup): "Ziel: … (61 -> 68)", "Opfer: … (68)", materials
+**Confirmation popup** (vanilla price popup): "Ziel: … (61 -> 68)", the projected primary stat
+with the tooltip's label ("Rüstung: 129 -> 164"; spec §9.2), "Opfer: … (68)", materials
 covered by the sacrifice and additional materials (inline icons), the permanent-consumption and
 full-repair note, and the fee. Accept executes the infusion with the NPC the player is talking
 to; the craftsman receives the fee, as with vanilla repairs. A successful infusion returns to
@@ -115,7 +116,8 @@ launch: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, Infusion tab.
 3. Step 2: headers "Ziel (E: abbrechen)" / "Opfer wählen"; per-sacrifice fee and row; a sacrifice
    with missing materials is disabled with "Fehlende Materialien".
 4. Selecting the target again cancels; switching tabs cancels; Space does nothing.
-5. Popup: names, levels, covered/additional materials with icons, note, price; accept infuses
+5. Popup: names, levels, projected stat (matches the tooltip after infusing), covered/additional
+   materials with icons, note, price — everything inside the frame; accept infuses
    (level, crowns, materials, sacrifice gone), decline changes nothing.
 6. Close and reopen the menu on the Infusion tab: it reopens there with the grid.
 7. Reparieren / Zerlegen (vanilla warning text) / Sockel behave like vanilla.

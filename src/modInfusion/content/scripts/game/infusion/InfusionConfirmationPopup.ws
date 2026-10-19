@@ -60,6 +60,7 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 		text = GetLocStringByKeyExt( "panel_infusion_target" ) + ": "
 			+ GetLocStringByKeyExt( inv.GetItemLocalizedNameByUniqueID( targetId ) )
 			+ " (" + preview.targetLevel + " -&gt; " + preview.newLevel + ")";
+		text += DescribeStat();
 
 		text += "<br><font size='16'>" + GetLocStringByKeyExt( "panel_infusion_sacrifice" ) + ": "
 			+ GetLocStringByKeyExt( inv.GetItemLocalizedNameByUniqueID( sacrificeId ) )
@@ -80,6 +81,27 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 		}
 		text += "<br>" + GetLocStringByKeyExt( "panel_infusion_consumed_note" ) + "</font>";
 		return text;
+	}
+
+	// "Rüstung: 129 -> 164" with the tooltip's own label and value. Left out
+	// when the service has no projection or the tooltip's primary stat is a
+	// different one (spec §9.2: no projection that isn't exact).
+	private function DescribeStat() : string
+	{
+		var label : string;
+		var shown : float;
+
+		if ( preview.statAttribute == '' )
+		{
+			return "";
+		}
+		thePlayer.inv.GetItemPrimaryStat( targetId, label, shown );
+		if ( label == "" || RoundMath( shown ) != RoundMath( preview.statBefore ) )
+		{
+			return "";
+		}
+		return "<br><font size='16'>" + label + ": " + RoundMath( preview.statBefore )
+			+ " -&gt; " + RoundMath( preview.statAfter ) + "</font>";
 	}
 
 	private function DescribeParts( parts : array<SItemParts> ) : string

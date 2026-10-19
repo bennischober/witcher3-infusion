@@ -40,7 +40,7 @@ started.
 | §8.2 | Tier + specialization from game data | ✅ | Scenario (`reject_craftsman_type`, `reject_tier_witcher`, `reject_tier_relic`, `master_relic_ok`). Relic → master, Witcher gear → grandmaster (config). |
 | §8.3 | No level cap, overflow-safe | ✅ | Scenario (`ngplus_uncapped`); gap factor capped at 3 sets. |
 | §9.1 | Select target and sacrifice | ✅ | Two-step flow (UI.md). |
-| §9.2 | Preview contents | ⚠️ | ✅ names, icons, levels, fee, covered/remaining materials, consumption + repair note, eligibility (blocked targets with reason). ❌ projected stats — reliably calculable (current stat + steps × the step ability's fixed value), so no reason to omit them. |
+| §9.2 | Preview contents | ⚠️ | ✅ names, icons, levels, fee, covered/remaining materials, consumption + repair note, eligibility (blocked targets with reason). projected primary stat in the popup (current stat + steps × the step ability's fixed value; every infusion scenario checks it against the result). In-game popup layout check pending. |
 | §9.3 | Clear rejection messages | ✅ | Blocked targets are listed disabled with the reason in the tooltip (tier with the game's rank name, no/only-lower/only-equipped sacrifices); popup-time rejections as localized notifications (en/de). Scenario (`block_tier`, `block_no_higher`, `block_ok`); UI checked in game (one-line reasons, no Space hint). |
 | §9.5 | Confirmation with fresh data | ✅ | Fresh `Preview` before the popup; `Execute` re-validates. |
 | §10 | Configuration | ⚠️ | Script constants in `InfusionConfig.ws` (no settings menu — broken on 5.01); dev overrides via `infuseSetConfig`. Missing switches: `RequireCraftingMaterials`, `AllowEqualLevelInfusion`, `AllowSpecialItems`. Salvage toggle verified (scenario `salvage_off`). ❌ **values are not validated**: a 0 `LEVELS_PER_FULL_SET` divides by zero, negative multipliers/minimum fee give negative fees, a negative yield multiplier negative salvage. ❌ player-facing configuration doc. |
@@ -59,7 +59,7 @@ started.
 
 | # | Spec | Item | Who | Size |
 | --- | --- | --- | --- | --- |
-| 1 | §9.2 | Projected primary stat in the confirmation popup ("Rüstung 129 -> 164"), plus a scenario that compares projection and result | code | S |
+| 1 | §9.2 | ~~Projected primary stat in the popup~~ — done, popup layout check pending | code | S |
 | 2 | §10 | Validate config values (clamp to safe ranges, no division by zero, fee ≥ 0, yield ≥ 0) | code | S |
 | 3 | §10 | `RequireCraftingMaterials` switch (off = labor fee only) | code | S |
 | 4 | §14.2 | List excluded gear disabled with "can't be infused safely" | code | S |

@@ -35,6 +35,7 @@ struct SInfusionCategoryData
 {
 	var category : name;        // item category as returned by GetItemCategory
 	var stepAbility : name;     // crafted ability added once per level
+	var statAttribute : name;   // the primary stat the step ability raises
 }
 
 struct SInfusionPreview
@@ -53,6 +54,12 @@ struct SInfusionPreview
 	var laborFee : int;         // crowns charged for the service (spec §6)
 	var stepsToAdd : int;       // number of step abilities that will be added to the target
 	var stepAbility : name;     // which ability will be used
+
+	// Projected primary stat (spec §9.2): current value + stepsToAdd x the
+	// step ability's fixed value. statAttribute is '' when not calculable.
+	var statAttribute : name;
+	var statBefore : float;
+	var statAfter : float;
 
 	// Material model (spec §5.4): AdditionalRequired = max(0, RecipeRequired - Salvaged)
 	var materials : array<SItemParts>;   // remaining requirements AFTER the salvage discount

@@ -58,6 +58,12 @@ Item levels are **not stored per instance** — they are derived from the item's
   SilverDamage, `autogen_fixed_armor_armor` +5 armor, `autogen_fixed_pants_armor` (pants, boots)
   and `autogen_fixed_gloves_armor` +2. The game's NG+ item raise (`IncreaseNGPItemlevel`) uses
   the same abilities.
+- **Projected stat** (spec §9.2): the value per step is read at runtime with
+  `theGame.GetDefinitionsManager().GetAbilityAttributeValue(stepAbility, attr, min, max)`
+  (`min.valueBase`; the abilities are fixed). Projection = current `valueBase` + N × step. The
+  tooltip's primary stat (`CInventoryComponent.GetItemPrimaryStat`) reads the same `valueBase`.
+  Blunt/piercing weapons in `steelsword` have another primary stat than the step raises → no
+  projection shown.
 - **Infusion = add N step abilities** (`AddItemCraftedAbility`), N = level gap. The item keeps
   its definition, sockets, enchantment and abilities; stats are recalculated by the game. Crafted
   abilities are saved with the item and survive removing the mod (verified 2026-10-19).

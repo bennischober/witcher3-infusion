@@ -246,23 +246,28 @@ class W3InfusionService extends IScriptable
 		{
 			case 'steelsword':
 				data.stepAbility = 'autogen_fixed_steel_dmg';
+				data.statAttribute = 'SlashingDamage';
 				return true;
 
 			case 'silversword':
 				data.stepAbility = 'autogen_fixed_silver_dmg';
+				data.statAttribute = 'SilverDamage';
 				return true;
 
 			case 'armor':
 				data.stepAbility = 'autogen_fixed_armor_armor';
+				data.statAttribute = 'armor';
 				return true;
 
 			case 'pants':
 			case 'boots':
 				data.stepAbility = 'autogen_fixed_pants_armor';
+				data.statAttribute = 'armor';
 				return true;
 
 			case 'gloves':
 				data.stepAbility = 'autogen_fixed_gloves_armor';
+				data.statAttribute = 'armor';
 				return true;
 		}
 		return false;
@@ -748,8 +753,31 @@ class W3InfusionService extends IScriptable
 		preview.stepsToAdd = gap;
 		preview.newLevel = targetLevel + gap;
 		preview.laborFee = GetLaborFee( inv, targetId, gap, quality, craftsmanLevel );
+		ProjectPrimaryStat( inv, targetId, targetData, preview );
 		preview.errorCode = IFE_Ok;
 		return preview.errorCode;
+	}
+
+	// Projected primary stat (spec §9.2). Exact, not an estimate: the level
+	// is derived from this stat, and each step ability adds one level's worth
+	// of it (fixed value, TECHNICAL_DISCOVERY.md §3). Item stats live in
+	// valueBase, which is also what the tooltip shows (GetItemPrimaryStat).
+	// Items whose stat the step doesn't raise (e.g. blunt weapons in the
+	// steelsword category) get no projection.
+	private function ProjectPrimaryStat( inv : CInventoryComponent, targetId : SItemUniqueId, targetData : SInfusionCategoryData, out preview : SInfusionPreview ) : void
+	{
+		var current, stepMin, stepMax : SAbilityAttributeValue;
+
+		preview.statAttribute = '';
+		current = inv.GetItemAttributeValue( targetId, targetData.statAttribute );
+		theGame.GetDefinitionsManager().GetAbilityAttributeValue( targetData.stepAbility, targetData.statAttribute, stepMin, stepMax );
+		if ( current.valueBase <= 0 || stepMin.valueBase <= 0 )
+		{
+			return;
+		}
+		preview.statAttribute = targetData.statAttribute;
+		preview.statBefore = current.valueBase;
+		preview.statAfter = current.valueBase + preview.stepsToAdd * stepMin.valueBase;
 	}
 
 	// ---------------------------------------------------------------------
