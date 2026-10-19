@@ -25,3 +25,15 @@
 2112345023||panel_infusion_sacrifice|Sacrifice
 2112345024||panel_infusion_choose_sacrifice|Choose a sacrifice
 2112345025||panel_infusion_missing|Missing materials
+2112345026||panel_infusion_err_unavailable|The selected item is no longer available.
+2112345027||panel_infusion_err_unsupported|This item cannot be infused.
+2112345028||panel_infusion_err_disabled|Infusion is disabled for this equipment type.
+2112345029||panel_infusion_err_incompatible|The selected items are incompatible.
+2112345030||panel_infusion_err_same_item|Target and sacrifice must be different items.
+2112345031||panel_infusion_err_excluded|This item cannot be infused safely.
+2112345032||panel_infusion_err_equipped|The sacrifice is equipped. Unequip it first.
+2112345033||panel_infusion_err_level|The sacrifice must be a higher level than the target.
+2112345034||panel_infusion_err_aborted|Infusion aborted. Nothing was consumed.
+2112345035||panel_infusion_err_no_craftsman|No craftsman available.
+2112345036||panel_infusion_err_craftsman_type|This craftsman cannot infuse this equipment.
+2112345037||panel_infusion_err_craftsman_level|A more experienced craftsman is required.

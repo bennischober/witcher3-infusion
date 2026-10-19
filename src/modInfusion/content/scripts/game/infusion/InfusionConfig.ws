@@ -2,11 +2,11 @@
 /** 	Witcher Gear Infusion — configuration
 /** 	Balance model and knobs in one place.
 /**
-/** 	Auto-balance: the labor fee anchors to the sacrifice item's market
+/** 	Auto-balance: the labor fee anchors to the TARGET item's market
 /** 	value (GetItemPriceModified — the game's own level/tier-scaled price)
 /** 	as a fraction, so official economy updates rebalance infusion fees
 /** 	automatically. Multipliers (§6.2) shape it; a labor floor keeps
-/** 	zero-value sacrifices meaningful.
+/** 	cheap targets meaningful. Model: docs/BALANCING.md.
 /**
 /** 	Settings menu: NOT used (Remastered settings UI is broken for mod
 /** 	groups; decision documented in docs/TECHNICAL_DISCOVERY.md). Values
@@ -26,13 +26,12 @@ class W3InfusionConfig extends IScriptable
 	private const var ENABLE_INFUSION : bool;
 	default ENABLE_INFUSION = true;
 
-	// Category gates. M2/M3 scope: only steelsword enabled; the others
-	// activate with their milestones.
+	// Category gates (spec §10 EnableSwordInfusion / EnableArmorInfusion).
 	private const var ENABLE_STEEL_SWORD : bool;
 	default ENABLE_STEEL_SWORD = true;
 
 	private const var ENABLE_SILVER_SWORD : bool;
-	default ENABLE_SILVER_SWORD = false;
+	default ENABLE_SILVER_SWORD = true;
 
 	private const var ENABLE_ARMOR : bool;
 	default ENABLE_ARMOR = true;
@@ -121,13 +120,23 @@ class W3InfusionConfig extends IScriptable
 	private const var RESTORE_DURABILITY : bool;
 	default RESTORE_DURABILITY = true;
 
+	// ============================== logging ================================
+
+	// Per-item grid diagnostics (one log line per item and grid refresh -
+	// floods scriptslog.txt in large inventories). Off by default; the
+	// InfCfg_Debug fact switches it on at runtime (infuseSetConfig debug 1).
+	// Transaction results (OK / ABORT) are always logged.
+	private const var DEBUG_LOGGING : bool;
+	default DEBUG_LOGGING = false;
+
 	// ============================ debug facts ==============================
 
 	// Console overrides (dev harness; tests/infuseSetConfig). A fact set to
 	// a nonzero value overrides the corresponding default. Player-invisible.
 	//   InfCfg_BaseFee  - overrides the fee fraction (value = fraction x 1000)
 	//   InfCfg_MinFee   - overrides MIN_LABOR_FEE
-	//   InfCfg_Salvage  - nonzero disables salvage economically
+	//   InfCfg_Salvage  - nonzero disables salvage (no discount: full recipe)
+	//   InfCfg_Debug    - nonzero enables the per-item grid logging
 	private const var FACT_BASE_FEE : string;
 	default FACT_BASE_FEE = "InfCfg_BaseFee";
 
@@ -136,6 +145,9 @@ class W3InfusionConfig extends IScriptable
 
 	private const var FACT_SALVAGE_OFF : string;
 	default FACT_SALVAGE_OFF = "InfCfg_Salvage";
+
+	private const var FACT_DEBUG_LOG : string;
+	default FACT_DEBUG_LOG = "InfCfg_Debug";
 
 	// ---------------------------------------------------------------------
 	// Accessors (the service's only interface)
@@ -290,6 +302,11 @@ class W3InfusionConfig extends IScriptable
 	public function RestoreTargetDurability() : bool
 	{
 		return RESTORE_DURABILITY;
+	}
+
+	public function DebugLogging() : bool
+	{
+		return DEBUG_LOGGING || FactsQuerySum( FACT_DEBUG_LOG ) > 0;
 	}
 
 	// =====================================================================

@@ -87,3 +87,28 @@ function InfusionErrorToString( err : EInfusionError ) : string
 	}
 	return "unknown error";
 }
+
+// Player-facing message for a rejection (spec §9.3), localized through the
+// mod's w3strings (tools/strings-sources). InfusionErrorToString stays the
+// English log text.
+function InfusionErrorToLocString( err : EInfusionError ) : string
+{
+	switch ( err )
+	{
+		case IFE_InvalidItemId:       return GetLocStringByKeyExt( "panel_infusion_err_unavailable" );
+		case IFE_UnsupportedCategory: return GetLocStringByKeyExt( "panel_infusion_err_unsupported" );
+		case IFE_DisabledCategory:    return GetLocStringByKeyExt( "panel_infusion_err_disabled" );
+		case IFE_CategoryMismatch:    return GetLocStringByKeyExt( "panel_infusion_err_incompatible" );
+		case IFE_SameItemInstance:    return GetLocStringByKeyExt( "panel_infusion_err_same_item" );
+		case IFE_QuestItem:           return GetLocStringByKeyExt( "panel_infusion_err_excluded" );
+		case IFE_EquippedSacrifice:   return GetLocStringByKeyExt( "panel_infusion_err_equipped" );
+		case IFE_SacrificeNotHigher:  return GetLocStringByKeyExt( "panel_infusion_err_level" );
+		case IFE_LevelMismatch:       return GetLocStringByKeyExt( "panel_infusion_err_aborted" );
+		case IFE_NotEnoughCrowns:     return GetLocStringByKeyExt( "panel_shop_notification_not_enough_money" );
+		case IFE_NotEnoughMaterials:  return GetLocStringByKeyExt( "panel_infusion_missing" );
+		case IFE_NoCraftsman:         return GetLocStringByKeyExt( "panel_infusion_err_no_craftsman" );
+		case IFE_WrongCraftsmanType:  return GetLocStringByKeyExt( "panel_infusion_err_craftsman_type" );
+		case IFE_CraftsmanLevelTooLow: return GetLocStringByKeyExt( "panel_infusion_err_craftsman_level" );
+	}
+	return InfusionErrorToString( err );
+}

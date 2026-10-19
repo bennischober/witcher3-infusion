@@ -173,8 +173,9 @@ exec function infuseTestStrings()
 //   infuseSetConfig('fee', 150)      -> fee fraction = 0.150 (x1000 stored)
 //   infuseSetConfig('fee', 0)        -> clear override
 //   infuseSetConfig('minfee', 25)    -> minimum labor fee
-//   infuseSetConfig('salvage', 1)    -> disable salvage economically (nonzero)
+//   infuseSetConfig('salvage', 1)    -> disable salvage (full recipe, no discount)
 //   infuseSetConfig('salvage', 0)    -> re-enable salvage
+//   infuseSetConfig('debug', 1)      -> per-item grid logging on (0 = off)
 exec function infuseSetConfig( key : string, value : int )
 {
 	var keyNorm : string;
@@ -220,9 +221,22 @@ exec function infuseSetConfig( key : string, value : int )
 			LogChannel( 'Infusion', "config override: salvage re-enabled" );
 		}
 	}
+	else if ( keyNorm == "debug" )
+	{
+		if ( value > 0 )
+		{
+			FactsSet( "InfCfg_Debug", 1 );
+			LogChannel( 'Infusion', "config override: grid debug logging ON" );
+		}
+		else
+		{
+			FactsRemove( "InfCfg_Debug" );
+			LogChannel( 'Infusion', "config override: grid debug logging off" );
+		}
+	}
 	else
 	{
-		LogChannel( 'Infusion', "infuseSetConfig: unknown key '" + key + "' (fee | minfee | salvage)" );
+		LogChannel( 'Infusion', "infuseSetConfig: unknown key '" + key + "' (fee | minfee | salvage | debug)" );
 	}
 
 	theGame.GetGuiManager().ShowNotification( "config override applied - see log", 6.0 );
@@ -244,7 +258,8 @@ exec function infuseDumpConfig()
 		+ " minFee=" + c.GetMinLaborFee()
 		+ " salvage=" + c.SalvageEnabled()
 		+ " salvageMult=" + c.SalvageYieldMultiplier()
-		+ " restoreDurability=" + c.RestoreTargetDurability() );
+		+ " restoreDurability=" + c.RestoreTargetDurability()
+		+ " debugLog=" + c.DebugLogging() );
 	LogChannel( 'Infusion', "config dump: gapMult(10)=" + c.GetLevelGapMultiplier( 10 )
 		+ " witcherTierReq=" + c.GetRequiredCraftsmanLevel( 5 ) );
 
