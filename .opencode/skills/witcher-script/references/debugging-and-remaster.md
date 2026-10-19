@@ -180,7 +180,7 @@ BOM-less UTF-8 has worked in practice but is not the documented contract — shi
 
 1. Deploy: `powershell -File tools\deploy-mod.ps1 -Dev` (dev overlay) or without `-Dev`
    (release layout).
-2. Launch with `-debugscripts` active (Steam launch options; see `tools/launch-debug.bat`).
+2. Launch with `-debugscripts` active (Steam launch options; see `tools/launch-debug.ps1`).
 3. Compile errors → `Documents\The Witcher 3\scriptslog.txt`.
 4. Runtime verification → in-game debug commands (see `tests/modInfusion/README.md`): sounds +
    HUD notifications + inventory state. The 5.01 console does not echo `LogChannel`.

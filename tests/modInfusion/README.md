@@ -1,20 +1,27 @@
 # modInfusion — dev/test overlay (never shipped)
 
 These files are deployed **on top of** `src/modInfusion` by `tools/deploy-mod.ps1 -Dev` and are
-excluded from release builds. They exist so milestone acceptance criteria can be verified
-in game without building production UI first.
+excluded from release builds.
 
-- `content/scripts/game/infusion/InfusionDebug.ws` — debug console commands (scenario tests: see below):
+| File | Contents |
+| --- | --- |
+| `InfusionDebug.ws` | Console commands (thin wrappers) |
+| `InfusionScenarios.ws` | Scenario tests (below) |
+| `InfusionTestTools.ws` | Shared helpers: service factory, test items, test craftsmen, opening the service menu, cleanup |
+
+## Console commands
 
 | Command | Effect |
 | --- | --- |
 | `infuseHelp` | List commands (HUD notification) |
-| `infusePreview` | Validate the best target/sacrifice pair; sound = verdict |
-| `infuseRun` | Execute the infusion of the best pair |
-| `infuseSelfTest` | Spawn test swords, run all rejection checks + one real infusion; final verdict sound (crafting = pass, denied = fail) |
-| `infuseCleanTestItems` | Remove spawned test items (keeps one — typically the infused target) |
-| `infuseOpenMenu(armorer, master)` | Spawn a craftsman (or reuse a spawned one) and open his service menu right here (opens on the Repair tab; switch to the Infusion tab). No args: journeyman swordsmith; `(true)`: journeyman armorer; `(true, true)`: master armorer; `(false, true)`: master swordsmith. Craftsman despawns after 10 min or via `infuseDespawnTestSmith`. |
-| `infuseSpawnTestPair(armor)` | Spawn a valid infusion pair (ordinary target + same-category sacrifice boosted +10 levels, tagged test items). No args: steel swords (`Novigraadan sword 1` / `3`); `(true)`: armor (`Light armor 01` / `06`). Remove with `infuseCleanTestItems`. |
+| `infuseOpenMenu(armorer, master)` | Spawn a craftsman (or reuse a spawned one) and open his service menu right here (opens on the Repair tab; the Infusion tab is next to it). No args: journeyman swordsmith; `(true)`: journeyman armorer; `(true, true)`: master armorer; `(false, true)`: master swordsmith. Despawns after 10 min or via `infuseDespawnTestSmith`. |
+| `infuseSpawnTestPair(armor)` | Spawn a valid pair (ordinary target + same-category sacrifice boosted +10 levels). No args: steel swords (`Novigraadan sword 1` / `3`); `(true)`: armor (`Light armor 01` / `06`). |
+| `infuseCleanTestItems` | Remove spawned test items (keeps the highest-level one — typically the infused target) |
+| `infuseDespawnTestSmith` | Remove spawned test craftsmen |
+| `infuseCraftsmanReport` | Log type/tier of every craftsman within 40 m |
+| `infuseSetConfig(key, n)` | Dev config override via facts: `fee` (fraction ×1000, 0 = default), `minfee`, `salvage` (1 = off), `debug` (1 = per-item grid log) |
+| `infuseDumpConfig` | Log the effective configuration |
+| `infuseTestStrings` | Check that the mod's `.w3strings` load |
 
 ## Scenario tests (one command each)
 
@@ -58,16 +65,7 @@ run again). Still manual: everything visual in the menu (docs/UI.md checklists).
 ## Console output caveat (Remastered 5.01)
 
 `LogChannel` text does **not** render in the debug console; it is written to `scriptslog.txt`
-(`-debugscripts` launch flag) as `[Infusion]` lines (earlier notes said only compile errors were
-captured — current builds log the channel too). The test therefore reports through
-game state: sounds, HUD notifications (queued; visible after closing the console), and the
-inventory UI itself (sword level, damage, durability). See
-[docs/SCRIPT_TEST_BENCH_RESEARCH.md](../../docs/SCRIPT_TEST_BENCH_RESEARCH.md) for the full
-research on why there is no out-of-game test bench.
-
-## Manual test protocol (Milestone 2 acceptance)
-
-1. `infuseSelfTest` — listen for the final verdict sound; check inventory:
-   target raised to sacrifice level, sacrifice consumed, durability 100%.
-2. Save, reload, re-check: level persists, no item duplication, sacrifice stays gone.
-3. `infuseCleanTestItems` — clean up spawned test items.
+(`-debugscripts` launch flag, `tools/launch-debug.ps1`) as `[Infusion]` lines. On screen, results
+appear as HUD notifications (queued; visible after closing the console) plus a sound (crafting =
+pass, denied = fail). Why there is no out-of-game test bench:
+[docs/SCRIPT_TEST_BENCH_RESEARCH.md](../../docs/SCRIPT_TEST_BENCH_RESEARCH.md).

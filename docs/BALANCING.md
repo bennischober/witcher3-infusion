@@ -21,7 +21,7 @@ regardless of tier (user feedback 2026-10-18).
 **Spec deviation (deliberate):** spec §6.1/§7.1 say not to charge the same level gap twice.
 Here both the fee (labor) and the materials (physical work per level) scale with the gap,
 because a 1-level touch-up must not cost the same materials as a 30-level jump. Recorded in
-TECHNICAL_DISCOVERY §12.
+TECHNICAL_DISCOVERY §9.
 
 ## What it does (examples from `tools/infusion-cost-table.py`)
 

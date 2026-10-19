@@ -98,32 +98,28 @@ exactly `src/`, nothing else.
 
 ## Development workflow
 
-Prerequisites: The Witcher 3 — Remastered (5.01), REDkit installed, console enabled
-(`DBGConsoleOn=true` in `bin/config/base/general.ini`), and `-debugscripts` in the Steam launch
-options (writes `scriptslog.txt` on compile errors).
+Prerequisites: The Witcher 3 — Remastered (5.01), REDkit, the console enabled
+(`DBGConsoleOn=true` in `bin/config/base/general.ini`). The tools find the game through the
+Steam libraries (override: `W3_GAME_DIR`); see [tools/README.md](tools/README.md).
 
 ```powershell
-# deploy dev build (release files + debug commands) into the game
-powershell -File tools\deploy-mod.ps1 -Dev
-
-# release build (what players get — no test code)
-powershell -File tools\deploy-mod.ps1
+powershell -File tools\deploy-mod.ps1 -Dev    # release files + test commands
+powershell -File tools\deploy-mod.ps1         # release build (what players get)
+powershell -File tools\launch-debug.ps1       # start the game with script logging
 ```
 
-Then launch, load a save, open the console (`~`):
+In game, open the console (`~`):
 
 ```
-infuseHelp            - list debug commands
-infusePreview         - validate the best target/sacrifice pair in inventory
-infuseRun             - execute the infusion
-infuseSelfTest        - full self test; verdict via sounds and HUD notifications
-infuseCleanTestItems  - remove spawned test items (keeps one)
+infuseScenarioAll        - run all service scenarios, PASS/FAIL summary
+infuseOpenMenu(true)     - open an armorer's menu here (Infusion tab)
+infuseSpawnTestPair(true) - spawn a target + sacrifice to try the UI
+infuseHelp               - list all commands
 ```
 
-Compile errors appear in `Documents\The Witcher 3\scriptslog.txt` (requires the
-`-debugscripts` launch flag). Runtime verification is in-game by design — see
-[docs/SCRIPT_TEST_BENCH_RESEARCH.md](docs/SCRIPT_TEST_BENCH_RESEARCH.md) for why there is no
-out-of-game test runner.
+Compile errors and `[Infusion]` log lines go to `Documents\The Witcher 3\scriptslog.txt`.
+Test commands: [tests/modInfusion/README.md](tests/modInfusion/README.md). Manual UI checks:
+[docs/UI.md](docs/UI.md).
 
 ## Compatibility notes
 
@@ -137,8 +133,10 @@ out-of-game test runner.
 - Known safe alongside texture/asset mods. Gameplay overhauls that change damage/armor math
   may shift level formulas; the infusion transaction verifies level equality before committing
   and aborts safely on mismatch.
-- Item exclusions: quest items, Aerondight (own progression mechanic), merchant-range
-  autogen items.
+- Item exclusions: quest items, hidden/technical items, Aerondight (own progression mechanic),
+  merchant-range autogen items.
+- Removing the mod is safe: infused items keep their levels (they use the game's own level
+  abilities); nothing else is stored in the save.
 
 ## License and assets
 

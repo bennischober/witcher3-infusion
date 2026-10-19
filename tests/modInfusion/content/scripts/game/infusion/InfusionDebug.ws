@@ -1,77 +1,31 @@
 ﻿/***********************************************************************/
-/** 	Witcher Gear Infusion — debug console entry points (DEV ONLY)
-/** 	Thin exec-function wrappers; the test bodies live in
-/** 	InfusionTestCases.ws, shared plumbing in InfusionTestHelpers.ws.
+/** 	Witcher Gear Infusion — debug console commands (DEV ONLY)
+/** 	Thin exec wrappers; scenario tests live in InfusionScenarios.ws,
+/** 	shared helpers in InfusionTestTools.ws. Console: DBGConsoleOn.
 /**
-/** 	Enabled via the game console (DBGConsoleOn). Commands:
-/** 	  infuseHelp       - list commands
-/** 	  infuseStats      - pointer to the inventory UI verification
-/** 	  infusePreview    - validate best pair (sound = verdict)
-/** 	  infuseRun        - execute infusion of the best pair
-/** 	  infuseSelfTest   - rejection checks + one real infusion
-/** 	  infuseCleanTestItems    - remove spawned test items (keeps one)
-/** 	  infuseTestMissingMaterials - sad path; side-effect free
-/** 	  infuseReadLastTest     - re-show last test result
-/** 	  infuseCraftsmanReport  - report nearby craftsmen (type/tier)
-/** 	  infuseSpawnTestSmith   - spawn a test smith (optional master)
-/** 	  infuseDespawnTestSmith - remove spawned test smiths
-/** 	  infuseOpenMenu         - open the smith/armorer service menu here
-/** 	                           (args: armorer, master - both optional)
-/** 	  infuseSpawnTestPair    - spawn a valid target + sacrifice (optional armor)
-/** 	  infuseScenarioAll      - run every scenario, PASS/FAIL/SKIP summary
-/** 	  infuseScenario(name)   - run one scenario (InfusionScenarios.ws)
-/** 	  infuseScenarioN(n)     - same, by number from infuseScenarioList
-/** 	  infuseScenarioList     - list the scenario names
-/** 	  infuseScenarioPersistCheck - after infuseScenario(persist) + reload
+/** 	  infuseScenarioAll          - run every scenario, PASS/FAIL/SKIP summary
+/** 	  infuseScenario(name)       - run one scenario
+/** 	  infuseScenarioN(n)         - same, by number from infuseScenarioList
+/** 	  infuseScenarioList         - list the scenario names
+/** 	  infuseScenarioPersistCheck - after infuseScenario(persist) + save/reload
+/** 	  infuseOpenMenu             - open the smith/armorer menu here
+/** 	                               (args: armorer, master - both optional)
+/** 	  infuseSpawnTestPair        - spawn a valid target + sacrifice (optional armor)
+/** 	  infuseCleanTestItems       - remove spawned test items (keeps one)
+/** 	  infuseDespawnTestSmith     - remove spawned test craftsmen
+/** 	  infuseCraftsmanReport      - report nearby craftsmen (type/tier)
+/** 	  infuseSetConfig(key, n)    - dev config override (fee/minfee/salvage/debug)
+/** 	  infuseDumpConfig           - log the effective configuration
+/** 	  infuseTestStrings          - check that the mod's strings load
 /**
-/** 	Output channels (5.01): LogChannel -> scriptslog.txt (-debugscripts),
-/** 	notifications + HudConsoleMsg on screen, verdicts via sounds. The
-/** 	console overlay can hide notifications fired while it is open; tests
-/** 	also persist their result in the 'InfLastTest' fact.
+/** 	Output: LogChannel -> scriptslog.txt (-debugscripts); notifications and
+/** 	HudConsoleMsg on screen (shown after closing the console).
 /***********************************************************************/
 
 exec function infuseHelp()
 {
 	theGame.GetGuiManager().ShowNotification(
-		"Infusion: scenarioAll / scenario(name) / scenarioN(n) / scenarioList / scenarioPersistCheck / selfTest / cleanTestItems / testMissingMaterials / testEligibility / craftsmanReport / spawnTestSmith / openMenu(armorer, master) / spawnTestPair(armor) / preview / run", 9.0 );
-}
-
-exec function infuseStats()
-{
-	theGame.GetGuiManager().ShowNotification( "Infusion: check sword levels in the inventory", 6.0 );
-}
-
-exec function infusePreview()
-{
-	var svc : W3InfusionService;
-	var targetId, sacrificeId : SItemUniqueId;
-	var p : SInfusionPreview;
-	var inv : CInventoryComponent;
-
-	if ( !InfusionFindBestPair( targetId, sacrificeId ) )
-	{
-		return;
-	}
-
-	inv = thePlayer.inv;
-	svc = InfusionGetService();
-	svc.Preview( targetId, sacrificeId, p );
-
-	theGame.GetGuiManager().ShowNotification(
-		"Infusion preview: " + inv.GetItemName( targetId ) + " L" + p.targetLevel
-		+ " <- " + inv.GetItemName( sacrificeId ) + " L" + p.sacrificeLevel
-		+ ", fee " + p.laborFee, 9.0 );
-	theSound.SoundEvent( "gui_crafting_craft_item" );
-}
-
-exec function infuseRun()
-{
-	InfusionRunBestPair();
-}
-
-exec function infuseSelfTest( optional armor : bool )
-{
-	InfusionTestCaseSelfTest( armor );
+		"Infusion: scenarioAll / scenario(name) / scenarioN(n) / scenarioList / scenarioPersistCheck / openMenu(armorer, master) / spawnTestPair(armor) / cleanTestItems / despawnTestSmith / craftsmanReport / setConfig(key, n) / dumpConfig / testStrings", 9.0 );
 }
 
 exec function infuseCleanTestItems()
@@ -79,49 +33,9 @@ exec function infuseCleanTestItems()
 	InfusionCleanTestItems();
 }
 
-exec function infuseTestMissingMaterials()
-{
-	InfusionTestCaseMissingMaterials();
-}
-
-exec function infuseReadLastTest()
-{
-	var hud : CR4ScriptedHud;
-	var msg : string;
-
-	if ( FactsDoesExist( "InfLastTest" ) )
-	{
-		if ( FactsQuerySum( "InfLastTest" ) == 1 )
-		{
-			msg = "last test: PASS";
-		}
-		else
-		{
-			msg = "last test: FAIL (or setup failed)";
-		}
-	}
-	else
-	{
-		msg = "no test result recorded yet";
-	}
-
-	LogChannel( 'Infusion', "infuseReadLastTest: " + msg );
-	theGame.GetGuiManager().ShowNotification( msg, 9.0 );
-	hud = (CR4ScriptedHud)theGame.GetHud();
-	if ( hud )
-	{
-		hud.HudConsoleMsg( msg );
-	}
-}
-
 exec function infuseCraftsmanReport()
 {
-	InfusionTestCaseCraftsmanReport();
-}
-
-exec function infuseSpawnTestSmith( optional master : bool )
-{
-	InfusionSpawnTestSmith( master );
+	InfusionCraftsmanReport();
 }
 
 exec function infuseDespawnTestSmith()
@@ -129,8 +43,8 @@ exec function infuseDespawnTestSmith()
 	InfusionDespawnTestSmith();
 }
 
-// Opens the service menu (Repair tab = infusion) with a spawned craftsman,
-// anywhere in the world - no travel to an NPC per UI test round.
+// Opens the service menu with a spawned craftsman, anywhere in the world -
+// no travel to an NPC per UI test round.
 //   infuseOpenMenu              journeyman swordsmith
 //   infuseOpenMenu(true)        journeyman armorer
 //   infuseOpenMenu(true, true)  master armorer
@@ -141,7 +55,7 @@ exec function infuseOpenMenu( optional armorer : bool, optional master : bool )
 }
 
 // Spawns a valid infusion pair (ordinary gear, sacrifice +10 levels) so the
-// service grid has something to show. infuseSpawnTestPair(true) = armor.
+// Infusion tab has something to show. infuseSpawnTestPair(true) = armor.
 exec function infuseSpawnTestPair( optional armor : bool )
 {
 	InfusionSpawnTestPair( armor );
@@ -197,7 +111,7 @@ exec function infuseSetConfig( key : string, value : int )
 		else
 		{
 			FactsRemove( "InfCfg_BaseFee" );
-			LogChannel( 'Infusion', "config override: fee fraction cleared (default 0.10)" );
+			LogChannel( 'Infusion', "config override: fee fraction cleared (default 0.25)" );
 		}
 	}
 	else if ( keyNorm == "minfee" )
@@ -247,8 +161,7 @@ exec function infuseSetConfig( key : string, value : int )
 	theGame.GetGuiManager().ShowNotification( "config override applied - see log", 6.0 );
 }
 
-// Dumps the parsed configuration values to the log - the ground truth for
-// verifying what the settings menu writes vs. what the config class parses.
+// Logs the effective configuration (defaults plus console overrides).
 exec function infuseDumpConfig()
 {
 	var c : W3InfusionConfig;

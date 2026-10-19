@@ -1,80 +1,65 @@
-# Spec coverage audit (2026-10-19)
+# Spec coverage
 
-INFUSION_SPEC.md compared section by section with the implementation after M6. Purpose: an honest
-answer to "have we worked through everything?" and the list of what M7/M8 still have to cover.
+INFUSION_SPEC.md compared section by section with the implementation. Updated 2026-10-19.
 
-Legend: ✅ implemented and verified in game · 🟡 implemented, not yet verified in game ·
-⚠️ partial or deliberate deviation (documented) · ❌ missing
+Legend: ✅ implemented and verified in game · ⚠️ partial, or a deliberate deviation
+(TECHNICAL_DISCOVERY.md §9) · ❌ missing · — optional, not planned yet
+
+"Scenario" = verified by the one-command scenario suite (`infuseScenarioAll`, 22/22 PASS;
+tests/modInfusion/README.md).
 
 ## Summary
 
-The **core loop is complete** (two-item model, level transfer, salvage, materials, labor fee,
-craftsman gating, durability, transaction safety, production UI). What's left is mostly
-**validation breadth** (swords, upgrades, unique items), **player-facing explanations** for
-rejected items, **compatibility**, and the **M7 release work**. Nothing in the spec was
-silently dropped; the deviations below are deliberate and documented.
+The **core system is complete and verified**: two-item model, level transfer, salvage and
+materials, labor fee, craftsman gating, durability, transaction safety, persistence, uninstall
+safety and the production UI — with no vanilla script override. Open: **rejection reasons in the
+grid** (§9.3), **NG+ balance playtesting** (§6.4), **compatibility testing with other mods**
+(§14), and the **M7 release work**. Bonus merging (§11, M8) has not started.
 
 ## Section by section
 
 | Spec | Requirement | Status | Notes |
 | --- | --- | --- | --- |
-| §1.3 | Non-goals (no auto-scaling, no new NPC/quest, no random failure, no level cap, no new resource) | ✅ | All respected. |
-| §2 | Technical discovery | ✅ | docs/TECHNICAL_DISCOVERY.md. Leveling-mod research done in M1. |
-| §3.1 | Two distinct items, target kept, sacrifice consumed | ✅ | |
-| §3.2 | New level = sacrifice level; equal/lower rejected | ✅ | Equal level always rejected (no `AllowEqualLevelInfusion` switch — not needed so far). |
-| §3.3 | Compatibility armor↔armor, sword↔sword | ✅ ⚠️ | Stricter than the spec: same **category** (chest↔chest, boots↔boots, steel↔steel, silver↔silver), matching the game's level formulas per slot. |
-| §3.3 | Silver swords | 🟡 | Were disabled since M2; enabled 2026-10-19. |
-| §3.4 | Full durability restore, stated in the UI | ✅ | Popup note "…wird vollständig repariert". |
-| §4.1 | Preserve identity, sockets, upgrades, set bonuses | ✅ by design · ❌ not tested | The item is never recreated; only `autogen_fixed_*` step abilities are added. Sockets/runes/glyphs after infusion not yet checked in game. |
-| §4.2/4.3 | Stats recalculated from the target's own definition | ✅ | Step abilities = one level of the target's own stat each; the game derives stats and level. |
-| §4.4 | Validation matrix | ⚠️ | ✅ ordinary armor, Witcher armor, damaged items, steel sword (M2). ❌ Witcher sword, silver sword, items with sockets/upgrades, enchanted (runewords), unique/relic items. 🟡 All covered by `infuseScenarioAll` (tests/modInfusion/README.md, 2026-10-19) — first run pending. |
-| §5.1–5.4 | Salvage from native dismantle data, applied directly, excess discarded | ✅ | `GetItemRecyclingParts`. Recipe from the target's own components (docs/BALANCING.md). |
-| §5.5 | Exploit protection | ✅ | Same instance, double use, preview/cancel side-effect free, re-validation in `Execute`. |
-| §10 / §15.3 | Disabling salvage changes the calculation | 🟡 | **Bug fixed 2026-10-19:** salvage-off made infusions material-free. |
-| §6.1/6.2 | Labor fee separate from materials; craftsman multipliers | ✅ | |
-| §6.3 | `BaseFee × multipliers` | ⚠️ | Deviation: base = 25 % of the **target's market value** (auto-balances with the game's economy). docs/BALANCING.md. |
-| §6.4 | Costs meaningful in long NG+ runs | ❌ open | Needs playtesting with high-level/NG+ gear (BALANCING.md open questions). |
-| §7.1 | Gap drives cost; materials not charged twice | ⚠️ | Deliberate deviation: gap scales fee **and** materials (TECHNICAL_DISCOVERY §12). |
-| §7.2 | Craftsman efficiency discount | — | Optional in the spec; not implemented (spec says only if playtesting asks for it). |
+| §1.3 | Non-goals | ✅ | No auto-scaling, no new NPC/quest, no random failure, no level cap, no new resource. |
+| §2 | Technical discovery | ✅ | TECHNICAL_DISCOVERY.md. |
+| §3.1 | Two distinct items, target kept, sacrifice consumed | ✅ | Scenario. |
+| §3.2 | New level = sacrifice level; equal/lower rejected | ✅ | Scenario (`reject_equal`, `reject_lower`). No `AllowEqualLevelInfusion` switch. |
+| §3.3 | Compatibility | ✅ ⚠️ | Same item **category** (chest↔chest, boots↔boots, steel↔steel, silver↔silver) — stricter than the spec. Scenario (`reject_category`, `reject_steel_silver`). |
+| §3.4 | Full durability restore, stated in the UI | ✅ | Scenario (damaged targets); popup note. |
+| §4.1–4.3 | Identity kept, stats recalculated from the target's own definition | ✅ | Only step abilities are added. Scenario: rune, glyph and runeword kept, all previous abilities kept. |
+| §4.4 | Validation matrix | ✅ | Scenario: ordinary steel/silver sword, armor, boots, Witcher sword + rune, Witcher armor + glyph, relic + runeword, damaged targets, NG+ above the cap. Unique special-progression items are excluded (Aerondight). |
+| §5.1–5.4 | Salvage from native dismantle data, excess discarded | ✅ | `GetItemRecyclingParts`; recipe from the target's own components (BALANCING.md). |
+| §5.5 | Exploit protection | ✅ | Scenario (`reject_same`, `reject_materials`, `reject_crowns`: nothing consumed); `Execute` re-validates. |
+| §6.1/6.2 | Labor fee separate from materials; craftsman multipliers | ✅ | Scenario (`fee_by_tier`: master > journeyman). |
+| §6.3 | Fee formula | ⚠️ | Base = 25 % of the target's market value instead of a fixed base fee. |
+| §6.4 | Costs meaningful in long NG+ runs | ❌ | Needs a playtest with real high-level gear (BALANCING.md open questions). |
+| §7.1 | Level gap drives cost | ⚠️ | The gap scales fee **and** materials (deliberate). |
+| §7.2 | Craftsman efficiency discount | — | Optional; only if playtesting asks for it. |
 | §7.3 | No random failure, safe abort | ✅ | |
-| §8.1 | Existing NPCs and menu only | ✅ | New tab inside the existing blacksmith menu (the "smallest extension" clause). |
-| §8.2 | Tier + specialization from game data | ✅ | `W3CraftsmanComponent`; swordsmith for swords, armorer for armor; relic → master, Witcher → grandmaster (config). |
-| §8.3 | No level cap, overflow-safe | ✅ | Uncapped level above the player's max; gap factor capped at 3 sets. |
-| §9.1 | Select target and sacrifice in the existing interface | ✅ | Two-step flow. |
-| §9.2 | Preview contents | ⚠️ | ✅ names, icons (grid), levels, fee, covered/remaining materials, consumption + repair note. ❌ projected stats (spec allows omitting them, but asks to explain why). ❌ **eligibility shown**: ineligible items are hidden, not explained. |
-| §9.3 | Clear rejection messages | ⚠️ 🟡 | Messages localized (en/de) 2026-10-19, but most rejections never reach the player: the grid **hides** items that can't be infused here (no "a master armorer is required"). Biggest UX gap — see "Proposals". |
-| §9.5 | Confirmation summary with fresh data | ✅ | Fresh `Preview` before the popup; `Execute` re-validates. |
-| §10 | Configuration | ⚠️ | Script constants in `InfusionConfig.ws` (Remastered settings menu broken for mod groups — documented). Missing switches: `RequireCraftingMaterials`, `AllowEqualLevelInfusion`, `AllowSpecialItems`. ❌ player-facing configuration docs (M7). |
-| §11 | Bonus merging (optional) | — | M8. The core has no extension point yet (§11.3). |
-| §12 | Modular architecture | ✅ | Config / service / grid / menu separated; the service is used by the console tests. |
-| §13.1–13.3 | Validate before commit, rollback, no partial state | ✅ | Level verified after applying; abilities rolled back on mismatch; money → materials → sacrifice. |
-| §13.4 | Save/load integrity | ✅ | Verified several times (armor) and by `infuseScenario(persist)` + `infuseScenarioPersistCheck` (steel sword, 2026-10-19). |
-| §14 | Compatibility investigation | ⚠️ 🟡 | **No vanilla script override left** (2026-10-19): `commonMenu.ws` (verified) and `blacksmithMenu.ws` (test pending) moved to annotations. Remaining surface: the global `HaxGetPanelStateName` replacement. Scaling mods, crafting overhauls and UI mods untested. |
-| §14.2 | Exclusion list with explanation | ⚠️ | List exists (quest, body, hidden, Aerondight, merchant autogen). Excluded items are hidden without explanation. |
-| §15.1/15.2 | Core and rejection tests | ⚠️ | Rejections covered by the M2–M5 console harness and gating tests; sword/Witcher-sword/upgrade cases open (§4.4). |
-| §15.6 | Regression | ✅ | ✅ repair, repair all, dismantle. ✅ crafting / alchemy / inventory menus with the annotation tab (2026-10-19). ✅ removing the mod from an existing save (2026-10-19): an infused armor and sword kept their levels after save → uninstall → load; the save loads without new errors and the menus are vanilla. Infused levels are vanilla `autogen_fixed_*` crafted abilities saved with the item; no mod class or tag is saved. |
-| §16 M7 | Release preparation | ❌ | Compatibility, config docs, install instructions, known issues, packaging. |
+| §8.1 | Existing NPCs and menu only | ✅ | Infusion tab inside the blacksmith/armorer menu. |
+| §8.2 | Tier + specialization from game data | ✅ | Scenario (`reject_craftsman_type`, `reject_tier_witcher`, `reject_tier_relic`, `master_relic_ok`). Relic → master, Witcher gear → grandmaster (config). |
+| §8.3 | No level cap, overflow-safe | ✅ | Scenario (`ngplus_uncapped`); gap factor capped at 3 sets. |
+| §9.1 | Select target and sacrifice | ✅ | Two-step flow (UI.md). |
+| §9.2 | Preview contents | ⚠️ | ✅ names, icons, levels, fee, covered/remaining materials, consumption + repair note. ❌ projected stats (allowed to omit). ❌ eligibility: ineligible items are hidden, not explained. |
+| §9.3 | Clear rejection messages | ⚠️ | Messages are localized (en/de), but most never reach the player: the grid **hides** items that can't be infused here. Biggest UX gap — see "Next". |
+| §9.5 | Confirmation with fresh data | ✅ | Fresh `Preview` before the popup; `Execute` re-validates. |
+| §10 | Configuration | ⚠️ | Script constants in `InfusionConfig.ws` (no settings menu — broken on 5.01); dev overrides via `infuseSetConfig`. Missing switches: `RequireCraftingMaterials`, `AllowEqualLevelInfusion`, `AllowSpecialItems`. Salvage toggle verified (scenario `salvage_off`). ❌ player-facing configuration doc. |
+| §11 | Bonus merging | — | M8; the core has no extension point yet (§11.3). |
+| §12 | Modular architecture | ✅ | Config / service / grid / menu hooks separated; the service is driven directly by the tests. |
+| §13 | Transaction safety | ✅ | Level verified after applying, rollback on mismatch; charge → materials → sacrifice. |
+| §13.4 | Save/load integrity | ✅ | Scenario (`persist` + `infuseScenarioPersistCheck`) and manual rounds. |
+| §14 | Compatibility | ⚠️ | No vanilla script override (annotations, UI.md). Remaining surface: the global `HaxGetPanelStateName` replacement. Not tested alongside scaling, crafting or UI overhaul mods. |
+| §14.2 | Exclusion list with explanation | ⚠️ | Quest, hidden/body, Aerondight, merchant-range items. Excluded items are hidden without explanation. |
+| §15.1–15.5 | Core, rejection, salvage, pricing, persistence tests | ✅ | Scenario suite. |
+| §15.6 | Regression | ✅ | Repair, repair all, dismantle, sockets; crafting/alchemy/inventory menus; removing the mod from a save (infused items keep their levels). |
+| §16 M7 | Release preparation | ❌ | Install guide, configuration doc, known issues, release-build check, packaging. |
 
-## Proposals (not implemented)
+## Next
 
-1. **Rejection reasons in the grid (§9.2/§9.3/§14.2).** List supported-but-not-infusable items in
-   step 1 as **disabled** entries (same `disableAction` mechanism as missing materials) and put
-   the reason in the warning line ("Erfordert einen Großmeister-Plattner", "Kein höherstufiges
-   Opfer im Inventar"). Open question: the warning line's text is per page, not per item; it
-   would have to be updated from `OnGetItemData` (hover), with the known hover/selection
-   mismatch. Alternative: the reason as the item tooltip's `WarningMessage`
-   (docs/ROADMAP_IDEAS.md).
-2. **Annotations** for `blacksmithMenu.ws` — implemented 2026-10-19, test pending (§14).
-3. **Validation round** for the §4.4 matrix — **scenario tests built 2026-10-19**
-   (`infuseScenarioAll`: 22 scenarios incl. rejections, salvage-off, fee by tier, NG+; plus a
-   two-step persistence check). First run 2026-10-19: 12/22 — all 11 rejections and the master
-   relic pass; every infusion executed correctly but the test's stat read returned 0 (fixed:
-   item stats are in `valueBase`). `fee_by_tier` found a **real bug**: the fee tier was read as
-   the smith tier, so armorers always charged the journeyman rate (fixed in `Preview`).
-   Second run: **22/22 PASS** — §4.4 matrix (silver, Witcher sword + rune, Witcher armor +
-   glyph, relic + runeword, boots), NG+ above the cap, salvage off, fee by tier, all rejections.
-   Persistence check: the sword survived the reload but the check looked for a script-added tag,
-   which the game does not save — now matched by name and level. Re-run: **PASS** (L69,
-   stat 576, full durability after save/reload).
-4. **Uninstall test** (§15.6) — **done 2026-10-19** (armor and sword survived save, uninstall, load).
-5. M7 documents: install, configuration (constants + console overrides), known issues.
+1. **Rejection reasons in the grid** (§9.2/§9.3/§14.2): list supported-but-not-infusable items
+   in step 1 as disabled entries with the reason ("Erfordert einen Großmeister-Plattner",
+   "Kein höherstufiges Opfer im Inventar"). The disabled warning line is one text per page, so a
+   per-item reason needs another carrier — e.g. the item tooltip's `WarningMessage`
+   (ROADMAP_IDEAS.md).
+2. **M7 release work** (see §16 above).
+3. **NG+ balance playtest** (§6.4).

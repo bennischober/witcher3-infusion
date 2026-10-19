@@ -1150,12 +1150,10 @@ function InfusionRunScenario( scenario : name )
 	theGame.GetGuiManager().ShowNotification( line, 10.0 );
 	if ( status == ISS_Fail )
 	{
-		FactsSet( "InfLastTest", 0 );
 		theSound.SoundEvent( "gui_global_denied" );
 	}
 	else
 	{
-		FactsSet( "InfLastTest", 1 );
 		theSound.SoundEvent( "gui_crafting_craft_item" );
 	}
 }
@@ -1232,12 +1230,10 @@ function InfusionRunAllScenarios()
 	theGame.GetGuiManager().ShowNotification( summary, 15.0 );
 	if ( failed > 0 )
 	{
-		FactsSet( "InfLastTest", 0 );
 		theSound.SoundEvent( "gui_global_denied" );
 	}
 	else
 	{
-		FactsSet( "InfLastTest", 1 );
 		theSound.SoundEvent( "gui_crafting_craft_item" );
 	}
 }

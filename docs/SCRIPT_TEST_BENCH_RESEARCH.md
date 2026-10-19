@@ -46,15 +46,14 @@ are fragile (drive/move/verify-integrity changes) and cannot be shared or used i
 
 ## Decision
 
-In-game self-test remains the verification path:
+Verification runs in game:
 
-- `tests/modInfusion/.../InfusionDebug.ws` (dev deploys only) provides
-  `infuseSelfTest`, `infusePreview`, `infuseCleanTestItems` — verdicts via sounds,
-  HUD notifications, and inventory state.
-- `-debugscripts` (Steam launch option, already configured) makes the engine write
-  `scriptslog.txt` on compile errors — the cheap "compile gate" for everyday use.
-- Manual test protocol per milestone lives in the milestone acceptance criteria
-  (INFUSION_SPEC.md §16) and `src/modInfusion/README.md` / `tests/...` documentation.
+- **Scenario tests** (`tests/modInfusion/.../InfusionScenarios.ws`, dev deploys only):
+  `infuseScenarioAll` runs every service-level scenario in one command and reports
+  PASS/FAIL/SKIP on screen and in `scriptslog.txt` (tests/modInfusion/README.md).
+- `-debugscripts` makes the engine write `scriptslog.txt` (compile errors and `[Infusion]`
+  log lines) — the everyday compile gate (`tools/launch-debug.ps1`).
+- The menu itself is checked by hand (docs/UI.md, "Manual UI checklist").
 
 ## When to revisit
 
