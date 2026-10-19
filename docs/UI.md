@@ -75,10 +75,11 @@ Key mechanics:
   belongs to. The page's disabled warning line is one text per page: "Hier nicht infundierbar"
   in step 1, "Fehlende Materialien" in step 2.
 - **Space hint off:** after the Repair tab, the vanilla "repair equipped items" Space hint
-  stayed visible in the Infuse tab (Space would run vanilla repair-all). The tab now treats every
-  `UpdateRepairAllInputFeedback` as `'Infuse'`, clears Flash's label (`setXActionLabel("")`) and
-  removes the bottom-bar binding (`m_GFxInputBindings`, action 1002) whenever it sets its button
-  label. With `infuseSetConfig('debug', 1)` the menu-state and label updates are logged.
+  stayed in the Infuse tab's bottom bar although every label update was correct (debug log). The
+  bar is the script-side binding list (`CR4MenuBase.m_GFxInputBindings`, action 1002), and
+  Flash's removal didn't reach it. The tab clears Flash's label (`setXActionLabel("")`), removes
+  the binding and refreshes the bar whenever it sets its button label. With
+  `infuseSetConfig('debug', 1)` menu-state changes are logged.
 
 ## Flash protocol facts (REDkit ActionScript sources)
 

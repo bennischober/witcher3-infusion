@@ -19,7 +19,8 @@
 /** 	                          from the OnGetItemData event)
 /** 	  InventoryUpdateAll      invalidates the grid's verdict cache
 /** 	Vanilla's Space/X handler stays untouched: Flash only sends it while
-/** 	the key has a label, and the Disassemble page clears it. Cancelling a
+/** 	the key has a label; the Infuse tab clears the label and its bottom-bar
+/** 	binding (InfusionUpdateActionLabel). Cancelling a
 /** 	target choice = selecting the target again (or switching tabs).
 /**
 /** 	Annotation rules (docs/TECHNICAL_DISCOVERY.md): no access modifier
@@ -162,18 +163,6 @@
 		wrappedMethod( item, compareItemType );
 	}
 	InfusionUpdateActionLabel();
-}
-
-// The Space hint ("repair equipped items") belongs to the Repair tab only.
-// In the Infuse tab any update is treated as 'Infuse' (empty label).
-@wrapMethod( CR4BlacksmithMenu ) function UpdateRepairAllInputFeedback( newState : name ) : void
-{
-	InfusionDebugLog( "space label: update for '" + newState + "', menu state '" + m_menuState + "'" );
-	if ( m_menuState == 'Infuse' )
-	{
-		newState = 'Infuse';
-	}
-	wrappedMethod( newState );
 }
 
 // Full rebuild: the inventory may have changed since the last render.
@@ -343,13 +332,13 @@
 // the cancel action instead ("Ziel (E: abbrechen)").
 //
 //
-// The Space hint ("repair equipped items") must stay off here: after the
-// Repair tab it stayed visible in the Infuse tab (2026-10-19, cause not
-// pinned down - see the debug log of UpdateRepairAllInputFeedback), and
-// Space would trigger vanilla repair-all. An empty label clears Flash's
-// copy (BlacksmithMenu.as setXActionLabel; vanilla passes a string
-// variable, not a literal); the bottom bar is the script-side binding list
-// (CR4MenuBase.m_GFxInputBindings, action 1002), refreshed directly.
+// The Space hint ("repair equipped items") must stay off here. After the
+// Repair tab it stayed in the bottom bar although every label update said
+// 'Infuse' (debug log, 2026-10-19): the bar is the script-side binding list
+// (CR4MenuBase.m_GFxInputBindings, action 1002), and Flash's removal didn't
+// reach it. So the binding is removed here and the bar refreshed; the empty
+// label also clears Flash's copy (BlacksmithMenu.as setXActionLabel; vanilla
+// passes a string variable, not a literal).
 @addMethod( CR4BlacksmithMenu ) function InfusionUpdateActionLabel() : void
 {
 	var noLabel : string;

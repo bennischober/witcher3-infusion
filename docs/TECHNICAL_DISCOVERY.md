@@ -41,7 +41,8 @@ messages in `witcher3.exe`, verified in game 2026-10-19:
 | Inherited methods | Can be neither wrapped nor replaced in a subclass — target the declaring class (e.g. `@wrapMethod(CR4MenuBase) RefreshMenuState`, then check `(CR4BlacksmithMenu)this`). |
 | Global functions | Replaceable (`@replaceMethod function F` — no class). No global `@wrapMethod` is documented or referenced by the compiler. A second replacement of the same function in another mod is a compile error ("duplicate found"). |
 | Natives | Can't be wrapped outside mod.io (precompiled) mods — e.g. `RequestSubMenu`. |
-| Events | **Can't be annotated** (the parser expects `function`). Hook the function the event calls instead. **Flash calls reach script events only**: an added function named like a Flash call (`OnInventoryItemSelected`) never runs. An annotation-only mod therefore can't receive Flash calls the vanilla menu doesn't already handle. |
+| Events | **Can't be annotated** (the parser expects `function`). Hook the function the event calls instead. **Flash calls reach script events only**: an added function named like a Flash call (`OnInventoryItemSelected`) never runs. An annotation-only mod therefore can't receive Flash calls the vanilla menu doesn't already handle. Script code may call events directly (e.g. `OnUpdateGFxButtonsList()`). |
+| Bottom key bar | Script-side: Flash's `InputFeedbackManager` sends `OnAppendGFxButton`/`OnRemoveGFxButton`, the menu keeps `CR4MenuBase.m_GFxInputBindings`, and `OnUpdateGFxButtonsList` pushes it to the common menu. A stale entry can survive Flash state changes (blacksmith repair-all, action 1002, after the Repair tab); remove it script-side with `RemoveGFxButtonById` + `OnUpdateGFxButtonsList()` (verified 2026-10-19). |
 
 ## 3. Item levels
 
