@@ -338,6 +338,13 @@ Setup: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)` (armorer) or `infuseO
    - **regression:** the other menus built by `CR4CommonMenu` look normal — inventory, crafting
      (Handwerk), alchemy, and an enchanter if one is at hand (Enchanting + Add sockets tabs).
 
+## Scenario tests (2026-10-19)
+
+`infuseScenarioAll` (tests/modInfusion/README.md) covers the service-level checks in one
+command. First run: 12/22 (see docs/SPEC_COVERAGE.md); its fee check found that **master
+armorers charged the journeyman fee** (tier read as smith) — fixed. In the menu, master
+armorers now show 1.5× the journeyman fee.
+
 ## Open items
 
 1. **Compatibility (M7):** `blacksmithMenu.ws` is still a full override — any mod touching it

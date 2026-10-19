@@ -67,6 +67,9 @@ silently dropped; the deviations below are deliberate and documented.
 2. **Annotations** for `blacksmithMenu.ws` after the `commonMenu.ws` spike passes (compatibility, §14).
 3. **Validation round** for the §4.4 matrix — **scenario tests built 2026-10-19**
    (`infuseScenarioAll`: 22 scenarios incl. rejections, salvage-off, fee by tier, NG+; plus a
-   two-step persistence check). First in-game run pending.
+   two-step persistence check). First run 2026-10-19: 12/22 — all 11 rejections and the master
+   relic pass; every infusion executed correctly but the test's stat read returned 0 (fixed:
+   item stats are in `valueBase`). `fee_by_tier` found a **real bug**: the fee tier was read as
+   the smith tier, so armorers always charged the journeyman rate (fixed in `Preview`).
 4. **Uninstall test** (§15.6): infuse, save, remove the mod, load.
 5. M7 documents: install, configuration (constants + console overrides), known issues.

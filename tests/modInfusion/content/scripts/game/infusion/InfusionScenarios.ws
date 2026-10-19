@@ -835,6 +835,7 @@ class W3InfusionScenarioRunner extends IScriptable
 	private function PrimaryStat( id : SItemUniqueId ) : float
 	{
 		var attr : name;
+		var value : SAbilityAttributeValue;
 
 		switch ( inv.GetItemCategory( id ) )
 		{
@@ -842,7 +843,11 @@ class W3InfusionScenarioRunner extends IScriptable
 			case 'silversword': attr = 'SilverDamage'; break;
 			default:            attr = 'armor'; break;
 		}
-		return CalculateAttributeValue( inv.GetItemAttributeValue( id, attr ) );
+		// Item stats live in valueBase (the field gameParams.GetItemLevel
+		// reads); CalculateAttributeValue multiplies it by valueMultiplicative,
+		// which is 0 for item stats - it returned 0 for every item.
+		value = inv.GetItemAttributeValue( id, attr );
+		return value.valueBase + value.valueAdditive;
 	}
 
 	private function Capture( id : SItemUniqueId ) : SInfScnItemState
