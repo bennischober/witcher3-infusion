@@ -4,7 +4,7 @@ These files are deployed **on top of** `src/modInfusion` by `tools/deploy-mod.ps
 excluded from release builds. They exist so milestone acceptance criteria can be verified
 in game without building production UI first.
 
-- `content/scripts/game/infusion/InfusionDebug.ws` — debug console commands:
+- `content/scripts/game/infusion/InfusionDebug.ws` — debug console commands (scenario tests: see below):
 
 | Command | Effect |
 | --- | --- |
@@ -16,10 +16,50 @@ in game without building production UI first.
 | `infuseOpenMenu(armorer, master)` | Spawn a craftsman (or reuse a spawned one) and open his service menu right here (opens on the Repair tab; switch to the Infusion tab). No args: journeyman swordsmith; `(true)`: journeyman armorer; `(true, true)`: master armorer; `(false, true)`: master swordsmith. Craftsman despawns after 10 min or via `infuseDespawnTestSmith`. |
 | `infuseSpawnTestPair(armor)` | Spawn a valid infusion pair (ordinary target + same-category sacrifice boosted +10 levels, tagged test items). No args: steel swords (`Novigraadan sword 1` / `3`); `(true)`: armor (`Light armor 01` / `06`). Remove with `infuseCleanTestItems`. |
 
+## Scenario tests (one command each)
+
+`content/scripts/game/infusion/InfusionScenarios.ws`. Every scenario spawns its own items (and a
+test craftsman where needed), runs the real service code (`Preview` / `Execute`, the calls the
+menu makes), checks the result itself and then puts the inventory back: spawned items removed,
+crowns and materials restored to the exact amounts from before.
+
+| Command | Effect |
+| --- | --- |
+| `infuseScenarioAll` | Runs all scenarios below. Summary on screen and in the log: `SCENARIOS: 21/22 PASS \| FAIL: … \| SKIP: …`; one `scenario <name>: PASS/FAIL/SKIP (detail)` line per scenario. |
+| `infuseScenario(name)` | Runs one scenario, e.g. `infuseScenario(silver_sword)`. |
+| `infuseScenarioN(n)` | Same by number (1-based, order below) — fallback if the console rejects a bare name. |
+| `infuseScenarioList` | Lists the names with their numbers. |
+| `infuseScenario(persist)` + `infuseScenarioPersistCheck` | Persistence (§13.4): infuses a sword and keeps it; save, reload, then the check verifies level, stat and durability and removes the sword. |
+
+Successful infusions check: new level = sacrifice level, primary stat higher, durability 100 %
+(target damaged first where marked), sacrifice consumed, item identity, socketed upgrades,
+enchantment and all previous abilities intact, crowns charged = fee, materials used = preview.
+
+| # | Scenario | Checks (spec) |
+| --- | --- | --- |
+| 1 | `steel_sword` | ordinary steel sword, damaged target (§4.4, §3.4) |
+| 2 | `silver_sword` | ordinary silver sword, damaged target |
+| 3 | `armor` | ordinary chest armor, damaged target |
+| 4 | `boots` | boots (separate level formula) |
+| 5 | `witcher_sword_rune` | Witcher steel sword with a rune socketed — rune kept (§4.1) |
+| 6 | `witcher_armor_glyph` | Witcher armor with a glyph socketed — glyph kept |
+| 7 | `relic_runeword` | relic sword with a runeword — enchantment kept |
+| 8 | `ngplus_uncapped` | target and sacrifice above the player's max level (§8.3) |
+| 9 | `salvage_off` | salvage disabled: nothing covered, full recipe charged (§15.3) |
+| 10 | `fee_by_tier` | master armorer charges more than journeyman (§6.2, §15.4) |
+| 11 | `master_relic_ok` | master smith accepts a relic (§8.2) |
+| 12–22 | `reject_same`, `reject_lower`, `reject_equal`, `reject_category`, `reject_steel_silver`, `reject_quest`, `reject_crowns`, `reject_materials`, `reject_craftsman_type`, `reject_tier_witcher`, `reject_tier_relic` | exact rejection code **and** nothing consumed (§15.2, §13.3) |
+
+Scenarios 1–9 run without a craftsman (eligibility bypass, mechanics only); 10–11 and the three
+craftsman rejections spawn journeyman/master test craftsmen (despawn after 5 min). SKIP means a
+precondition did not hold (game data differs, a freshly spawned craftsman was not ready yet —
+run again). Still manual: everything visual in the menu (docs/M6_UI_STATE.md checklists).
+
 ## Console output caveat (Remastered 5.01)
 
-`LogChannel` text does **not** render in the debug console, and `scriptslog.txt`
-(`-debugscripts` launch flag) only captures compile errors. The test therefore reports through
+`LogChannel` text does **not** render in the debug console; it is written to `scriptslog.txt`
+(`-debugscripts` launch flag) as `[Infusion]` lines (earlier notes said only compile errors were
+captured — current builds log the channel too). The test therefore reports through
 game state: sounds, HUD notifications (queued; visible after closing the console), and the
 inventory UI itself (sword level, damage, durability). See
 [docs/SCRIPT_TEST_BENCH_RESEARCH.md](../../docs/SCRIPT_TEST_BENCH_RESEARCH.md) for the full

@@ -18,6 +18,11 @@
 /** 	  infuseOpenMenu         - open the smith/armorer service menu here
 /** 	                           (args: armorer, master - both optional)
 /** 	  infuseSpawnTestPair    - spawn a valid target + sacrifice (optional armor)
+/** 	  infuseScenarioAll      - run every scenario, PASS/FAIL/SKIP summary
+/** 	  infuseScenario(name)   - run one scenario (InfusionScenarios.ws)
+/** 	  infuseScenarioN(n)     - same, by number from infuseScenarioList
+/** 	  infuseScenarioList     - list the scenario names
+/** 	  infuseScenarioPersistCheck - after infuseScenario(persist) + reload
 /**
 /** 	Output channels (5.01): LogChannel -> scriptslog.txt (-debugscripts),
 /** 	notifications + HudConsoleMsg on screen, verdicts via sounds. The
@@ -28,7 +33,7 @@
 exec function infuseHelp()
 {
 	theGame.GetGuiManager().ShowNotification(
-		"Infusion: selfTest / cleanTestItems / testMissingMaterials / testEligibility / craftsmanReport / spawnTestSmith / openMenu(armorer, master) / spawnTestPair(armor) / preview / run", 9.0 );
+		"Infusion: scenarioAll / scenario(name) / scenarioN(n) / scenarioList / scenarioPersistCheck / selfTest / cleanTestItems / testMissingMaterials / testEligibility / craftsmanReport / spawnTestSmith / openMenu(armorer, master) / spawnTestPair(armor) / preview / run", 9.0 );
 }
 
 exec function infuseStats()
@@ -264,4 +269,31 @@ exec function infuseDumpConfig()
 		+ " witcherTierReq=" + c.GetRequiredCraftsmanLevel( 5 ) );
 
 	theGame.GetGuiManager().ShowNotification( "config dumped to log (Infusion channel)", 6.0 );
+}
+
+// ---- scenario tests (InfusionScenarios.ws) ----
+
+exec function infuseScenarioAll()
+{
+	InfusionRunAllScenarios();
+}
+
+exec function infuseScenario( scenarioName : name )
+{
+	InfusionRunScenario( scenarioName );
+}
+
+exec function infuseScenarioN( index : int )
+{
+	InfusionRunScenarioByIndex( index );
+}
+
+exec function infuseScenarioList()
+{
+	InfusionListScenarios();
+}
+
+exec function infuseScenarioPersistCheck()
+{
+	InfusionScenarioPersistCheck();
 }

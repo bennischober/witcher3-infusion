@@ -27,7 +27,7 @@ silently dropped; the deviations below are deliberate and documented.
 | §3.4 | Full durability restore, stated in the UI | ✅ | Popup note "…wird vollständig repariert". |
 | §4.1 | Preserve identity, sockets, upgrades, set bonuses | ✅ by design · ❌ not tested | The item is never recreated; only `autogen_fixed_*` step abilities are added. Sockets/runes/glyphs after infusion not yet checked in game. |
 | §4.2/4.3 | Stats recalculated from the target's own definition | ✅ | Step abilities = one level of the target's own stat each; the game derives stats and level. |
-| §4.4 | Validation matrix | ⚠️ | ✅ ordinary armor, Witcher armor, damaged items, steel sword (M2). ❌ Witcher sword, silver sword, items with sockets/upgrades, enchanted (runewords), unique/relic items. |
+| §4.4 | Validation matrix | ⚠️ | ✅ ordinary armor, Witcher armor, damaged items, steel sword (M2). ❌ Witcher sword, silver sword, items with sockets/upgrades, enchanted (runewords), unique/relic items. 🟡 All covered by `infuseScenarioAll` (tests/modInfusion/README.md, 2026-10-19) — first run pending. |
 | §5.1–5.4 | Salvage from native dismantle data, applied directly, excess discarded | ✅ | `GetItemRecyclingParts`. Recipe from the target's own components (docs/BALANCING.md). |
 | §5.5 | Exploit protection | ✅ | Same instance, double use, preview/cancel side-effect free, re-validation in `Execute`. |
 | §10 / §15.3 | Disabling salvage changes the calculation | 🟡 | **Bug fixed 2026-10-19:** salvage-off made infusions material-free. |
@@ -65,7 +65,8 @@ silently dropped; the deviations below are deliberate and documented.
    mismatch. Alternative: the reason as the item tooltip's `WarningMessage`
    (docs/ROADMAP_IDEAS.md).
 2. **Annotations** for `blacksmithMenu.ws` after the `commonMenu.ws` spike passes (compatibility, §14).
-3. **Validation round** for the §4.4 matrix: silver + Witcher swords, socketed/upgraded items,
-   a relic.
+3. **Validation round** for the §4.4 matrix — **scenario tests built 2026-10-19**
+   (`infuseScenarioAll`: 22 scenarios incl. rejections, salvage-off, fee by tier, NG+; plus a
+   two-step persistence check). First in-game run pending.
 4. **Uninstall test** (§15.6): infuse, save, remove the mod, load.
 5. M7 documents: install, configuration (constants + console overrides), known issues.
