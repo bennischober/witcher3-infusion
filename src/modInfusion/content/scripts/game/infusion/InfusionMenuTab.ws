@@ -8,11 +8,11 @@
 /** 	     the blacksmith's Repair tab. Chainable with other mods' wrappers.
 /** 	  2. @replaceMethod HaxGetPanelStateName (global): vanilla body plus
 /** 	     "Infuse". Unknown states map to '' - the root cause of the blank
-/** 	     Infuse tab in the 2026-10-11 attempt. Global functions can only be
+/** 	     Infuse tab in the first attempt. Global functions can only be
 /** 	     replaced (the docs list no global form of @wrapMethod), so a
 /** 	     second mod replacing it would fail with "duplicate found".
 /** 	Flash renders the tab with its Disassemble page; see
-/** 	CR4BlacksmithMenu.SetMenuState (blacksmithMenu.ws).
+/** 	CR4BlacksmithMenu.SetMenuState (InfusionBlacksmithMenu.ws).
 /***********************************************************************/
 
 // No access modifier after the annotation: the parser expects 'function'

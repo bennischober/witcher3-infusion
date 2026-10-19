@@ -79,10 +79,6 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 			text += "<br>" + GetLocStringByKeyExt( "panel_infusion_required" ) + ": " + parts;
 		}
 		text += "<br>" + GetLocStringByKeyExt( "panel_infusion_consumed_note" ) + "</font>";
-
-		// Experiment (inline material icons): logged so the exact markup can
-		// be compared with what renders.
-		LogChannel( 'Infusion', "popup html: " + text );
 		return text;
 	}
 
@@ -112,11 +108,8 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 		return text;
 	}
 
-	// Experiment: small inline item icon like the crafting ingredient list.
-	// Vanilla embeds images in htmlText (localizedContent.ws GetHTMLForItemICO)
-	// but only UI-library symbols; item icons are textures loaded via img://
-	// (PopupData.ws). Whether htmlText resolves img:// textures is what this
-	// tests - if not, the tag renders nothing or an empty box.
+	// Small inline item icon, like the crafting menu's ingredient list. The
+	// popup's htmlText resolves img:// item textures (verified in game).
 	private function MaterialIconHtml( itemName : name ) : string
 	{
 		var iconPath : string;

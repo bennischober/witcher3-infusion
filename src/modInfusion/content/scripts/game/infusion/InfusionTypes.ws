@@ -1,9 +1,10 @@
 ﻿/***********************************************************************/
-/** 	Witcher Gear Infusion — Milestone 2 prototype
-/** 	Type definitions shared by the infusion system.
+/** 	Witcher Gear Infusion — shared types
+/** 	Error codes, category data, the preview/transaction record and the
+/** 	error messages (log text and localized player text).
 /**
-/** 	Spec: INFUSION_SPEC.md §3 (core rules), §12 (architecture)
-/** 	Discovery: docs/TECHNICAL_DISCOVERY.md §3 (level derivation), §10 (architecture)
+/** 	Spec: INFUSION_SPEC.md §3 (core rules), §9.3 (messages), §12
+/** 	Engine background: docs/TECHNICAL_DISCOVERY.md §3 (item levels)
 /***********************************************************************/
 
 enum EInfusionError
@@ -11,10 +12,10 @@ enum EInfusionError
 	IFE_Ok,
 	IFE_InvalidItemId,        // target or sacrifice is not a valid inventory item
 	IFE_UnsupportedCategory,  // item category has no infusion support (not a leveled equipment category)
-	IFE_DisabledCategory,     // category supported by code but disabled in configuration (M2/M3: steel only)
+	IFE_DisabledCategory,     // infusion or the category disabled in the configuration
 	IFE_CategoryMismatch,     // target and sacrifice categories differ (spec §3.3)
 	IFE_SameItemInstance,     // the same inventory instance was passed as target and sacrifice (spec §5.5)
-	IFE_QuestItem,            // quest items must never be consumed (spec §14.2)
+	IFE_QuestItem,            // excluded item: quest, hidden/body, Aerondight, merchant range (spec §14.2)
 	IFE_EquippedSacrifice,    // sacrifice is currently equipped; unequip first
 	IFE_SacrificeNotHigher,   // sacrifice level <= target level (spec §3.2)
 	IFE_LevelMismatch,        // post-application verification failed; transaction aborted
@@ -25,20 +26,14 @@ enum EInfusionError
 	IFE_CraftsmanLevelTooLow  // craftsman tier insufficient for the target's tier (spec §8.2)
 }
 
-// One entry per supported item category. Values mirror the vanilla autogen system
-// (r4data/gameplay/items/def_item_weapons_relic_autogen.xml) and the per-level stat
-// steps in theGame.params.GetItemLevel (gameParams.ws:917).
-//   steelsword: autogen_fixed_steel_dmg adds +8 SlashingDamage == one level (stat_add = 8)
-//   silversword: autogen_fixed_silver_dmg adds +10 SilverDamage == one level (stat_add = 10)
-//   armor: autogen_fixed_armor_armor adds +5 armor == one level (stat_add = 5)
-//   pants/boots: autogen_fixed_pants_armor adds +2 == one level (stat_add = 2)
-//   gloves: autogen_fixed_gloves_armor adds +2 == one level (stat_add = 2)
+// One entry per supported item category: the vanilla autogen ability that
+// adds exactly one level of the item's stats (gameParams.ws GetItemLevel
+// steps: steel +8 SlashingDamage, silver +10 SilverDamage, armor +5,
+// pants/boots/gloves +2).
 struct SInfusionCategoryData
 {
 	var category : name;        // item category as returned by GetItemCategory
 	var stepAbility : name;     // crafted ability added once per level
-	var stepValue : int;        // stat delta of one step ability == one level of stats
-	var attributeName : name;   // attribute the step ability modifies
 }
 
 struct SInfusionPreview
@@ -54,7 +49,7 @@ struct SInfusionPreview
 	var levelGap : int;         // sacrificeLevel - targetLevel (> 0 required)
 	var newLevel : int;         // projected target level after infusion
 
-	var laborFee : int;         // crowns charged for the service (M3: flat formula)
+	var laborFee : int;         // crowns charged for the service (spec §6)
 	var stepsToAdd : int;       // number of step abilities that will be added to the target
 	var stepAbility : name;     // which ability will be used
 

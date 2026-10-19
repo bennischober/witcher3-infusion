@@ -12,6 +12,7 @@ function InfusionGetService() : W3InfusionService
 	var svc : W3InfusionService;
 	svc = new W3InfusionService in theGame;
 	svc.config = new W3InfusionConfig in theGame;
+	svc.debugBypassCraftsman = true;
 	return svc;
 }
 

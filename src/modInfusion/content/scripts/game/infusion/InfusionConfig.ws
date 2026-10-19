@@ -8,11 +8,10 @@
 /** 	automatically. Multipliers (§6.2) shape it; a labor floor keeps
 /** 	cheap targets meaningful. Model: docs/BALANCING.md.
 /**
-/** 	Settings menu: NOT used (Remastered settings UI is broken for mod
-/** 	groups; decision documented in docs/TECHNICAL_DISCOVERY.md). Values
-/** 	ship as curated script defaults; a dev-only console override via
-/** 	persistent facts allows live tuning without recompiling
-/** 	(tests/infuseSetConfig).
+/** 	Settings menu: NOT used (the Remastered settings UI is broken for mod
+/** 	groups; docs/TECHNICAL_DISCOVERY.md §1). Values ship as curated script
+/** 	defaults; dev builds can override some at runtime via facts
+/** 	(console command infuseSetConfig).
 /**
 /** 	Spec: INFUSION_SPEC.md §6 (fees), §7 (efficiency), §10 (configuration),
 /** 	      §8.2 (eligibility thresholds)
@@ -52,10 +51,9 @@ class W3InfusionConfig extends IScriptable
 
 	// ============================= labor fees ==============================
 
-	// Balancing model (2026-10-18): the fee is anchored to the TARGET's market
-	// value (the item being upgraded), not the sacrifice's - sacrifices are
-	// usually cheap loot, which made large upgrades of valuable gear nearly
-	// free. fee = targetValue * fraction * gapFactor * craftsman * tier.
+	// The fee is anchored to the TARGET's market value (the item being
+	// upgraded), not the sacrifice's - sacrifices are usually cheap loot.
+	// fee = targetValue * fraction * gapFactor * craftsman * tier.
 	// At a 10-level gap the fee is 25% of the target's current value.
 	private const var FEE_FRACTION_OF_TARGET_VALUE : float;
 	default FEE_FRACTION_OF_TARGET_VALUE = 0.25f;
@@ -307,23 +305,5 @@ class W3InfusionConfig extends IScriptable
 	public function DebugLogging() : bool
 	{
 		return DEBUG_LOGGING || FactsQuerySum( FACT_DEBUG_LOG ) > 0;
-	}
-
-	// =====================================================================
-	// Validation helpers (spec §10: invalid values must not cause negative
-	// costs, unlimited resource generation, or script errors)
-	// =====================================================================
-
-	public function SanitizeInt( value : int, minValue : int, maxValue : int ) : int
-	{
-		if ( value < minValue )
-		{
-			return minValue;
-		}
-		if ( value > maxValue )
-		{
-			return maxValue;
-		}
-		return value;
 	}
 }

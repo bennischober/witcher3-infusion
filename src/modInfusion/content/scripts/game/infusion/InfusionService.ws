@@ -1,16 +1,9 @@
 ﻿/***********************************************************************/
 /** 	Witcher Gear Infusion — core infusion service
-/** 	Level computation, validation, transaction. Reads all balance knobs
-/** 	from W3InfusionConfig (InfusionConfig.ws); contains no balance values
-/** 	itself.
-/**
-/** 	Design constraints (docs/TECHNICAL_DISCOVERY.md):
-/** 	  - No overrides of gameParams.ws / inventoryComponent.ws / playerWitcher.ws
-/** 	    (script-merger conflict avoidance). New classes only.
-/** 	  - Levels are DERIVED from stats; we replicate the derivation side-effect-free
-/** 	    instead of calling inventoryComponent.GetItemLevel (which under the
-/** 	    Leveling Gear mod auto-scales the item — an unacceptable side effect —
-/** 	    and has an install-dependent signature).
+/** 	Levels, recipe and salvage, labor fee, eligibility, validation and the
+/** 	transaction. Balance knobs come from W3InfusionConfig
+/** 	(InfusionConfig.ws); UI code only calls Preview / Execute and the
+/** 	public queries. Engine background: docs/TECHNICAL_DISCOVERY.md.
 /**
 /** 	Spec: INFUSION_SPEC.md §3 (rules), §4 (identity), §5.5 (exploit guards),
 /** 	      §6 (fees), §8.2 (eligibility), §13 (transaction safety)
@@ -44,12 +37,10 @@ class W3InfusionService extends IScriptable
 	}
 
 	// ---------------------------------------------------------------------
-	// Material requirements (spec §5.4) — recipes are balance values and live
-	// in the config layer conceptually, but recipes are struct arrays which
-	// the config class stores as per-category constants (see GetRecipeForCategory).
+	// Material requirements (spec §5.4)
 	// ---------------------------------------------------------------------
 
-	// Recipe for a target and level gap (balancing model 2026-10-18): the
+	// Recipe for a target and level gap (docs/BALANCING.md): the
 	// target's OWN components - its vanilla dismantle data (recycling_parts),
 	// i.e. what the item is made of - scaled by the level gap: 10 levels = one
 	// full set (rounded up per material, at least 1 each), capped at
@@ -101,8 +92,8 @@ class W3InfusionService extends IScriptable
 		return category == 'crafting_ingredient' || category == 'alchemy_ingredient';
 	}
 
-	// Fallback recipe per supported category for targets without dismantle
-	// data (prototype values from M3).
+	// Fallback recipe per supported category, for targets without usable
+	// dismantle data.
 	private function GetRecipeForCategory( category : name, out recipe : array<SItemParts> ) : bool
 	{
 		var part : SItemParts;
@@ -227,19 +218,10 @@ class W3InfusionService extends IScriptable
 	}
 
 	// Scales salvage quantities by the configured yield multiplier (spec §10),
-	// rounding down. With salvage disabled economically, zeroes everything.
+	// rounding down. (With salvage disabled, Preview doesn't read salvage.)
 	private function ApplySalvageMultiplier( out salvaged : array<SItemParts> ) : void
 	{
 		var i : int;
-
-		if ( !GetConfig().SalvageEnabled() )
-		{
-			for ( i = 0; i < salvaged.Size(); i += 1 )
-			{
-				salvaged[i].quantity = 0;
-			}
-			return;
-		}
 
 		if ( GetConfig().SalvageYieldMultiplier() == 1.0f )
 		{
@@ -264,33 +246,23 @@ class W3InfusionService extends IScriptable
 		{
 			case 'steelsword':
 				data.stepAbility = 'autogen_fixed_steel_dmg';
-				data.stepValue = 8;
-				data.attributeName = 'SlashingDamage';
 				return true;
 
 			case 'silversword':
 				data.stepAbility = 'autogen_fixed_silver_dmg';
-				data.stepValue = 10;
-				data.attributeName = 'SilverDamage';
 				return true;
 
 			case 'armor':
 				data.stepAbility = 'autogen_fixed_armor_armor';
-				data.stepValue = 5;
-				data.attributeName = 'armor';
 				return true;
 
 			case 'pants':
 			case 'boots':
 				data.stepAbility = 'autogen_fixed_pants_armor';
-				data.stepValue = 2;
-				data.attributeName = 'armor';
 				return true;
 
 			case 'gloves':
 				data.stepAbility = 'autogen_fixed_gloves_armor';
-				data.stepValue = 2;
-				data.attributeName = 'armor';
 				return true;
 		}
 		return false;
@@ -406,7 +378,7 @@ class W3InfusionService extends IScriptable
 	}
 
 	// ---------------------------------------------------------------------
-	// Public queries (used by the M6 menu integration)
+	// Public queries (used by the menu integration)
 	// ---------------------------------------------------------------------
 
 	// True when the item's category is infusion-supported AND enabled
@@ -546,8 +518,8 @@ class W3InfusionService extends IScriptable
 		{
 			return true;
 		}
-		// Merchant-stocked leveled items use the AutogenUseLevelRange range system.
-		// Not player loot; keep them out of the transaction for M2.
+		// Merchant-stocked leveled items (AutogenUseLevelRange range system):
+		// not player loot.
 		if ( inv.ItemHasTag( item, 'AutogenUseLevelRange' ) )
 		{
 			return true;
@@ -637,7 +609,7 @@ class W3InfusionService extends IScriptable
 
 		quality = RoundMath( CalculateAttributeValue( inv.GetItemAttributeValue( targetId, 'quality' ) ) );
 
-		// Craftsman eligibility (M4, spec §8.2) — before costs so an
+		// Craftsman eligibility (spec §8.2) — before costs so an
 		// ineligible craftsman never sees a price.
 		// The fee tier is the craftsman's tier in the specialization the
 		// target needs (an armorer has no smith tier - reading ECT_Smith
@@ -700,15 +672,15 @@ class W3InfusionService extends IScriptable
 	}
 
 	// ---------------------------------------------------------------------
-	// Craftsman eligibility (M4, spec §8.2; data comes from the live NPC's
+	// Craftsman eligibility (spec §8.2; data comes from the live NPC's
 	// W3CraftsmanComponent — never hard-coded per NPC; thresholds from config)
 	// ---------------------------------------------------------------------
 
-	// Debug bypass: when true, Preview/Execute run without a craftsman
-	// context (unit-style testing anywhere in the world). The production UI
-	// path must always pass a craftsman entity and will not enable this.
+	// Debug bypass: when true, Preview/Execute accept a NULL craftsman
+	// (tests anywhere in the world; set by the test tools only). Off by
+	// default: without a craftsman, production calls are refused.
 	public var debugBypassCraftsman : bool;
-	default debugBypassCraftsman = true;
+	default debugBypassCraftsman = false;
 
 	// Specialization: swordsmith for swords, armorer for armor pieces.
 	private function GetRequiredCraftsmanType( category : name ) : ECraftsmanType
@@ -939,8 +911,8 @@ class W3InfusionService extends IScriptable
 
 		// 3) Apply level: add fixed step abilities until the target's UNCAPPED level
 		//    equals the sacrifice's level (see ComputeItemLevel for why uncapped).
-		//    Each autogen_fixed_* ability carries exactly one level's worth of stats
-		//    (stepValue == stat_add), so the expected count is preview.levelGap; the
+		//    Each autogen_fixed_* ability carries exactly one level's worth of stats,
+		//    so the expected count is preview.levelGap; the
 		//    small correction budget absorbs rounding or overhaul-mod drift. The loop
 		//    condition (<) can never overshoot; the guard prevents runaway if ability
 		//    addition were ever ineffective.

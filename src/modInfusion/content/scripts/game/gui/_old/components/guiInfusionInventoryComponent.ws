@@ -1,12 +1,13 @@
 ﻿/***********************************************************************/
-/** 	Witcher Gear Infusion — Infusion inventory grid component (M6)
+/** 	Witcher Gear Infusion — Infusion tab item grid
 /** 	Grid of the Infuse tab (extends the repair grid component). Two
 /** 	phases (spec §9.1: the player selects both items):
 /** 	  1. target phase: infusion-capable targets (damaged ones too -
 /** 	     infusion includes the repair)
 /** 	  2. sacrifice phase: the chosen target (section 0) + every valid
 /** 	     sacrifice for it (section 1), each priced for that pair
-/** 	New class in a new file — no vanilla file override.
+/** 	New class; lives next to the vanilla grid components it extends
+/** 	(game/gui/_old/components/). Design: docs/UI.md.
 /***********************************************************************/
 
 class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
