@@ -61,13 +61,14 @@ and development milestones.
   tier acceptance at journeyman and master, real service delivery at spawned craftsman NPCs;
   see docs/CRAFTSMAN_MAP.md)
 - ✅ **Milestone 5** — pricing and configuration: economy-anchored fee (fraction of the
-  sacrifice's market value — auto-balances with official economy updates), tier/tier-target/gap
+  target's market value, model in docs/BALANCING.md — auto-balances with official economy updates), tier/tier-target/gap
   multipliers per spec §6.2, curated defaults without a settings menu (Remastered settings UI
   is broken for mod groups; decision documented), dev-only console overrides for live tuning
-- ✅ **Milestone 6** — production UI, verified in game: two-step infusion (pick target, then
-  sacrifice) inside the blacksmith/armorer Repair tab, confirmation popup with the full cost
-  breakdown, craftsman gating, vanilla repair unaffected, save/reload persistence. Release polish
-  (log volume, localized error messages) tracked in docs/M6_UI_STATE.md
+- ✅ **Milestone 6** — production UI, verified in game: a dedicated **Infusion tab** in the
+  blacksmith/armorer menu, two-step infusion (pick target, then sacrifice) with a crafting-style
+  material row, confirmation popup with the full cost breakdown, craftsman gating, vanilla
+  Repair tab untouched, save/reload persistence (docs/M6_UI_STATE.md). Spec coverage and the
+  remaining gaps: docs/SPEC_COVERAGE.md
 - 🔜 **Milestone 7** — release packaging
 - 🔜 **Milestone 8** — optional bonus-merging extension (separate module)
 

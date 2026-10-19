@@ -1,7 +1,8 @@
-# M6 — Production UI: state, findings, open items (updated 2026-10-17)
+# M6 — Production UI: state, findings, open items (updated 2026-10-19)
 
-Status: **functionally complete — the full checklist passed in game (2026-10-17).** Remaining
-work is release polish (see "Open items before release").
+Status: **complete — the Infuse tab is the production UI (decision 2026-10-19); every check
+passed in game.** The Repair tab is vanilla again. Remaining work is M7 (compatibility,
+packaging, docs); the spec-wide gap list is docs/SPEC_COVERAGE.md.
 Spec: INFUSION_SPEC.md §9 (UI/interaction), §16 Milestone 6.
 Flash protocol reference: docs/TECHNICAL_DISCOVERY.md §13.
 
@@ -9,50 +10,43 @@ Flash protocol reference: docs/TECHNICAL_DISCOVERY.md §13.
 
 ### Entry point and flow (in the blacksmith service UI)
 
-The **Repair tab of the existing blacksmith/armorer menu doubles as the infusion service**
-(spec §9.1: extend the existing service interface). Infusion is a **two-step flow** — the player
-picks both items (spec §9.1); the sacrifice is never chosen automatically.
+A dedicated **Infusion tab** in the existing blacksmith/armorer menu, next to Repair (spec §8.1:
+the smallest UI extension attached to the existing service). Flash renders its **Disassemble
+page** for the tab (its info panel lists a per-item icon row, used for the material costs); the
+script keeps the state `'Infuse'`. Infusion is a **two-step flow** — the player picks both items
+(spec §9.1); the sacrifice is never chosen automatically.
 
-**Step 1 — target selection** (normal Repair tab):
+**Step 1 — target selection:** only items that can be infused at this craftsman right now
+(damaged ones too — infusion includes the repair). Info panel: fee and the material row for the
+best available sacrifice, `have/need` in green/red. E = **Infundieren**.
 
-| Item state | Panel button | Price shown | Activating does |
-| --- | --- | --- | --- |
-| Damaged | Repair (vanilla) | repair cost | vanilla repair |
-| Full durability + at least one valid sacrifice + eligible craftsman | **Infuse** (swapped via Flash `setButtonData`) | fee with the highest-level sacrifice | picks it as the target → step 2 |
-| Damaged *and* infusable | Repair | repair cost | vanilla repair; the item then stays in the grid as an infusion target |
-| Full durability, not infusable here | — (not listed) | — | — |
+**Step 2 — sacrifice selection** (same grid, rebuilt): section headers **Target** (the picked
+item) and **Choose a sacrifice** (every valid sacrifice for this craftsman), each priced for that
+exact pair. E = **Infundieren**, Space / X = **Abbrechen** (back to step 1). A sacrifice whose
+remaining materials are missing is disabled (`disableAction`: greyed panel, no E button, denied
+sound, warning line "Fehlende Materialien").
 
-**Step 2 — sacrifice selection** (same grid, rebuilt): section headers become **Target** (the
-picked item) and **Choose a sacrifice** (every valid sacrifice for it at this craftsman); "Repair
-all" is hidden.
-
-| Item | Panel button | Price shown | Activating does |
-| --- | --- | --- | --- |
-| The target (section "Target") | **Cancel** (vanilla `panel_common_cancel`) | — | back to step 1 |
-| A sacrifice | **Infuse** | fee for this exact pair | confirmation popup |
-
-Switching tabs also returns to step 1; a successful infusion returns to step 1, a failed one stays
-in step 2. Confirming opens `InfusionConfirmationPopupData` — a vanilla
-`PriceConfirmationPopup` carrying the §9.5 summary with labeled roles ("Target: … (61 -> 68)",
-"Sacrifice: … (68)"), 
-recovered materials, remaining requirements, permanent-consumption + full-repair note) and the
-fee as the popup price. Accept executes via `W3InfusionService.Execute(..., craftsman)` with the
-NPC the player is talking to (spec §8.1); the craftsman receives the fee, as with vanilla repairs.
-Accept, decline and every rejection answer Flash with `confirmAction(false)`.
+Switching tabs returns to step 1; a successful infusion returns to step 1, a failed one stays in
+step 2. Confirming opens `InfusionConfirmationPopupData` — a vanilla `PriceConfirmationPopup`
+carrying the §9.5 summary ("Ziel: … (61 -> 68)", "Opfer: … (68)", materials covered by the
+sacrifice, additional materials with icons, permanent-consumption + full-repair note) and the fee
+as the popup price. Accept executes via `W3InfusionService.Execute(..., craftsman)` with the NPC
+the player is talking to (spec §8.1); the craftsman receives the fee, as with vanilla repairs.
+Accept, decline and every rejection answer Flash with `confirmAction(false)`; in the Infuse tab
+no click ever reaches the vanilla path (Flash shows the Disassemble page there — a vanilla
+`true` would dismantle the item).
 
 ### Files
 
 | File | Role |
 | --- | --- |
-| `src/modInfusion/content/scripts/game/gui/menus/blacksmithMenu.ws` | **Override** of vanilla (conflict-free on this install; changes marked `modInfusion`). Grid swap, confirmation routing, Flash handshake, per-item button label, popup class. |
-| `src/modInfusion/content/scripts/game/gui/_old/components/guiInfusionInventoryComponent.ws` | **New class** (extends `W3GuiRepairInventoryComponent`): unified service grid, craftsman-aware verdicts cached per refresh, per-item fee. |
-| `src/modInfusion/content/strings/{en,de}.w3strings` | UI labels (button + popup + notifications). |
+| `src/modInfusion/content/scripts/game/gui/menus/commonMenu.ws` | **Override** of vanilla: registers the Infusion tab and maps `"Infuse"` in `HaxGetPanelStateName`. Candidate for annotations (docs/ROADMAP_IDEAS.md). |
+| `src/modInfusion/content/scripts/game/gui/menus/blacksmithMenu.ws` | **Override** of vanilla (changes marked `modInfusion`): Infuse state, confirmation routing, Flash handshake, button labels, popup class. |
+| `src/modInfusion/content/scripts/game/gui/_old/components/guiInfusionInventoryComponent.ws` | **New class** (extends `W3GuiRepairInventoryComponent`): Infuse-tab grid, two phases, craftsman-aware verdicts cached per refresh, fee + material row per item. |
+| `src/modInfusion/content/strings/{en,de}.w3strings` | UI labels, popup, notifications, localized rejection messages. |
 | `tools/strings-sources/infusion_strings_{en,de}.csv` | Editable sources for the strings. |
 | `tools/w3stringsr/` | The community Remastered strings encoder (user-provided; not committed). |
 | `tests/.../InfusionDebug.ws` → `infuseOpenMenu` | Dev command: open the real service menu anywhere with a spawned craftsman. |
-
-`commonMenu.ws` is overridden again **for the Infuse-tab prototype only** (2026-10-17, see
-"Infuse tab prototype"); if the Repair-tab variant wins, the override goes away.
 
 ### Service API used by the UI
 
@@ -298,20 +292,53 @@ flow before the popup with a localized notification naming them.
   Redanian armor's recipe asked for a unique insignia → recipes keep only crafting/alchemy
   ingredients (docs/BALANCING.md).
 
-## Open items before release
+## Tab decision and release polish (2026-10-19)
 
-1. **Log volume:** the grid writes one `[Infusion] grid:` line per item on every refresh (useful
-   for diagnosis, noisy for players). Gate behind a debug flag before release.
-2. **Error messages are English-only:** `InfusionErrorToString` is used for in-game
-   notifications (e.g. missing materials). Move to w3strings keys (en/de).
-3. **Label follows hover** — only left in the Repair tab's mixed grid; the Infuse tab uses constant labels + Space to cancel.
-4. **Dedicated Infuse tab (optional):** likely feasible after all. The earlier blank page
-   (finding 1) was probably not a missing Flash page: `HaxGetPanelStateName` in `commonMenu.ws`
-   maps unknown tab states to `''`, and the old attempt never added `"Infuse"` there, so the
-   blacksmith menu received an empty state. Needs a `commonMenu.ws` override again (conflict
-   surface) — decide before release.
-5. **M7 work:** release packaging, compatibility notes for the vanilla override
-   (`blacksmithMenu.ws`), installation docs.
+The user confirmed the last round (missing-materials state, insignia filter, level refactor,
+Zerlegen warning text, normal infusion) and chose the **Infuse tab**. Changes:
+- **Repair tab back to vanilla:** grid, routing, button label and "repair all" untouched by the
+  mod; the unified Repair-tab variant and its hover-dependent label are gone.
+- **Log volume:** the per-item `grid:` lines only appear with debug logging
+  (`DEBUG_LOGGING` in `InfusionConfig.ws`, or `infuseSetConfig debug 1`). Transaction results
+  (OK / ABORT) are always logged.
+- **Localized rejections:** notifications use `InfusionErrorToLocString` (12 new w3strings keys,
+  en/de); `InfusionErrorToString` stays the English log text.
+- **Master switch:** `EnableInfusion = false` now empties the tab (service-level check) instead of
+  falling back to the repair grid on the Disassemble page.
+- **Silver swords enabled** (had been off since M2; same mechanism as steel, `autogen_fixed_silver_dmg`
+  verified in TECHNICAL_DISCOVERY).
+- **Bug fixed — salvage toggle:** with salvage disabled the discount still applied and the
+  remaining materials were not charged (free infusions). Now: no salvage → full recipe, always
+  charged.
+
+Test round (next launch): see "Test checklist 2026-10-19" below.
+
+### Test checklist 2026-10-19
+
+Setup: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)` (armorer) or `infuseOpenMenu()`
+(swordsmith).
+1. Compiles; `scriptslog.txt` has **no** `grid:` lines; `infuseSetConfig debug 1` brings them back
+   after reopening the menu.
+2. **Reparieren** tab: vanilla — only damaged items, "Reparieren" label, repair and "repair all"
+   work; undamaged items are not listed.
+3. **Infusion** tab: unchanged from the last round (two steps, cost row, disabled sacrifices,
+   Space cancels).
+4. **Silver sword** at a swordsmith: infuse one; level, stats and durability correct.
+5. **Steel sword** at a swordsmith (blacksmith specialization in the real menu).
+6. **Runes / glyphs:** infuse an item with an upgrade socketed; the upgrade is still there.
+7. **Salvage off:** `infuseSetConfig salvage 1`, reopen the menu: the cost row shows the full
+   recipe (nothing "covered"), and an infusion deducts exactly those materials.
+   `infuseSetConfig salvage 0` afterwards.
+8. Any rejection notification appears in German (they are rare now — the grid pre-filters).
+
+## Open items
+
+1. **Compatibility (M7):** `blacksmithMenu.ws` and `commonMenu.ws` are full overrides — any mod
+   touching them conflicts. Annotation spike (`@wrapMethod` / `@addMethod`) first.
+2. **Rejection reasons in the grid (spec §9.3):** items that can't be infused here are hidden
+   without a reason (e.g. Witcher gear at a journeyman). See docs/SPEC_COVERAGE.md.
+3. Optional hint in the empty step-2 target panel; tooltip `WarningMessage` idea
+   (docs/ROADMAP_IDEAS.md).
 
 ## Risk assessment
 

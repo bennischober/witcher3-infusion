@@ -5,16 +5,16 @@ all at once. Nothing here is implemented unless stated.
 
 ## 1. UI: Infuse tab vs. Repair tab
 
-Both variants are live in the dev build for comparison (docs/M6_UI_STATE.md, "Infuse tab
-prototype"). The tab works in game (2026-10-17). Decision pending:
+**Decided 2026-10-19: Infuse tab.** Infusion was stripped from the Repair tab, which is vanilla
+again (docs/M6_UI_STATE.md). Moving the `commonMenu.ws` change to annotations (§3) is still open.
+The options as they were weighed:
 
 - **Infuse tab:** clearer (infusion is its own service, Repair stays vanilla, damaged items can
   be infused directly). Costs a `commonMenu.ws` change — see §3 for doing it without a file
   override.
 - **Repair tab only:** no `commonMenu.ws` change at all; mixed Repair/Infuse labels in one grid.
 
-Recommendation: keep the Infuse tab **if** §3 works (annotations), then strip infusion from the
-Repair tab so Repair is exactly vanilla again.
+If §3 fails, the tab stays a `commonMenu.ws` override (documented conflict surface).
 
 ## 2. Show the required materials at the sacrifice (user idea)
 

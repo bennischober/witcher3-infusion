@@ -13,7 +13,7 @@ in game without building production UI first.
 | `infuseRun` | Execute the infusion of the best pair |
 | `infuseSelfTest` | Spawn test swords, run all rejection checks + one real infusion; final verdict sound (crafting = pass, denied = fail) |
 | `infuseCleanTestItems` | Remove spawned test items (keeps one — typically the infused target) |
-| `infuseOpenMenu(armorer, master)` | Spawn a craftsman (or reuse a spawned one) and open his service menu right here — the Repair tab is the infusion UI. No args: journeyman swordsmith; `(true)`: journeyman armorer; `(true, true)`: master armorer; `(false, true)`: master swordsmith. Craftsman despawns after 10 min or via `infuseDespawnTestSmith`. |
+| `infuseOpenMenu(armorer, master)` | Spawn a craftsman (or reuse a spawned one) and open his service menu right here (opens on the Repair tab; switch to the Infusion tab). No args: journeyman swordsmith; `(true)`: journeyman armorer; `(true, true)`: master armorer; `(false, true)`: master swordsmith. Craftsman despawns after 10 min or via `infuseDespawnTestSmith`. |
 | `infuseSpawnTestPair(armor)` | Spawn a valid infusion pair (ordinary target + same-category sacrifice boosted +10 levels, tagged test items). No args: steel swords (`Novigraadan sword 1` / `3`); `(true)`: armor (`Light armor 01` / `06`). Remove with `infuseCleanTestItems`. |
 
 ## Console output caveat (Remastered 5.01)
