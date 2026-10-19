@@ -23,7 +23,8 @@ enum EInfusionError
 	IFE_NotEnoughMaterials,   // player lacks remaining materials after the salvage discount (spec §5.4)
 	IFE_NoCraftsman,          // no craftsman context and debug bypass is off (spec §8.1)
 	IFE_WrongCraftsmanType,   // craftsman specialization does not match the target category (spec §8.2)
-	IFE_CraftsmanLevelTooLow  // craftsman tier insufficient for the target's tier (spec §8.2)
+	IFE_CraftsmanLevelTooLow, // craftsman tier insufficient for the target's tier (spec §8.2)
+	IFE_NoSacrifice           // no other item of the target's category in the inventory
 }
 
 // One entry per supported item category: the vanilla autogen ability that
@@ -79,6 +80,7 @@ function InfusionErrorToString( err : EInfusionError ) : string
 		case IFE_NoCraftsman:      return "no craftsman available";
 		case IFE_WrongCraftsmanType: return "this craftsman cannot infuse this equipment";
 		case IFE_CraftsmanLevelTooLow: return "this craftsman is not qualified for this equipment";
+		case IFE_NoSacrifice:      return "no other item of this category";
 	}
 	return "unknown error";
 }
@@ -104,6 +106,7 @@ function InfusionErrorToLocString( err : EInfusionError ) : string
 		case IFE_NoCraftsman:         return GetLocStringByKeyExt( "panel_infusion_err_no_craftsman" );
 		case IFE_WrongCraftsmanType:  return GetLocStringByKeyExt( "panel_infusion_err_craftsman_type" );
 		case IFE_CraftsmanLevelTooLow: return GetLocStringByKeyExt( "panel_infusion_err_craftsman_level" );
+		case IFE_NoSacrifice:         return GetLocStringByKeyExt( "panel_infusion_block_no_candidates" );
 	}
 	return InfusionErrorToString( err );
 }

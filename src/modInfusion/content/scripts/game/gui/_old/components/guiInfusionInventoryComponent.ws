@@ -3,7 +3,9 @@
 /** 	Grid of the Infuse tab (extends the repair grid component). Two
 /** 	phases (spec §9.1: the player selects both items):
 /** 	  1. target phase: infusion-capable targets (damaged ones too -
-/** 	     infusion includes the repair)
+/** 	     infusion includes the repair), plus targets this craftsman's
+/** 	     specialization covers that can't be infused right now, disabled,
+/** 	     with the reason in the tooltip (spec §9.3)
 /** 	  2. sacrifice phase: the chosen target (section 0) + every valid
 /** 	     sacrifice for it (section 1), each priced for that pair
 /** 	New class; lives next to the vanilla grid components it extends
@@ -28,6 +30,9 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 	private var _cacheInfusable : array<bool>;
 	private var _cacheSacrifices : array<SItemUniqueId>;
 	private var _cachePreviews : array<SInfusionPreview>;
+	// Why a listed target can't be infused (IFE_Ok when it can, or when it
+	// is not listed at all - see GetBlockReason).
+	private var _cacheReasons : array<EInfusionError>;
 
 	// Sacrifice phase: the target the player picked, and per-refresh cached
 	// verdicts for each candidate sacrifice (target + candidate preview).
@@ -43,6 +48,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		_cacheInfusable.Clear();
 		_cacheSacrifices.Clear();
 		_cachePreviews.Clear();
+		_cacheReasons.Clear();
 		_sacIds.Clear();
 		_sacValid.Clear();
 		_sacPreviews.Clear();
@@ -111,6 +117,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		var infusable : bool;
 		var s : SItemUniqueId;
 		var p : SInfusionPreview;
+		var reason : EInfusionError;
 
 		for ( i = 0; i < _cacheIds.Size(); i += 1 )
 		{
@@ -123,9 +130,16 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		}
 
 		infusable = false;
+		reason = IFE_Ok;
 		if ( infusionService && craftsman && infusionService.IsSupportedTarget( item ) )
 		{
 			infusable = infusionService.FindBestSacrifice( _inv, item, s, p, craftsman );
+			// Blocked targets are listed only within this craftsman's
+			// specialization: every sword at an armorer would be noise.
+			if ( !infusable && infusionService.IsCraftsmanSpecializedFor( craftsman, item ) )
+			{
+				reason = infusionService.GetBlockReason( _inv, item, craftsman );
+			}
 			// One line per item and refresh: only with debug logging on.
 			if ( infusionService.GetPublicConfig().DebugLogging() )
 			{
@@ -144,6 +158,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		_cacheInfusable.PushBack( infusable );
 		_cacheSacrifices.PushBack( s );
 		_cachePreviews.PushBack( p );
+		_cacheReasons.PushBack( reason );
 
 		sacrificeId = s;
 		preview = p;
@@ -158,18 +173,73 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		return GetInfusionInfo( item, s, p );
 	}
 
-	// Only infusion targets (phase 1) or the target plus its valid
-	// sacrifices (phase 2); no repair entries. Access modifier matches the
-	// ancestor (protected) - the compiler rejects weaker overrides.
+	// Target phase: true when the item is listed as a disabled target;
+	// returns why it can't be infused here.
+	public function GetBlockReason( item : SItemUniqueId, out reason : EInfusionError ) : bool
+	{
+		var s : SItemUniqueId;
+		var p : SInfusionPreview;
+		var i : int;
+
+		reason = IFE_Ok;
+		if ( _sacrificePhase || GetInfusionInfo( item, s, p ) )
+		{
+			return false;
+		}
+		for ( i = 0; i < _cacheIds.Size(); i += 1 )
+		{
+			if ( _cacheIds[i] == item )
+			{
+				reason = _cacheReasons[i];
+				break;
+			}
+		}
+		return reason != IFE_Ok;
+	}
+
+	// Player text for a blocked target (tooltip warning line). The tier
+	// reason names the tier this item needs, with the game's own tier name
+	// (CraftsmanLevelToLocalizationKey, craftingTypes.ws).
+	public function GetBlockReasonText( item : SItemUniqueId ) : string
+	{
+		var reason : EInfusionError;
+		var quality : int;
+		var required : int;
+
+		if ( !GetBlockReason( item, reason ) )
+		{
+			return "";
+		}
+		switch ( reason )
+		{
+			case IFE_CraftsmanLevelTooLow:
+				quality = RoundMath( CalculateAttributeValue( _inv.GetItemAttributeValue( item, 'quality' ) ) );
+				required = infusionService.GetPublicConfig().GetRequiredCraftsmanLevel( quality );
+				return GetLocStringByKeyExt( "panel_infusion_block_tier" ) + " "
+					+ GetLocStringByKeyExt( CraftsmanLevelToLocalizationKey( (ECraftsmanLevel)required ) );
+			case IFE_SacrificeNotHigher:
+				return GetLocStringByKeyExt( "panel_infusion_block_no_higher" );
+			case IFE_EquippedSacrifice:
+				return GetLocStringByKeyExt( "panel_infusion_block_equipped" );
+		}
+		return InfusionErrorToLocString( reason );
+	}
+
+	// Phase 1: infusion targets plus blocked targets (disabled); phase 2:
+	// the target plus its valid sacrifices. No repair entries. Access
+	// modifier matches the ancestor (protected) - the compiler rejects
+	// weaker overrides.
 	protected function ShouldShowItem( item : SItemUniqueId ) : bool
 	{
 		var p : SInfusionPreview;
+
+		var reason : EInfusionError;
 
 		if ( _sacrificePhase )
 		{
 			return item == _phaseTarget || GetSacrificeInfo( item, p );
 		}
-		return IsInfusable( item );
+		return IsInfusable( item ) || GetBlockReason( item, reason );
 	}
 
 	// Per-item price and cost row: phase 1 shows the fee and materials for
@@ -180,6 +250,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		var s : SItemUniqueId;
 		var p : SInfusionPreview;
 		var missing : array<SItemParts>;
+		var reason : EInfusionError;
 
 		super.SetInventoryFlashObjectForItem( item, flashObject );
 
@@ -228,6 +299,15 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		{
 			flashObject.SetMemberFlashInt( "actionPrice", p.laborFee );
 			SetCostPartList( flashObject, p.materials );
+		}
+		else if ( GetBlockReason( item, reason ) )
+		{
+			// Listed but not infusable here: greyed panel, no E button, the
+			// page's warning line points to the tooltip, which names the
+			// reason (CR4BlacksmithMenu.ShowItemTooltip wrapper).
+			flashObject.SetMemberFlashInt( "actionPrice", 0 );
+			flashObject.SetMemberFlashArray( "partList", flashObject.CreateFlashArray() );
+			flashObject.SetMemberFlashBool( "disableAction", true );
 		}
 	}
 

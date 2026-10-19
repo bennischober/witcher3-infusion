@@ -71,6 +71,9 @@ function InfusionScenarioNames( out names : array<name> )
 	names.PushBack( 'reject_craftsman_type' );
 	names.PushBack( 'reject_tier_witcher' );
 	names.PushBack( 'reject_tier_relic' );
+	names.PushBack( 'block_tier' );
+	names.PushBack( 'block_no_higher' );
+	names.PushBack( 'block_ok' );
 }
 
 class W3InfusionScenarioRunner extends IScriptable
@@ -197,6 +200,14 @@ class W3InfusionScenarioRunner extends IScriptable
 				return ScenarioRejectCraftsman( 'Bear Armor 1', 'Light armor 06', true, IFE_CraftsmanLevelTooLow, 5 );
 			case 'reject_tier_relic':
 				return ScenarioRejectCraftsman( 'Abarad', 'Novigraadan sword 3', false, IFE_CraftsmanLevelTooLow, 4 );
+
+			// ---- block reasons for the grid (spec §9.3) ----
+			case 'block_tier':
+				return ScenarioBlockTier();
+			case 'block_no_higher':
+				return ScenarioBlockNoHigher();
+			case 'block_ok':
+				return ScenarioBlockOk();
 		}
 		detail = "unknown scenario - run infuseScenarioList";
 		return ISS_Skip;
@@ -785,6 +796,75 @@ class W3InfusionScenarioRunner extends IScriptable
 			return ISS_Fail;
 		}
 		return ExpectRejection( t, s, expected, craftsman );
+	}
+
+	// =====================================================================
+	// Block reasons (what the Infusion tab's tooltip shows, spec §9.3)
+	// =====================================================================
+
+	private function ExpectBlockReason( t : SItemUniqueId, expected : EInfusionError, craftsman : CGameplayEntity ) : EInfScnStatus
+	{
+		var reason : EInfusionError;
+
+		reason = svc.GetBlockReason( inv, t, craftsman );
+		detail = "reason '" + InfusionErrorToString( reason ) + "'";
+		if ( reason != expected )
+		{
+			detail += ", expected '" + InfusionErrorToString( expected ) + "'";
+			return ISS_Fail;
+		}
+		return ISS_Pass;
+	}
+
+	// Witcher gear at a journeyman armorer: the tier is the reason.
+	private function ScenarioBlockTier() : EInfScnStatus
+	{
+		var craftsman : CGameplayEntity;
+		var t, s : SItemUniqueId;
+
+		craftsman = GetCraftsman( true, false );
+		if ( !craftsman )
+		{
+			return ISS_Skip;
+		}
+		if ( !Spawn( 'Bear Armor 1', t ) || !Spawn( 'Light armor 06', s ) )
+		{
+			return ISS_Fail;
+		}
+		if ( inv.GetItemQuality( t ) != 5 )
+		{
+			detail = "Bear Armor 1 has quality " + inv.GetItemQuality( t ) + ", expected 5";
+			return ISS_Skip;
+		}
+		if ( !BoostTo( s, Level( t ) + 10 ) )
+		{
+			return ISS_Fail;
+		}
+		return ExpectBlockReason( t, IFE_CraftsmanLevelTooLow, craftsman );
+	}
+
+	// A target far above every other chest armor: nothing higher to sacrifice.
+	private function ScenarioBlockNoHigher() : EInfScnStatus
+	{
+		var t : SItemUniqueId;
+
+		if ( !Spawn( 'Light armor 01', t ) || !BoostTo( t, GetWitcherPlayer().GetMaxLevel() + 40 ) )
+		{
+			return ISS_Fail;
+		}
+		return ExpectBlockReason( t, IFE_SacrificeNotHigher, NULL );
+	}
+
+	// A valid pair: no block reason (consistent with FindBestSacrifice).
+	private function ScenarioBlockOk() : EInfScnStatus
+	{
+		var t, s : SItemUniqueId;
+
+		if ( !Spawn( 'Light armor 01', t ) || !Spawn( 'Light armor 06', s ) || !BoostTo( s, Level( t ) + 10 ) )
+		{
+			return ISS_Fail;
+		}
+		return ExpectBlockReason( t, IFE_Ok, NULL );
 	}
 
 	// =====================================================================

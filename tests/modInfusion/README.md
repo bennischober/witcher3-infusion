@@ -32,7 +32,7 @@ crowns and materials restored to the exact amounts from before.
 
 | Command | Effect |
 | --- | --- |
-| `infuseScenarioAll` | Runs all scenarios below. Summary on screen and in the log: `SCENARIOS: 22/22 PASS` (or `\| FAIL: … \| SKIP: …`); one `scenario <name>: PASS/FAIL/SKIP (detail)` line per scenario. |
+| `infuseScenarioAll` | Runs all scenarios below. Summary on screen and in the log: `SCENARIOS: 25/25 PASS` (or `\| FAIL: … \| SKIP: …`); one `scenario <name>: PASS/FAIL/SKIP (detail)` line per scenario. |
 | `infuseScenario(name)` | Runs one scenario, e.g. `infuseScenario(silver_sword)`. |
 | `infuseScenarioN(n)` | Same by number (1-based, order below) — fallback if the console rejects a bare name. |
 | `infuseScenarioList` | Lists the names with their numbers. |
@@ -56,9 +56,12 @@ enchantment and all previous abilities intact, crowns charged = fee, materials u
 | 10 | `fee_by_tier` | master armorer charges more than journeyman (§6.2, §15.4) |
 | 11 | `master_relic_ok` | master smith accepts a relic (§8.2) |
 | 12–22 | `reject_same`, `reject_lower`, `reject_equal`, `reject_category`, `reject_steel_silver`, `reject_quest`, `reject_crowns`, `reject_materials`, `reject_craftsman_type`, `reject_tier_witcher`, `reject_tier_relic` | exact rejection code **and** nothing consumed (§15.2, §13.3) |
+| 23 | `block_tier` | the grid's block reason for Witcher gear at a journeyman armorer is the tier (§9.3) |
+| 24 | `block_no_higher` | a target above every other item of its category: "no higher-level item" |
+| 25 | `block_ok` | a valid pair has no block reason (consistent with the infusable check) |
 
-Scenarios 1–9 run without a craftsman (eligibility bypass, mechanics only); 10–11 and the three
-craftsman rejections spawn journeyman/master test craftsmen (despawn after 5 min). SKIP means a
+Scenarios 1–9, 24 and 25 run without a craftsman (eligibility bypass, mechanics only); 10–11,
+the three craftsman rejections and `block_tier` spawn journeyman/master test craftsmen (despawn after 5 min). SKIP means a
 precondition did not hold (game data differs, a freshly spawned craftsman was not ready yet —
 run again). Still manual: everything visual in the menu (docs/UI.md checklists).
 

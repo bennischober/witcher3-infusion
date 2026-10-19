@@ -9,9 +9,23 @@ A dedicated **Infusion** tab in every blacksmith/armorer menu, right after Repar
 the smallest UI extension attached to the existing service). Infusion is a **two-step flow** —
 the player picks both items (§9.1); the sacrifice is never chosen automatically.
 
-**Step 1 — target.** Only items this craftsman can infuse right now (damaged ones too —
-infusion includes the repair). The info panel shows the fee and a crafting-style material row
-for the best available sacrifice: icon, name, `have/need` in green or red. E = **Infundieren**.
+**Step 1 — target.** Items this craftsman can infuse right now (damaged ones too — infusion
+includes the repair). The info panel shows the fee and a crafting-style material row for the
+best available sacrifice: icon, name, `have/need` in green or red. E = **Infundieren**.
+
+Items of this craftsman's specialization that **can't** be infused here are listed too, disabled
+(greyed panel, no E button, warning "Hier nicht infundierbar - siehe Tooltip"). Their tooltip names
+the reason in its warning line (spec §9.3):
+
+| Reason | Tooltip text |
+| --- | --- |
+| Craftsman's tier too low (relic → master, Witcher gear → grandmaster) | "Erfordert einen Handwerker mindestens dieses Rangs:" + the game's tier name |
+| No other item of the category | "Kein anderer Gegenstand dieser Art im Inventar." |
+| None with a higher level | "Kein Gegenstand dieser Art mit höherer Stufe im Inventar." |
+| Only equipped items are higher | "Nur angelegte Gegenstände haben eine höhere Stufe - zuerst ablegen." |
+
+Items of the other specialization (swords at an armorer) and excluded items (quest, hidden)
+stay hidden.
 
 **Step 2 — sacrifice.** The grid is rebuilt with two sections: **Ziel (E: abbrechen)** (the picked
 item) and **Opfer wählen** (every valid sacrifice), each priced for that exact pair. Selecting a
@@ -36,7 +50,7 @@ No vanilla script is overridden — everything hooks in through REDkit script an
 | `game/infusion/InfusionMenuTab.ws` | `@wrapMethod CR4CommonMenu.DefineSceneMenuStructure` inserts the tab after Repair; `@replaceMethod HaxGetPanelStateName` (global) adds `"Infuse"` — unknown states map to `''`, which made the tab blank in the first attempt. |
 | `game/infusion/InfusionBlacksmithMenu.ws` | Fields and helpers via `@addField`/`@addMethod`; wraps `SetMenuState`, `ApplyMenuState`, `SetSectionsDataList`, `InventoryUpdateAll`, `ShowItemTooltip`, `ProcessRequestConfirmation` and `CR4MenuBase.RefreshMenuState`. |
 | `game/infusion/InfusionConfirmationPopup.ws` | Popup data class (extends `ConfirmationPopupData`). |
-| `game/gui/_old/components/guiInfusionInventoryComponent.ws` | Grid component (extends `W3GuiRepairInventoryComponent`): the two phases, craftsman-aware verdicts cached per grid rebuild, fee + material row + `disableAction` per item. |
+| `game/gui/_old/components/guiInfusionInventoryComponent.ws` | Grid component (extends `W3GuiRepairInventoryComponent`): the two phases, craftsman-aware verdicts and block reasons (`W3InfusionService.GetBlockReason`) cached per grid rebuild, fee + material row + `disableAction` per item. |
 
 Key mechanics:
 
@@ -52,6 +66,11 @@ Key mechanics:
   path — Flash shows the Disassemble page there, so a vanilla `true` would dismantle the item.
 - **Button label:** Flash hardcodes it; the script sets it through the panel's own
   `setButtonData(label, "enter-gamepad_A", 69)`.
+- **Block reasons in the tooltip:** the `ShowItemTooltip` wrapper builds the tooltip data like
+  vanilla and sets its `WarningMessage` line (vanilla uses it for "not for sale"; rendered by
+  `TooltipInventory.as`). The tooltip follows the hovered item, which is the item the reason
+  belongs to. The page's disabled warning line is one text per page: "Hier nicht infundierbar"
+  in step 1, "Fehlende Materialien" in step 2.
 
 ## Flash protocol facts (REDkit ActionScript sources)
 
@@ -69,8 +88,6 @@ Sources: `r4data\gameplay\gui_new\actionscript\red\game\witcher3\menus\blacksmit
 ## Known limitations
 
 - The E label is the same for every item (see above); selecting the target again cancels.
-- Items that can't be infused at this craftsman are hidden, not shown with a reason (spec §9.3
-  gap — see [SPEC_COVERAGE.md](SPEC_COVERAGE.md)).
 - Layout of the Disassemble page: pliers icon in the middle column, no item picture/condition in
   the panel.
 - Axes share the `steelsword` category and infuse with swords (the game's own category model).
@@ -81,8 +98,10 @@ The service logic is covered by `infuseScenarioAll` (tests/modInfusion/README.md
 launch: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, Infusion tab.
 
 1. Compiles (`scriptslog.txt`: no errors).
-2. Step 1: only infusable items; cost row with green/red `have/need`; E = Infundieren; empty grid
-   shows "Kein geeignetes Opferitem verfügbar".
+2. Step 1: infusable items with cost row (green/red `have/need`), E = Infundieren. Blocked items
+   (e.g. Witcher gear at a journeyman, your highest-level piece) are greyed with "Hier nicht
+   infundierbar - siehe Tooltip"; hovering shows the reason in the tooltip's warning line; E does
+   nothing on them.
 3. Step 2: headers "Ziel (E: abbrechen)" / "Opfer wählen"; per-sacrifice fee and row; a sacrifice
    with missing materials is disabled with "Fehlende Materialien".
 4. Selecting the target again cancels; switching tabs cancels; Space does nothing.

@@ -14,8 +14,9 @@
 /** 	  SetSectionsDataList     Target / sacrifice section headers
 /** 	  ProcessRequestConfirmation  click routing (vanilla OnRequestConfirmation
 /** 	                          calls it for every non-standalone click)
-/** 	  ShowItemTooltip         re-applies the button label (called from the
-/** 	                          OnGetItemData event)
+/** 	  ShowItemTooltip         adds the block reason to a disabled target's
+/** 	                          tooltip, re-applies the button label (called
+/** 	                          from the OnGetItemData event)
 /** 	  InventoryUpdateAll      invalidates the grid's verdict cache
 /** 	Vanilla's Space/X handler stays untouched: Flash only sends it while
 /** 	the key has a label, and the Disassemble page clears it. Cancelling a
@@ -52,7 +53,8 @@
 		m_menuState = 'Infuse';
 		m_fxSetState.InvokeSelfOneArg( FlashArgString( "Disassemble" ) );
 		InfusionSetEmptyListText();
-		InfusionSetDisassembleWarningText( GetLocStringByKeyExt( "panel_infusion_missing" ) );
+		// Entering the tab always starts at target selection.
+		InfusionSetDisassembleWarningText( GetLocStringByKeyExt( "panel_infusion_blocked_warning" ) );
 		// Flash's setMenuState just reset the button label.
 		InfusionUpdateActionLabel();
 		if ( m_menuInited )
@@ -130,9 +132,34 @@
 	}
 }
 
+// A disabled target's tooltip names why it can't be infused here (spec
+// §9.3) in the tooltip's warning line - vanilla uses it for "not for sale"
+// (TooltipInventory.as tfWarningMessage). The tooltip follows the hovered
+// item, which is the item the reason belongs to. Same two calls as vanilla,
+// with the line added before the data goes to Flash.
 @wrapMethod( CR4BlacksmithMenu ) function ShowItemTooltip( item : SItemUniqueId, compareItemType : int )
 {
-	wrappedMethod( item, compareItemType );
+	var tooltipData : CScriptedFlashObject;
+	var reasonText : string;
+
+	reasonText = "";
+	if ( m_menuState == 'Infuse' && _infusionInv )
+	{
+		reasonText = _infusionInv.GetBlockReasonText( item );
+	}
+	if ( reasonText != "" )
+	{
+		tooltipData = _tooltipDataProvider.GetTooltipData( item, true, true );
+		if ( tooltipData )
+		{
+			tooltipData.SetMemberFlashString( "WarningMessage", reasonText );
+		}
+		m_flashValueStorage.SetFlashObject( "context.tooltip.data", tooltipData );
+	}
+	else
+	{
+		wrappedMethod( item, compareItemType );
+	}
 	InfusionUpdateActionLabel();
 }
 
@@ -193,9 +220,12 @@
 	_infusionInv.craftsman = _infusionCraftsman;
 }
 
-// Infuse: infusion targets only (damaged ones too - infusion includes the
-// repair), always starting at target selection. Without a craftsman or
-// with infusion disabled the grid stays empty and clicks are refused.
+// Infuse: infusion targets (damaged ones too - infusion includes the
+// repair) plus disabled blocked targets, always starting at target
+// selection. Without a craftsman or with infusion disabled the grid stays
+// empty and clicks are refused. The page texts are (re)set here too: when
+// the menu opens directly on this tab, SetMenuState runs before the Flash
+// module exists.
 @addMethod( CR4BlacksmithMenu ) function InfusionPrepareState( newState : name ) : void
 {
 	if ( newState != 'Infuse' )
@@ -215,6 +245,9 @@
 	}
 	_infusionActive = _infusionInv && _infusionService && _infusionCraftsman
 		&& _infusionService.GetPublicConfig().EnableInfusion();
+	InfusionSetEmptyListText();
+	InfusionSetDisassembleWarningText( GetLocStringByKeyExt( "panel_infusion_blocked_warning" ) );
+	InfusionUpdateActionLabel();
 }
 
 // Target selection: the Repair tab's sections (equipped / other). Sacrifice
@@ -373,6 +406,7 @@
 
 	_infusionTargetId = target;
 	_infusionInv.BeginSacrificePhase( target );
+	InfusionSetDisassembleWarningText( GetLocStringByKeyExt( "panel_infusion_missing" ) );
 	LogChannel( 'Infusion', "flow: target " + _inv.GetItemName( target ) + " picked - choose a sacrifice" );
 
 	InfusionEndRequest();
@@ -385,6 +419,7 @@
 @addMethod( CR4BlacksmithMenu ) function InfusionExitSacrificePhase() : void
 {
 	_infusionInv.EndSacrificePhase();
+	InfusionSetDisassembleWarningText( GetLocStringByKeyExt( "panel_infusion_blocked_warning" ) );
 	LogChannel( 'Infusion', "flow: back to target selection" );
 
 	SetSectionsDataList( m_menuState );
@@ -471,6 +506,7 @@
 		// Done: back to target selection (a failed attempt stays in the
 		// sacrifice phase so another sacrifice can be picked).
 		_infusionInv.EndSacrificePhase();
+		InfusionSetDisassembleWarningText( GetLocStringByKeyExt( "panel_infusion_blocked_warning" ) );
 		SetSectionsDataList( m_menuState );
 	}
 	else

@@ -381,6 +381,87 @@ class W3InfusionService extends IScriptable
 	// Public queries (used by the menu integration)
 	// ---------------------------------------------------------------------
 
+	// True when this craftsman's specialization covers the item (swordsmith
+	// for swords, armorer for armor) - regardless of tier.
+	public function IsCraftsmanSpecializedFor( craftsman : CGameplayEntity, item : SItemUniqueId ) : bool
+	{
+		var comp : W3CraftsmanComponent;
+
+		if ( !craftsman )
+		{
+			return false;
+		}
+		comp = (W3CraftsmanComponent)craftsman.GetComponentByClassName( 'W3CraftsmanComponent' );
+		return comp && comp.IsCraftsmanType( GetRequiredCraftsmanType( GetWitcherPlayer().inv.GetItemCategory( item ) ) );
+	}
+
+	// Why a supported target can't be infused at this craftsman right now
+	// (spec §9.3), for the UI: the craftsman's tier, no other item of the
+	// category, none with a higher level, or the higher ones are all
+	// equipped; otherwise the first refusal of a higher-level pair. Excluded
+	// items don't count as sacrifices. IFE_Ok = the target is infusable.
+	public function GetBlockReason( inv : CInventoryComponent, targetId : SItemUniqueId, optional craftsman : CGameplayEntity ) : EInfusionError
+	{
+		var all : array<SItemUniqueId>;
+		var p : SInfusionPreview;
+		var category : name;
+		var targetLevel : int;
+		var others, higher, higherEquipped : int;
+		var err, firstRefusal : EInfusionError;
+		var i : int;
+
+		if ( !VerifyCraftsman( inv, targetId, craftsman, p ) )
+		{
+			return p.errorCode;
+		}
+
+		category = inv.GetItemCategory( targetId );
+		targetLevel = ComputeItemLevel( inv, targetId );
+		firstRefusal = IFE_Ok;
+		inv.GetAllItems( all );
+		for ( i = 0; i < all.Size(); i += 1 )
+		{
+			if ( all[i] == targetId || inv.GetItemCategory( all[i] ) != category || IsExcludedItem( inv, all[i] ) )
+			{
+				continue;
+			}
+			others += 1;
+			if ( ComputeItemLevel( inv, all[i] ) <= targetLevel )
+			{
+				continue;
+			}
+			higher += 1;
+			if ( GetWitcherPlayer().IsItemEquipped( all[i] ) )
+			{
+				higherEquipped += 1;
+				continue;
+			}
+			err = Preview( targetId, all[i], p, craftsman );
+			if ( err == IFE_Ok )
+			{
+				return IFE_Ok;
+			}
+			if ( firstRefusal == IFE_Ok )
+			{
+				firstRefusal = err;
+			}
+		}
+
+		if ( others == 0 )
+		{
+			return IFE_NoSacrifice;
+		}
+		if ( higher == 0 )
+		{
+			return IFE_SacrificeNotHigher;
+		}
+		if ( higher == higherEquipped )
+		{
+			return IFE_EquippedSacrifice;
+		}
+		return firstRefusal;
+	}
+
 	// True when the item's category is infusion-supported AND enabled
 	// (exclusion rules + config gate). Uses the player's inventory context.
 	public function IsSupportedTarget( item : SItemUniqueId ) : bool
