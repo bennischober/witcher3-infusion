@@ -43,3 +43,4 @@
 2112345041||panel_infusion_block_equipped|Higher-level item is equipped
 2112345042||panel_infusion_block_tier|Required rank:
 2112345043||panel_infusion_blocked_warning|Can't be infused here - see the tooltip
+2112345044||panel_infusion_block_excluded|Can't be infused safely

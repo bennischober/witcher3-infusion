@@ -153,6 +153,13 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 				}
 			}
 		}
+		else if ( infusionService && craftsman && infusionService.IsExplainedExclusion( item )
+			&& infusionService.IsCraftsmanSpecializedFor( craftsman, item ) )
+		{
+			// Excluded gear (quest, Aerondight, ...) is listed disabled with
+			// its reason too (spec §14.2).
+			reason = IFE_QuestItem;
+		}
 
 		_cacheIds.PushBack( item );
 		_cacheInfusable.PushBack( infusable );
@@ -221,6 +228,8 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 				return GetLocStringByKeyExt( "panel_infusion_block_no_higher" );
 			case IFE_EquippedSacrifice:
 				return GetLocStringByKeyExt( "panel_infusion_block_equipped" );
+			case IFE_QuestItem:
+				return GetLocStringByKeyExt( "panel_infusion_block_excluded" );
 		}
 		return InfusionErrorToLocString( reason );
 	}

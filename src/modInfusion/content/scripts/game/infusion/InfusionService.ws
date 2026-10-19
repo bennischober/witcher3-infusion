@@ -584,18 +584,29 @@ class W3InfusionService extends IScriptable
 	// Items the infusion must never touch (spec §14.2). Extend deliberately.
 	private function IsExcludedItem( inv : CInventoryComponent, item : SItemUniqueId ) : bool
 	{
-		if ( inv.IsItemQuest( item ) )
+		return IsHiddenItem( inv, item ) || IsExcludedGearItem( inv, item );
+	}
+
+	// Excluded gear the player sees in the menu (spec §14.2: explain the
+	// exclusion): a quest, special-progression or merchant-range item of an
+	// infusion-supported, enabled category. The grid lists it disabled with
+	// "can't be infused safely"; hidden/body items stay invisible.
+	public function IsExplainedExclusion( item : SItemUniqueId ) : bool
+	{
+		var inv : CInventoryComponent;
+		var data : SInfusionCategoryData;
+
+		inv = GetWitcherPlayer().inv;
+		if ( !GetConfig().EnableInfusion() || !inv.IsIdValid( item ) || IsHiddenItem( inv, item ) || !IsExcludedGearItem( inv, item ) )
 		{
-			return true;
+			return false;
 		}
-		// Technical body items (e.g. 'Body torso medalion': category armor,
-		// tags NoDrop,NoShow,Body) are Geralt's own body meshes. They live in
-		// the player inventory but are never shown to the player; consuming
-		// one as a sacrifice would delete a body part. Same filters the
-		// vanilla inventory UI applies (W3GuiBaseInventoryComponent).
-		if ( inv.IsItemBody( item )
-			|| inv.ItemHasTag( item, theGame.params.TAG_DONT_SHOW )
-			|| inv.ItemHasTag( item, theGame.params.TAG_DONT_SHOW_ONLY_IN_PLAYERS ) )
+		return GetCategoryData( inv.GetItemCategory( item ), data ) && GetConfig().IsCategoryEnabled( data.category );
+	}
+
+	private function IsExcludedGearItem( inv : CInventoryComponent, item : SItemUniqueId ) : bool
+	{
+		if ( inv.IsItemQuest( item ) )
 		{
 			return true;
 		}
@@ -607,6 +618,22 @@ class W3InfusionService extends IScriptable
 		// Merchant-stocked leveled items (AutogenUseLevelRange range system):
 		// not player loot.
 		if ( inv.ItemHasTag( item, 'AutogenUseLevelRange' ) )
+		{
+			return true;
+		}
+		return false;
+	}
+
+	private function IsHiddenItem( inv : CInventoryComponent, item : SItemUniqueId ) : bool
+	{
+		// Technical body items (e.g. 'Body torso medalion': category armor,
+		// tags NoDrop,NoShow,Body) are Geralt's own body meshes. They live in
+		// the player inventory but are never shown to the player; consuming
+		// one as a sacrifice would delete a body part. Same filters the
+		// vanilla inventory UI applies (W3GuiBaseInventoryComponent).
+		if ( inv.IsItemBody( item )
+			|| inv.ItemHasTag( item, theGame.params.TAG_DONT_SHOW )
+			|| inv.ItemHasTag( item, theGame.params.TAG_DONT_SHOW_ONLY_IN_PLAYERS ) )
 		{
 			return true;
 		}
@@ -739,16 +766,20 @@ class W3InfusionService extends IScriptable
 		// (labor) and the materials (physical work per level) grow with the
 		// gap - a 1-level touch-up must not cost the same as a 30-level jump.
 		// With salvage disabled (spec §10 EnableSalvage) nothing is recovered
-		// and the player supplies the full recipe.
-		GetRecipeForTarget( inv, targetId, targetData.category, gap, preview.materials );
-		if ( GetConfig().SalvageEnabled() )
+		// and the player supplies the full recipe. Without material
+		// requirements (RequireCraftingMaterials) all three lists stay empty.
+		if ( GetConfig().RequireCraftingMaterials() )
 		{
-			GetSalvageYield( inv, sacrificeId, preview.salvaged );
-			ApplySalvageMultiplier( preview.salvaged );
+			GetRecipeForTarget( inv, targetId, targetData.category, gap, preview.materials );
+			if ( GetConfig().SalvageEnabled() )
+			{
+				GetSalvageYield( inv, sacrificeId, preview.salvaged );
+				ApplySalvageMultiplier( preview.salvaged );
+			}
+			remaining.Clear();
+			ComputeRemainingMaterials( preview.materials, preview.salvaged, remaining, preview.covered );
+			preview.materials = remaining;
 		}
-		remaining.Clear();
-		ComputeRemainingMaterials( preview.materials, preview.salvaged, remaining, preview.covered );
-		preview.materials = remaining;
 
 		preview.stepsToAdd = gap;
 		preview.newLevel = targetLevel + gap;
@@ -971,6 +1002,11 @@ class W3InfusionService extends IScriptable
 		if ( fee < minFee )
 		{
 			fee = minFee;
+		}
+		// Overflow guard before the int conversion (spec §8.3).
+		if ( fee > GetConfig().GetMaxLaborFee() )
+		{
+			fee = GetConfig().GetMaxLaborFee();
 		}
 		return RoundMath( fee );
 	}

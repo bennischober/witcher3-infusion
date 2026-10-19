@@ -14,7 +14,7 @@
 /** 	  infuseCleanTestItems       - remove spawned test items (keeps one)
 /** 	  infuseDespawnTestSmith     - remove spawned test craftsmen
 /** 	  infuseCraftsmanReport      - report nearby craftsmen (type/tier)
-/** 	  infuseSetConfig(key, n)    - dev config override (fee/minfee/salvage/debug)
+/** 	  infuseSetConfig(key, n)    - dev config override (fee/minfee/salvage/materials/debug)
 /** 	  infuseDumpConfig           - log the effective configuration
 /** 	  infuseTestStrings          - check that the mod's strings load
 /**
@@ -94,6 +94,7 @@ exec function infuseTestStrings()
 //   infuseSetConfig('minfee', 25)    -> minimum labor fee
 //   infuseSetConfig('salvage', 1)    -> disable salvage (full recipe, no discount)
 //   infuseSetConfig('salvage', 0)    -> re-enable salvage
+//   infuseSetConfig('materials', 1)  -> no material requirements (labor fee only)
 //   infuseSetConfig('debug', 1)      -> per-item grid logging on (0 = off)
 exec function infuseSetConfig( key : string, value : int )
 {
@@ -140,6 +141,19 @@ exec function infuseSetConfig( key : string, value : int )
 			LogChannel( 'Infusion', "config override: salvage re-enabled" );
 		}
 	}
+	else if ( keyNorm == "materials" )
+	{
+		if ( value > 0 )
+		{
+			FactsSet( "InfCfg_NoMaterials", 1 );
+			LogChannel( 'Infusion', "config override: material requirements DISABLED" );
+		}
+		else
+		{
+			FactsRemove( "InfCfg_NoMaterials" );
+			LogChannel( 'Infusion', "config override: material requirements re-enabled" );
+		}
+	}
 	else if ( keyNorm == "debug" )
 	{
 		if ( value > 0 )
@@ -155,7 +169,7 @@ exec function infuseSetConfig( key : string, value : int )
 	}
 	else
 	{
-		LogChannel( 'Infusion', "infuseSetConfig: unknown key '" + key + "' (fee | minfee | salvage | debug)" );
+		LogChannel( 'Infusion', "infuseSetConfig: unknown key '" + key + "' (fee | minfee | salvage | materials | debug)" );
 	}
 
 	theGame.GetGuiManager().ShowNotification( "config override applied - see log", 6.0 );
@@ -174,6 +188,7 @@ exec function infuseDumpConfig()
 		+ " armor=" + c.IsCategoryEnabled( 'armor' ) );
 	LogChannel( 'Infusion', "config dump: feeFraction=" + c.GetFeeFraction()
 		+ " minFee=" + c.GetMinLaborFee()
+		+ " materials=" + c.RequireCraftingMaterials()
 		+ " salvage=" + c.SalvageEnabled()
 		+ " salvageMult=" + c.SalvageYieldMultiplier()
 		+ " restoreDurability=" + c.RestoreTargetDurability()

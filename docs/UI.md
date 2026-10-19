@@ -23,12 +23,12 @@ the reason in its warning line (spec §9.3):
 | No other item of the category | "Kein anderer Gegenstand dieser Art" |
 | None with a higher level | "Kein höherstufiger Gegenstand" |
 | Only equipped items are higher | "Höherstufiger Gegenstand angelegt" |
+| Excluded gear: quest item, Aerondight, merchant-range item (spec §14.2) | "Kann nicht sicher infundiert werden" |
 
 The tooltip's warning line holds one line (~40 characters at its font size); longer text wraps
 over the item name, so keep reasons short.
 
-Items of the other specialization (swords at an armorer) and excluded items (quest, hidden)
-stay hidden.
+Items of the other specialization (swords at an armorer) and hidden/body items stay hidden.
 
 **Step 2 — sacrifice.** The grid is rebuilt with two sections: **Ziel (E: abbrechen)** (the picked
 item) and **Opfer wählen** (every valid sacrifice), each priced for that exact pair. Selecting a

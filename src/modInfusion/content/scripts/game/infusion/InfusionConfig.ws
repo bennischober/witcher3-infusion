@@ -62,6 +62,10 @@ class W3InfusionConfig extends IScriptable
 	private const var MIN_LABOR_FEE : int;
 	default MIN_LABOR_FEE = 10;
 
+	// Ceiling for any fee (overflow guard, not a balance knob).
+	private const var MAX_LABOR_FEE : int;
+	default MAX_LABOR_FEE = 10000000;
+
 	// Craftsman tier multipliers (spec §6.2; real game tiers).
 	private const var MULT_JOURNEYMAN : float;
 	default MULT_JOURNEYMAN = 1.0f;
@@ -104,6 +108,13 @@ class W3InfusionConfig extends IScriptable
 	private const var MAX_SETS : float;
 	default MAX_SETS = 3.0f;
 
+	// ============================= materials ===============================
+
+	// Material requirements (spec §10 RequireCraftingMaterials). Off: the
+	// infusion costs the labor fee only, salvage is irrelevant.
+	private const var REQUIRE_MATERIALS : bool;
+	default REQUIRE_MATERIALS = true;
+
 	// ============================== salvage ================================
 
 	private const var ENABLE_SALVAGE : bool;
@@ -134,6 +145,7 @@ class W3InfusionConfig extends IScriptable
 	//   InfCfg_BaseFee  - overrides the fee fraction (value = fraction x 1000)
 	//   InfCfg_MinFee   - overrides MIN_LABOR_FEE
 	//   InfCfg_Salvage  - nonzero disables salvage (no discount: full recipe)
+	//   InfCfg_NoMaterials - nonzero disables material requirements
 	//   InfCfg_Debug    - nonzero enables the per-item grid logging
 	private const var FACT_BASE_FEE : string;
 	default FACT_BASE_FEE = "InfCfg_BaseFee";
@@ -146,6 +158,9 @@ class W3InfusionConfig extends IScriptable
 
 	private const var FACT_DEBUG_LOG : string;
 	default FACT_DEBUG_LOG = "InfCfg_Debug";
+
+	private const var FACT_NO_MATERIALS : string;
+	default FACT_NO_MATERIALS = "InfCfg_NoMaterials";
 
 	// ---------------------------------------------------------------------
 	// Accessors (the service's only interface)
@@ -179,17 +194,17 @@ class W3InfusionConfig extends IScriptable
 	{
 		if ( craftsmanLevel <= 1 )
 		{
-			return MULT_JOURNEYMAN;
+			return SafeMultiplier( MULT_JOURNEYMAN );
 		}
 		if ( craftsmanLevel == 2 )
 		{
-			return MULT_MASTER;
+			return SafeMultiplier( MULT_MASTER );
 		}
 		if ( craftsmanLevel == 3 )
 		{
-			return MULT_GRAND_MASTER;
+			return SafeMultiplier( MULT_GRAND_MASTER );
 		}
-		return MULT_ARCH_MASTER;
+		return SafeMultiplier( MULT_ARCH_MASTER );
 	}
 
 	// Target tier multiplier by item quality (1..5).
@@ -197,21 +212,21 @@ class W3InfusionConfig extends IScriptable
 	{
 		if ( quality <= 1 )
 		{
-			return TIER_MULT_1;
+			return SafeMultiplier( TIER_MULT_1 );
 		}
 		if ( quality == 2 )
 		{
-			return TIER_MULT_2;
+			return SafeMultiplier( TIER_MULT_2 );
 		}
 		if ( quality == 3 )
 		{
-			return TIER_MULT_3;
+			return SafeMultiplier( TIER_MULT_3 );
 		}
 		if ( quality == 4 )
 		{
-			return TIER_MULT_4;
+			return SafeMultiplier( TIER_MULT_4 );
 		}
-		return TIER_MULT_5;
+		return SafeMultiplier( TIER_MULT_5 );
 	}
 
 	// Level-gap factor (spec §7.1): gap / LEVELS_PER_FULL_SET, capped at
@@ -225,12 +240,8 @@ class W3InfusionConfig extends IScriptable
 			return 0.0f;
 		}
 
-		mult = levelGap / LEVELS_PER_FULL_SET;
-		if ( mult > MAX_SETS )
-		{
-			mult = MAX_SETS;
-		}
-		return mult;
+		mult = levelGap / ClampF( LEVELS_PER_FULL_SET, 1.0f, 1000.0f );
+		return MinF( mult, ClampF( MAX_SETS, 0.1f, 100.0f ) );
 	}
 
 	// Craftsman tier requirement for a target quality (spec §8.2).
@@ -238,13 +249,13 @@ class W3InfusionConfig extends IScriptable
 	{
 		if ( quality >= 5 )
 		{
-			return TIER_REQ_WITCHER;
+			return Clamp( TIER_REQ_WITCHER, 1, 4 );
 		}
 		if ( quality == 4 )
 		{
-			return TIER_REQ_RELIC;
+			return Clamp( TIER_REQ_RELIC, 1, 4 );
 		}
-		return TIER_REQ_ORDINARY;
+		return Clamp( TIER_REQ_ORDINARY, 1, 4 );
 	}
 
 	// --------------------------- fee anchors -----------------------------
@@ -264,9 +275,9 @@ class W3InfusionConfig extends IScriptable
 		factVal = FactsQuerySum( FACT_BASE_FEE );
 		if ( factVal > 0 )
 		{
-			return factVal / 1000.0f;   // fact stores fraction x 1000
+			return SafeMultiplier( factVal / 1000.0f );   // fact stores fraction x 1000
 		}
-		return FEE_FRACTION_OF_TARGET_VALUE;
+		return SafeMultiplier( FEE_FRACTION_OF_TARGET_VALUE );
 	}
 
 	public function GetMinLaborFee() : int
@@ -276,9 +287,25 @@ class W3InfusionConfig extends IScriptable
 		factVal = FactsQuerySum( FACT_MIN_FEE );
 		if ( factVal > 0 )
 		{
-			return factVal;
+			return Min( factVal, MAX_LABOR_FEE );
 		}
-		return MIN_LABOR_FEE;
+		return Clamp( MIN_LABOR_FEE, 0, MAX_LABOR_FEE );
+	}
+
+	// Upper bound for any fee (spec §8.3/§15.4: no overflow at NG+ levels).
+	public function GetMaxLaborFee() : int
+	{
+		return MAX_LABOR_FEE;
+	}
+
+	// Material requirement toggle including the debug override.
+	public function RequireCraftingMaterials() : bool
+	{
+		if ( FactsQuerySum( FACT_NO_MATERIALS ) > 0 )
+		{
+			return false;
+		}
+		return REQUIRE_MATERIALS;
 	}
 
 	// Salvage toggle including the debug override.
@@ -294,7 +321,7 @@ class W3InfusionConfig extends IScriptable
 	// Global multiplier on recovered quantities (rounded down by the caller).
 	public function SalvageYieldMultiplier() : float
 	{
-		return SALVAGE_YIELD_MULT;
+		return ClampF( SALVAGE_YIELD_MULT, 0.0f, 10.0f );
 	}
 
 	public function RestoreTargetDurability() : bool
@@ -305,5 +332,15 @@ class W3InfusionConfig extends IScriptable
 	public function DebugLogging() : bool
 	{
 		return DEBUG_LOGGING || FactsQuerySum( FACT_DEBUG_LOG ) > 0;
+	}
+
+	// --------------------------- validation ------------------------------
+
+	// Config values are player-editable constants (spec §10: invalid values
+	// must not cause negative costs or script errors). Multipliers and
+	// fractions are clamped to [0, 100]; the accessors above clamp the rest.
+	private function SafeMultiplier( value : float ) : float
+	{
+		return ClampF( value, 0.0f, 100.0f );
 	}
 }

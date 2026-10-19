@@ -74,6 +74,11 @@ function InfusionScenarioNames( out names : array<name> )
 	names.PushBack( 'block_tier' );
 	names.PushBack( 'block_no_higher' );
 	names.PushBack( 'block_ok' );
+	names.PushBack( 'block_excluded' );
+	names.PushBack( 'materials_off' );
+	names.PushBack( 'fee_formula' );
+	names.PushBack( 'fee_by_gap' );
+	names.PushBack( 'fee_config' );
 }
 
 class W3InfusionScenarioRunner extends IScriptable
@@ -208,6 +213,18 @@ class W3InfusionScenarioRunner extends IScriptable
 				return ScenarioBlockNoHigher();
 			case 'block_ok':
 				return ScenarioBlockOk();
+			case 'block_excluded':
+				return ScenarioBlockExcluded();
+
+			// ---- configuration and pricing (spec §10, §15.4) ----
+			case 'materials_off':
+				return ScenarioMaterialsOff();
+			case 'fee_formula':
+				return ScenarioFeeFormula();
+			case 'fee_by_gap':
+				return ScenarioFeeByGap();
+			case 'fee_config':
+				return ScenarioFeeConfig();
 		}
 		detail = "unknown scenario - run infuseScenarioList";
 		return ISS_Skip;
@@ -881,6 +898,198 @@ class W3InfusionScenarioRunner extends IScriptable
 			return ISS_Fail;
 		}
 		return ExpectBlockReason( t, IFE_Ok, NULL );
+	}
+
+	// Excluded gear is listed with an explanation (spec §14.2): a quest-tagged
+	// sword counts as an explained exclusion, the same sword without the tag
+	// does not.
+	private function ScenarioBlockExcluded() : EInfScnStatus
+	{
+		var t : SItemUniqueId;
+		var tagged, untagged : bool;
+
+		if ( !Spawn( 'Novigraadan sword 1', t ) )
+		{
+			return ISS_Fail;
+		}
+		inv.AddItemTag( t, 'Quest' );
+		tagged = svc.IsExplainedExclusion( t );
+		inv.RemoveItemTag( t, 'Quest' );
+		untagged = svc.IsExplainedExclusion( t );
+		detail = "quest-tagged: " + tagged + ", untagged: " + untagged;
+		if ( !tagged || untagged )
+		{
+			return ISS_Fail;
+		}
+		return ISS_Pass;
+	}
+
+	// =====================================================================
+	// Configuration and pricing (spec §10, §15.4)
+	// =====================================================================
+
+	// RequireCraftingMaterials off: labor fee only, nothing else consumed
+	// (RunInfusion checks that no material count changed).
+	private function ScenarioMaterialsOff() : EInfScnStatus
+	{
+		var spec : SInfScnSpec;
+		var status : EInfScnStatus;
+		var prevFact : int;
+
+		prevFact = SetFactTemp( "InfCfg_NoMaterials", 1 );
+		spec.targetName = 'Light armor 01';
+		spec.sacrificeName = 'Light armor 06';
+		spec.gap = 10;
+		status = RunInfusion( spec, NULL );
+		if ( status == ISS_Pass && ( lastPreview.materials.Size() > 0 || lastPreview.salvaged.Size() > 0 || lastPreview.covered.Size() > 0 ) )
+		{
+			detail = "materials still required (" + lastPreview.materials.Size() + " remaining, " + lastPreview.covered.Size() + " covered)";
+			status = ISS_Fail;
+		}
+		RestoreFact( "InfCfg_NoMaterials", prevFact );
+		return status;
+	}
+
+	// The fee follows the configured formula for an ordinary and a Witcher
+	// target: value x fraction x craftsman x target tier x gap, floored and
+	// capped (spec §6.3; the target-tier multiplier is part of it).
+	private function ScenarioFeeFormula() : EInfScnStatus
+	{
+		var detailOrdinary : string;
+
+		if ( !CheckFeeFormula( 'Light armor 01', 'Light armor 06' ) )
+		{
+			return ISS_Fail;
+		}
+		detailOrdinary = detail;
+		if ( !CheckFeeFormula( 'Bear Armor 1', 'Light armor 06' ) )
+		{
+			return ISS_Fail;
+		}
+		detail = detailOrdinary + "; " + detail;
+		return ISS_Pass;
+	}
+
+	private function CheckFeeFormula( targetName, sacrificeName : name ) : bool
+	{
+		var cfg : W3InfusionConfig;
+		var t, s : SItemUniqueId;
+		var p : SInfusionPreview;
+		var err : EInfusionError;
+		var quality : int;
+		var expected : float;
+
+		if ( !Spawn( targetName, t ) || !Spawn( sacrificeName, s ) || !BoostTo( s, Level( t ) + 10 ) )
+		{
+			return false;
+		}
+		err = svc.Preview( t, s, p, NULL );
+		if ( err != IFE_Ok )
+		{
+			detail = "preview refused " + targetName + ": " + InfusionErrorToString( err );
+			return false;
+		}
+		cfg = svc.GetPublicConfig();
+		quality = inv.GetItemQuality( t );
+		// No craftsman (test bypass) = tier 0, priced like a journeyman.
+		expected = cfg.GetTargetValue( inv, t ) * cfg.GetFeeFraction()
+			* cfg.GetCraftsmanMultiplier( 0 ) * cfg.GetTargetTierMultiplier( quality )
+			* cfg.GetLevelGapMultiplier( p.levelGap );
+		expected = ClampF( expected, cfg.GetMinLaborFee(), cfg.GetMaxLaborFee() );
+		detail = targetName + " (quality " + quality + ", tier x" + cfg.GetTargetTierMultiplier( quality )
+			+ "): fee " + p.laborFee + ", formula " + RoundMath( expected );
+		return Abs( p.laborFee - RoundMath( expected ) ) <= 1;
+	}
+
+	// A larger level gap costs more labor (spec §7.1, §15.4). The fee floor
+	// is lowered so both fees come from the formula.
+	private function ScenarioFeeByGap() : EInfScnStatus
+	{
+		var t, small, large : SItemUniqueId;
+		var ps, pl : SInfusionPreview;
+		var errS, errL : EInfusionError;
+		var prevFact : int;
+		var status : EInfScnStatus;
+
+		if ( !Spawn( 'Novigraadan sword 1', t ) || !Spawn( 'Novigraadan sword 3', small ) || !Spawn( 'Novigraadan sword 3', large )
+			|| !BoostTo( small, Level( t ) + 5 ) || !BoostTo( large, Level( t ) + 20 ) )
+		{
+			return ISS_Fail;
+		}
+		prevFact = SetFactTemp( "InfCfg_MinFee", 1 );
+		errS = svc.Preview( t, small, ps, NULL );
+		errL = svc.Preview( t, large, pl, NULL );
+		RestoreFact( "InfCfg_MinFee", prevFact );
+		if ( errS != IFE_Ok || errL != IFE_Ok )
+		{
+			detail = "preview refused: " + InfusionErrorToString( errS ) + " / " + InfusionErrorToString( errL );
+			return ISS_Fail;
+		}
+		detail = "gap " + ps.levelGap + ": " + ps.laborFee + ", gap " + pl.levelGap + ": " + pl.laborFee + " crowns";
+		status = ISS_Pass;
+		if ( pl.laborFee <= ps.laborFee )
+		{
+			status = ISS_Fail;
+		}
+		return status;
+	}
+
+	// A config change changes the price (spec §15.4): doubling the fee
+	// fraction doubles the fee (within rounding).
+	private function ScenarioFeeConfig() : EInfScnStatus
+	{
+		var t, s : SItemUniqueId;
+		var pa, pb : SInfusionPreview;
+		var errA, errB : EInfusionError;
+		var prevFee, prevMin : int;
+		var fraction : float;
+
+		if ( !Spawn( 'Novigraadan sword 1', t ) || !Spawn( 'Novigraadan sword 3', s ) || !BoostTo( s, Level( t ) + 10 ) )
+		{
+			return ISS_Fail;
+		}
+		prevMin = SetFactTemp( "InfCfg_MinFee", 1 );
+		prevFee = SetFactTemp( "InfCfg_BaseFee", 0 );
+		errA = svc.Preview( t, s, pa, NULL );
+		fraction = svc.GetPublicConfig().GetFeeFraction();
+		FactsSet( "InfCfg_BaseFee", RoundMath( fraction * 2000 ) );
+		errB = svc.Preview( t, s, pb, NULL );
+		RestoreFact( "InfCfg_BaseFee", prevFee );
+		RestoreFact( "InfCfg_MinFee", prevMin );
+		if ( errA != IFE_Ok || errB != IFE_Ok )
+		{
+			detail = "preview refused: " + InfusionErrorToString( errA ) + " / " + InfusionErrorToString( errB );
+			return ISS_Fail;
+		}
+		detail = "fraction " + fraction + ": " + pa.laborFee + ", fraction " + ( fraction * 2 ) + ": " + pb.laborFee + " crowns";
+		if ( pa.laborFee <= 1 || Abs( pb.laborFee - 2 * pa.laborFee ) > 2 )
+		{
+			return ISS_Fail;
+		}
+		return ISS_Pass;
+	}
+
+	// Sets a config fact for one scenario; returns the previous value.
+	private function SetFactTemp( fact : string, value : int ) : int
+	{
+		var prev : int;
+
+		prev = FactsQuerySum( fact );
+		FactsRemove( fact );
+		if ( value != 0 )
+		{
+			FactsSet( fact, value );
+		}
+		return prev;
+	}
+
+	private function RestoreFact( fact : string, prev : int ) : void
+	{
+		FactsRemove( fact );
+		if ( prev != 0 )
+		{
+			FactsSet( fact, prev );
+		}
 	}
 
 	// =====================================================================

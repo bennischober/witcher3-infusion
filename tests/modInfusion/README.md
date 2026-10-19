@@ -19,7 +19,7 @@ excluded from release builds.
 | `infuseCleanTestItems` | Remove spawned test items (keeps the highest-level one — typically the infused target) |
 | `infuseDespawnTestSmith` | Remove spawned test craftsmen |
 | `infuseCraftsmanReport` | Log type/tier of every craftsman within 40 m |
-| `infuseSetConfig(key, n)` | Dev config override via facts: `fee` (fraction ×1000, 0 = default), `minfee`, `salvage` (1 = off), `debug` (1 = per-item grid log) |
+| `infuseSetConfig(key, n)` | Dev config override via facts: `fee` (fraction ×1000, 0 = default), `minfee`, `salvage` (1 = off), `materials` (1 = no material requirements), `debug` (1 = per-item grid log) |
 | `infuseDumpConfig` | Log the effective configuration |
 | `infuseTestStrings` | Check that the mod's `.w3strings` load |
 
@@ -32,7 +32,7 @@ crowns and materials restored to the exact amounts from before.
 
 | Command | Effect |
 | --- | --- |
-| `infuseScenarioAll` | Runs all scenarios below. Summary on screen and in the log: `SCENARIOS: 25/25 PASS` (or `\| FAIL: … \| SKIP: …`); one `scenario <name>: PASS/FAIL/SKIP (detail)` line per scenario. |
+| `infuseScenarioAll` | Runs all scenarios below. Summary on screen and in the log: `SCENARIOS: 30/30 PASS` (or `\| FAIL: … \| SKIP: …`); one `scenario <name>: PASS/FAIL/SKIP (detail)` line per scenario. |
 | `infuseScenario(name)` | Runs one scenario, e.g. `infuseScenario(silver_sword)`. |
 | `infuseScenarioN(n)` | Same by number (1-based, order below) — fallback if the console rejects a bare name. |
 | `infuseScenarioList` | Lists the names with their numbers. |
@@ -59,8 +59,16 @@ enchantment and all previous abilities intact, crowns charged = fee, materials u
 | 23 | `block_tier` | the grid's block reason for Witcher gear at a journeyman armorer is the tier (§9.3) |
 | 24 | `block_no_higher` | a target above every other item of its category: "no higher-level item" |
 | 25 | `block_ok` | a valid pair has no block reason (consistent with the infusable check) |
+| 26 | `block_excluded` | a quest-tagged sword is an explained exclusion (listed disabled, §14.2); untagged it isn't |
+| 27 | `materials_off` | material requirements off: labor fee only, no material consumed (§10) |
+| 28 | `fee_formula` | the fee matches the configured formula for an ordinary and a Witcher target, incl. the target-tier multiplier (§6.3, §15.4) |
+| 29 | `fee_by_gap` | a 20-level gap costs more than a 5-level gap (§7.1, §15.4) |
+| 30 | `fee_config` | doubling the fee fraction doubles the fee (§15.4) |
 
-Scenarios 1–9, 24 and 25 run without a craftsman (eligibility bypass, mechanics only); 10–11,
+Every successful infusion scenario also checks that the popup's projected primary stat equals
+the result (§9.2).
+
+Scenarios 1–9 and 24–30 run without a craftsman (eligibility bypass, mechanics only); 10–11,
 the three craftsman rejections and `block_tier` spawn journeyman/master test craftsmen (despawn after 5 min). SKIP means a
 precondition did not hold (game data differs, a freshly spawned craftsman was not ready yet —
 run again). Still manual: everything visual in the menu (docs/UI.md checklists).

@@ -5,7 +5,7 @@ INFUSION_SPEC.md compared section by section with the implementation. Updated 20
 Legend: ✅ implemented and verified in game · ⚠️ partial, or a deliberate deviation
 (TECHNICAL_DISCOVERY.md §9) · ❌ missing · — optional, not planned yet
 
-"Scenario" = verified by the one-command scenario suite (`infuseScenarioAll`, 25 scenarios;
+"Scenario" = verified by the one-command scenario suite (`infuseScenarioAll`, 30 scenarios;
 tests/modInfusion/README.md). Re-audited against every spec section on 2026-10-19.
 
 ## Summary
@@ -43,15 +43,15 @@ started.
 | §9.2 | Preview contents | ⚠️ | ✅ names, icons, levels, fee, covered/remaining materials, consumption + repair note, eligibility (blocked targets with reason). projected primary stat in the popup (current stat + steps × the step ability's fixed value; every infusion scenario checks it against the result). In-game popup layout check pending. |
 | §9.3 | Clear rejection messages | ✅ | Blocked targets are listed disabled with the reason in the tooltip (tier with the game's rank name, no/only-lower/only-equipped sacrifices); popup-time rejections as localized notifications (en/de). Scenario (`block_tier`, `block_no_higher`, `block_ok`); UI checked in game (one-line reasons, no Space hint). |
 | §9.5 | Confirmation with fresh data | ✅ | Fresh `Preview` before the popup; `Execute` re-validates. |
-| §10 | Configuration | ⚠️ | Script constants in `InfusionConfig.ws` (no settings menu — broken on 5.01); dev overrides via `infuseSetConfig`. Missing switches: `RequireCraftingMaterials`, `AllowEqualLevelInfusion`, `AllowSpecialItems`. Salvage toggle verified (scenario `salvage_off`). ❌ **values are not validated**: a 0 `LEVELS_PER_FULL_SET` divides by zero, negative multipliers/minimum fee give negative fees, a negative yield multiplier negative salvage. ❌ player-facing configuration doc. |
+| §10 | Configuration | ⚠️ | Script constants in `InfusionConfig.ws` (no settings menu — broken on 5.01); dev overrides via `infuseSetConfig`. Salvage toggle (scenario `salvage_off`), `RequireCraftingMaterials` (`REQUIRE_MATERIALS`, scenario `materials_off`). Values are clamped when read (BALANCING.md), fees capped at 10,000,000. Not added: `AllowEqualLevelInfusion` (§3.2), `AllowSpecialItems` (nothing special is tested), `EnableBonusMerging` (no extension). ❌ player-facing configuration doc (M7). |
 | §11 | Bonus merging | — | M8; the core has no extension point yet (§11.3). |
 | §12 | Modular architecture | ✅ | Config / service / grid / menu hooks separated; the service is driven directly by the tests. |
 | §13 | Transaction safety | ✅ | Level verified after applying, rollback on mismatch; charge → materials → sacrifice. |
 | §13.4 | Save/load integrity | ✅ | Scenario (`persist` + `infuseScenarioPersistCheck`) and manual rounds. |
 | §14 | Compatibility | ⚠️ | No vanilla script override (annotations, UI.md). Remaining surface: the global `HaxGetPanelStateName` replacement. Not tested alongside scaling, crafting or UI overhaul mods. |
-| §14.2 | Exclusion list with explanation | ⚠️ | Quest, hidden/body, Aerondight, merchant-range items. ❌ explanation: excluded gear (quest items, Aerondight) is hidden in the grid; it could be listed disabled with "can't be infused safely" like the other block reasons. Hidden/body items stay hidden. |
+| §14.2 | Exclusion list with explanation | ✅ | Quest, hidden/body, Aerondight, merchant-range items. Excluded gear of the craftsman's specialization is listed disabled with "Kann nicht sicher infundiert werden" (scenario `block_excluded`); hidden/body items stay hidden. |
 | §15.1–15.3, 15.5 | Core, rejection, salvage, persistence tests | ✅ | Scenario suite. |
-| §15.4 | Pricing tests | ⚠️ | ✅ master > journeyman (`fee_by_tier`), no negative/overflow at NG+ levels (`ngplus_uncapped`), salvage doesn't touch the fee. ❌ target-tier multiplier, larger gap → higher fee, config change → price change. "Journeymen > lower tier" doesn't apply (no lower tier in the game). |
+| §15.4 | Pricing tests | ✅ | Master > journeyman (`fee_by_tier`), formula incl. target-tier multiplier (`fee_formula`), larger gap → higher fee (`fee_by_gap`), config change → price change (`fee_config`), no negative/overflow at NG+ levels (`ngplus_uncapped`), salvage doesn't touch the fee. "Journeymen > lower tier" doesn't apply (no lower tier in the game). |
 | §15.6 | Regression | ✅ | Repair, repair all, dismantle, sockets; crafting/alchemy/inventory menus; removing the mod from a save (infused items keep their levels). `EnableInfusion = false` (empty tab, clicks refused) untested in game. |
 | §16 M7 | Release preparation | ❌ | Install guide, configuration doc, known issues, release-build check, packaging. |
 
@@ -60,10 +60,10 @@ started.
 | # | Spec | Item | Who | Size |
 | --- | --- | --- | --- | --- |
 | 1 | §9.2 | ~~Projected primary stat in the popup~~ — done, popup layout check pending | code | S |
-| 2 | §10 | Validate config values (clamp to safe ranges, no division by zero, fee ≥ 0, yield ≥ 0) | code | S |
-| 3 | §10 | `RequireCraftingMaterials` switch (off = labor fee only) | code | S |
-| 4 | §14.2 | List excluded gear disabled with "can't be infused safely" | code | S |
-| 5 | §15.4 | Scenarios: target-tier multiplier, gap → fee, config change → fee | tests | S |
+| 2 | §10 | ~~Validate config values~~ — done | code | S |
+| 3 | §10 | ~~`RequireCraftingMaterials` switch~~ — done | code | S |
+| 4 | §14.2 | ~~List excluded gear disabled with a reason~~ — done, UI check pending | code | S |
+| 5 | §15.4 | ~~Pricing scenarios~~ — done | tests | S |
 | 6 | §6.4 | NG+ balance playtest with real high-level gear | playtest | M |
 | 7 | §14 | Test next to popular mods (scaling, crafting, UI overhauls) | playtest | M |
 | 8 | §16 M7 | Install guide, configuration doc, known issues, release build without the test scripts, packaging | docs | M |
