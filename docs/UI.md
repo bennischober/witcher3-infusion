@@ -74,9 +74,11 @@ Key mechanics:
   `TooltipInventory.as`). The tooltip follows the hovered item, which is the item the reason
   belongs to. The page's disabled warning line is one text per page: "Hier nicht infundierbar"
   in step 1, "Fehlende Materialien" in step 2.
-- **Space hint off:** the Infuse tab clears the vanilla "repair equipped items" Space label
-  (`setXActionLabel` with an empty string) whenever it sets its button label — it once appeared
-  after selecting equipped items, and Space would run vanilla repair-all.
+- **Space hint off:** after the Repair tab, the vanilla "repair equipped items" Space hint
+  stayed visible in the Infuse tab (Space would run vanilla repair-all). The tab now treats every
+  `UpdateRepairAllInputFeedback` as `'Infuse'`, clears Flash's label (`setXActionLabel("")`) and
+  removes the bottom-bar binding (`m_GFxInputBindings`, action 1002) whenever it sets its button
+  label. With `infuseSetConfig('debug', 1)` the menu-state and label updates are logged.
 
 ## Flash protocol facts (REDkit ActionScript sources)
 
@@ -107,7 +109,8 @@ launch: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, Infusion tab.
 2. Step 1: infusable items with cost row (green/red `have/need`), E = Infundieren. Blocked items
    (e.g. Witcher gear at a journeyman, your highest-level piece) are greyed with "Hier nicht
    infundierbar - siehe Tooltip"; hovering shows the reason in the tooltip's warning line; E does
-   nothing on them. The reason fits on one line; no Space hint, also on equipped items.
+   nothing on them. The reason fits on one line; no Space hint and Space does nothing, also when coming from
+   Reparieren.
 3. Step 2: headers "Ziel (E: abbrechen)" / "Opfer wählen"; per-sacrifice fee and row; a sacrifice
    with missing materials is disabled with "Fehlende Materialien".
 4. Selecting the target again cancels; switching tabs cancels; Space does nothing.

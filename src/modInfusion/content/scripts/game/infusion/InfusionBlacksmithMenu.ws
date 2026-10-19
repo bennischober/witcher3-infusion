@@ -48,6 +48,7 @@
 // state stays 'Infuse' so ApplyMenuState and the click routing know it.
 @wrapMethod( CR4BlacksmithMenu ) function SetMenuState( newState : name ) : void
 {
+	InfusionDebugLog( "menu state: '" + m_menuState + "' -> '" + newState + "'" );
 	if ( newState == 'Infuse' )
 	{
 		m_menuState = 'Infuse';
@@ -161,6 +162,18 @@
 		wrappedMethod( item, compareItemType );
 	}
 	InfusionUpdateActionLabel();
+}
+
+// The Space hint ("repair equipped items") belongs to the Repair tab only.
+// In the Infuse tab any update is treated as 'Infuse' (empty label).
+@wrapMethod( CR4BlacksmithMenu ) function UpdateRepairAllInputFeedback( newState : name ) : void
+{
+	InfusionDebugLog( "space label: update for '" + newState + "', menu state '" + m_menuState + "'" );
+	if ( m_menuState == 'Infuse' )
+	{
+		newState = 'Infuse';
+	}
+	wrappedMethod( newState );
 }
 
 // Full rebuild: the inventory may have changed since the last render.
@@ -329,11 +342,14 @@
 // per-item label would mismatch with the mouse; the step-2 header names
 // the cancel action instead ("Ziel (E: abbrechen)").
 //
-// The Space hint ("repair equipped items") must stay off here: it showed up
-// in the Infuse tab after selecting equipped items (2026-10-19, cause not
-// pinned down), and Space would trigger vanilla repair-all. An empty label
-// removes it (BlacksmithMenu.as setXActionLabel); vanilla also passes a
-// string variable, not a literal (RepairAll).
+//
+// The Space hint ("repair equipped items") must stay off here: after the
+// Repair tab it stayed visible in the Infuse tab (2026-10-19, cause not
+// pinned down - see the debug log of UpdateRepairAllInputFeedback), and
+// Space would trigger vanilla repair-all. An empty label clears Flash's
+// copy (BlacksmithMenu.as setXActionLabel; vanilla passes a string
+// variable, not a literal); the bottom bar is the script-side binding list
+// (CR4MenuBase.m_GFxInputBindings, action 1002), refreshed directly.
 @addMethod( CR4BlacksmithMenu ) function InfusionUpdateActionLabel() : void
 {
 	var noLabel : string;
@@ -346,6 +362,27 @@
 		{
 			m_fxSetXActionLabel.InvokeSelfOneArg( FlashArgString( noLabel ) );
 		}
+		RemoveGFxButtonById( 1002 );
+		OnUpdateGFxButtonsList();
+	}
+}
+
+// Also usable before the Infuse tab was opened (no service yet).
+@addMethod( CR4BlacksmithMenu ) function InfusionDebugLog( msg : string ) : void
+{
+	var cfg : W3InfusionConfig;
+
+	if ( _infusionService )
+	{
+		cfg = _infusionService.GetPublicConfig();
+	}
+	else
+	{
+		cfg = new W3InfusionConfig in this;
+	}
+	if ( cfg.DebugLogging() )
+	{
+		LogChannel( 'Infusion', msg );
 	}
 }
 
