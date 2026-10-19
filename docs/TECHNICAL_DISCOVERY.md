@@ -53,6 +53,14 @@ it now costs nothing locally and remains essential for distribution:
   `@replaceMethod` — also for **global functions** —, `@addMethod`, `@addField`, since the
   2024-06-06 patch) as written in a new `.ws` file; loose-script support and event wrapping are
   not stated and need a spike. Migration plan: docs/ROADMAP_IDEAS.md §3.
+- *Update 2026-10-19:* the compiler's annotation errors (strings in witcher3.exe 5.01) add
+  what the docs omit: global functions can be **replaced** (`@replaceMethod function F`,
+  "cannot have a target class"), a second replacement of the same function is a compile error
+  ("duplicate found"), definitions inherited from a parent class can be neither wrapped nor
+  replaced, native functions can be wrapped only in mod.io (precompiled) mods. No message refers
+  to a global `@wrapMethod`, so it is treated as unsupported. Spike: `commonMenu.ws` override
+  replaced by `InfusionMenuTab.ws` (wrap `DefineSceneMenuStructure` + insert the tab, replace
+  `HaxGetPanelStateName`) — in-game result pending.
 - On Remastered, prefer the new conflict-free mechanisms for anything that *must* touch base code:
   script annotations (`@wrapMethod`), scope-based scripting (add functions/vars/enums to a class
   from a separate file), and XML `on_conflict="extend"` definitions. These require cooking a

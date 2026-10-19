@@ -40,7 +40,7 @@ no click ever reaches the vanilla path (Flash shows the Disassemble page there �
 
 | File | Role |
 | --- | --- |
-| `src/modInfusion/content/scripts/game/gui/menus/commonMenu.ws` | **Override** of vanilla: registers the Infusion tab and maps `"Infuse"` in `HaxGetPanelStateName`. Candidate for annotations (docs/ROADMAP_IDEAS.md). |
+| `src/modInfusion/content/scripts/game/infusion/InfusionMenuTab.ws` | **Annotations** (no file override, since 2026-10-19): `@wrapMethod` on `CR4CommonMenu.DefineSceneMenuStructure` inserts the Infusion tab after Repair; `@replaceMethod` on the global `HaxGetPanelStateName` adds `"Infuse"`. Replaces the former `commonMenu.ws` override. |
 | `src/modInfusion/content/scripts/game/gui/menus/blacksmithMenu.ws` | **Override** of vanilla (changes marked `modInfusion`): Infuse state, confirmation routing, Flash handshake, button labels, popup class. |
 | `src/modInfusion/content/scripts/game/gui/_old/components/guiInfusionInventoryComponent.ws` | **New class** (extends `W3GuiRepairInventoryComponent`): Infuse-tab grid, two phases, craftsman-aware verdicts cached per refresh, fee + material row per item. |
 | `src/modInfusion/content/strings/{en,de}.w3strings` | UI labels, popup, notifications, localized rejection messages. |
@@ -330,11 +330,20 @@ Setup: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)` (armorer) or `infuseO
    recipe (nothing "covered"), and an infusion deducts exactly those materials.
    `infuseSetConfig salvage 0` afterwards.
 8. Any rejection notification appears in German (they are rare now — the grid pre-filters).
+9. **Annotation spike** (`commonMenu.ws` override removed, `InfusionMenuTab.ws` instead):
+   - the game compiles — if not, send the first `scriptslog.txt` error (likely an
+     annotation rule); `git revert` of the spike commit restores the override;
+   - the Infusion tab appears **right after Reparieren**, and opening/closing the menu on it
+     works as before;
+   - **regression:** the other menus built by `CR4CommonMenu` look normal — inventory, crafting
+     (Handwerk), alchemy, and an enchanter if one is at hand (Enchanting + Add sockets tabs).
 
 ## Open items
 
-1. **Compatibility (M7):** `blacksmithMenu.ws` and `commonMenu.ws` are full overrides — any mod
-   touching them conflicts. Annotation spike (`@wrapMethod` / `@addMethod`) first.
+1. **Compatibility (M7):** `blacksmithMenu.ws` is still a full override — any mod touching it
+   conflicts. `commonMenu.ws` moved to annotations (spike, test pending); `blacksmithMenu.ws`
+   next — its hooks include events (`OnRequestConfirmation`, `OnGetItemData`), whose wrapping
+   isn't documented.
 2. **Rejection reasons in the grid (spec §9.3):** items that can't be infused here are hidden
    without a reason (e.g. Witcher gear at a journeyman). See docs/SPEC_COVERAGE.md.
 3. Optional hint in the empty step-2 target panel; tooltip `WarningMessage` idea

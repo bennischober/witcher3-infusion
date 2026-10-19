@@ -155,7 +155,13 @@ BOM-less UTF-8 has worked in practice but is not the documented contract — shi
 - **`precompiled.rsblob`** — cooked via REDkit; required for consoles; on PC coexists with
   loose scripts (a precompiled blob overrides loose scripts for the same functions).
 - **Script annotations** — `@wrapMethod(Class) function ...` wraps methods without file
-  overrides; wrapping native functions requires precompiled scripts.
+  overrides; wrapping native functions requires precompiled scripts ("only allowed in modio
+  mods"). Compiler messages in witcher3.exe 5.01 confirm: `@replaceMethod function F()` (no
+  class) replaces a **global** function; two mods replacing the same one fail with "duplicate
+  found"; wrappers must contain `wrappedMethod`; inherited definitions can't be wrapped or
+  replaced (target the declaring class). No message mentions a global `@wrapMethod`.
+  Loose-script use: first tried by modInfusion (InfusionMenuTab.ws) — check its docs for
+  the in-game result.
 - **Scope-based scripting** — add functions/variables/enum values to existing classes from a
   new file; engine merges at startup; also requires precompiled scripts.
 - **XML `on_conflict="extend"/"replace"`** — merge or replace item/ability definitions from a

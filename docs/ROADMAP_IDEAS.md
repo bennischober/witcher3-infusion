@@ -79,7 +79,8 @@ wrappers, and whether loose scripts in `mods\` support annotations without a coo
 
 Migration plan, smallest first (one test launch each):
 
-1. **`commonMenu.ws` → annotations (spike).** `@wrapMethod(CR4CommonMenu) DefineSceneMenuStructure`
+1. **`commonMenu.ws` → annotations (spike) — implemented 2026-10-19, in-game test pending**
+   (`src/.../game/infusion/InfusionMenuTab.ws`; tab inserted into `m_menuData` after Repair). `@wrapMethod(CR4CommonMenu) DefineSceneMenuStructure`
    (call the original, then add/insert the Infuse tab) + `@replaceMethod function
    HaxGetPanelStateName` (vanilla body + `"Infuse"`). Removes the 2,400-line override. Tab order
    may need an insert into `m_menuData` instead of an append.

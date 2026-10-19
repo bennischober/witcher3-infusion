@@ -49,7 +49,7 @@ silently dropped; the deviations below are deliberate and documented.
 | §12 | Modular architecture | ✅ | Config / service / grid / menu separated; the service is used by the console tests. |
 | §13.1–13.3 | Validate before commit, rollback, no partial state | ✅ | Level verified after applying; abilities rolled back on mismatch; money → materials → sacrifice. |
 | §13.4 | Save/load integrity | ✅ | Verified several times (armor). Swords/upgrades pending with §4.4. |
-| §14 | Compatibility investigation | ❌ | `blacksmithMenu.ws` and `commonMenu.ws` are **full file overrides** → conflict with any mod touching them. Scaling mods, crafting overhauls and UI mods untested. Annotation spike planned. |
+| §14 | Compatibility investigation | ❌ 🟡 | `blacksmithMenu.ws` is a **full file override** → conflicts with any mod touching it. `commonMenu.ws` moved to annotations 2026-10-19 (test pending). Scaling mods, crafting overhauls and UI mods untested. |
 | §14.2 | Exclusion list with explanation | ⚠️ | List exists (quest, body, hidden, Aerondight, merchant autogen). Excluded items are hidden without explanation. |
 | §15.1/15.2 | Core and rejection tests | ⚠️ | Rejections covered by the M2–M5 console harness and gating tests; sword/Witcher-sword/upgrade cases open (§4.4). |
 | §15.6 | Regression | ⚠️ | ✅ repair, repair all, dismantle. ❌ crafting / alchemy menus after the `commonMenu.ws` override (it defines the tabs of all menus). ❌ removing the mod from an existing save (spec: "can be disabled without leaving invalid state"; infused items keep vanilla abilities, so expected safe). |
@@ -64,7 +64,7 @@ silently dropped; the deviations below are deliberate and documented.
    would have to be updated from `OnGetItemData` (hover), with the known hover/selection
    mismatch. Alternative: the reason as the item tooltip's `WarningMessage`
    (docs/ROADMAP_IDEAS.md).
-2. **Annotation spike** for `commonMenu.ws`, then `blacksmithMenu.ws` (compatibility, §14).
+2. **Annotations** for `blacksmithMenu.ws` after the `commonMenu.ws` spike passes (compatibility, §14).
 3. **Validation round** for the §4.4 matrix: silver + Witcher swords, socketed/upgraded items,
    a relic.
 4. **Uninstall test** (§15.6): infuse, save, remove the mod, load.
