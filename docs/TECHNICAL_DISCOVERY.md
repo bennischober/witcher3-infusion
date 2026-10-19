@@ -61,6 +61,11 @@ it now costs nothing locally and remains essential for distribution:
   to a global `@wrapMethod`, so it is treated as unsupported. Spike: `commonMenu.ws` override
   replaced by `InfusionMenuTab.ws` (wrap `DefineSceneMenuStructure` + insert the tab, replace
   `HaxGetPanelStateName`) — in-game result pending.
+  First launch: **loose scripts parse annotations** (the error came from the token after
+  `@wrapMethod(...)`, not from the annotation itself). Syntax rule found: **no access modifier
+  after the annotation** — `@wrapMethod(C) private function F()` fails with "unexpected
+  TOKEN_PRIVATE, expecting TOKEN_FUNCTION"; write `@wrapMethod(C) function F()`. Modifiers
+  dropped on `@addMethod` too (the docs' `public` example is not relied on).
 - On Remastered, prefer the new conflict-free mechanisms for anything that *must* touch base code:
   script annotations (`@wrapMethod`), scope-based scripting (add functions/vars/enums to a class
   from a separate file), and XML `on_conflict="extend"` definitions. These require cooking a

@@ -160,8 +160,9 @@ BOM-less UTF-8 has worked in practice but is not the documented contract — shi
   class) replaces a **global** function; two mods replacing the same one fail with "duplicate
   found"; wrappers must contain `wrappedMethod`; inherited definitions can't be wrapped or
   replaced (target the declaring class). No message mentions a global `@wrapMethod`.
-  Loose-script use: first tried by modInfusion (InfusionMenuTab.ws) — check its docs for
-  the in-game result.
+  Loose scripts **do** parse annotations (verified 2026-10-19). Write **no access modifier**
+  after the annotation: `@wrapMethod(C) private function F()` → "unexpected TOKEN_PRIVATE,
+  expecting TOKEN_FUNCTION"; use `@wrapMethod(C) function F()`.
 - **Scope-based scripting** — add functions/variables/enum values to existing classes from a
   new file; engine merges at startup; also requires precompiled scripts.
 - **XML `on_conflict="extend"/"replace"`** — merge or replace item/ability definitions from a

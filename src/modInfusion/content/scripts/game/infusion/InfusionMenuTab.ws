@@ -15,7 +15,10 @@
 /** 	CR4BlacksmithMenu.SetMenuState (blacksmithMenu.ws).
 /***********************************************************************/
 
-@wrapMethod( CR4CommonMenu ) private function DefineSceneMenuStructure() : void
+// No access modifier after the annotation: the parser expects 'function'
+// right after @wrapMethod(...) (in game: "unexpected TOKEN_PRIVATE"); the
+// wrapper keeps the wrapped method's access.
+@wrapMethod( CR4CommonMenu ) function DefineSceneMenuStructure() : void
 {
 	wrappedMethod();
 	InfusionAddBlacksmithTab();
@@ -24,7 +27,7 @@
 // Inserts the Infuse tab after the blacksmith's Repair tab. The Repair tab
 // only exists where vanilla defines it (crafting available), so the
 // Infuse tab appears exactly where the blacksmith service does.
-@addMethod( CR4CommonMenu ) private function InfusionAddBlacksmithTab() : void
+@addMethod( CR4CommonMenu ) function InfusionAddBlacksmithTab() : void
 {
 	var tab : SMenuTab;
 	var i : int;
