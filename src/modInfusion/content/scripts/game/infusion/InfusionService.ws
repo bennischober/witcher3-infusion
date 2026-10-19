@@ -639,13 +639,17 @@ class W3InfusionService extends IScriptable
 
 		// Craftsman eligibility (M4, spec §8.2) — before costs so an
 		// ineligible craftsman never sees a price.
+		// The fee tier is the craftsman's tier in the specialization the
+		// target needs (an armorer has no smith tier - reading ECT_Smith
+		// charged every armorer the journeyman rate; found by the
+		// fee_by_tier scenario).
 		craftsmanLevel = 1;
 		if ( craftsman )
 		{
 			comp = (W3CraftsmanComponent)craftsman.GetComponentByClassName( 'W3CraftsmanComponent' );
 			if ( comp )
 			{
-				craftsmanLevel = comp.GetCraftsmanLevel( ECT_Smith );
+				craftsmanLevel = comp.GetCraftsmanLevel( GetRequiredCraftsmanType( targetData.category ) );
 			}
 		}
 		if ( !VerifyCraftsman( inv, targetId, craftsman, preview ) )
@@ -706,6 +710,16 @@ class W3InfusionService extends IScriptable
 	public var debugBypassCraftsman : bool;
 	default debugBypassCraftsman = true;
 
+	// Specialization: swordsmith for swords, armorer for armor pieces.
+	private function GetRequiredCraftsmanType( category : name ) : ECraftsmanType
+	{
+		if ( category == 'steelsword' || category == 'silversword' )
+		{
+			return ECT_Smith;
+		}
+		return ECT_Armorer;
+	}
+
 	// Validates the craftsman against the target item.
 	// craftsman may be NULL when debugBypassCraftsman is enabled.
 	// Sets preview.errorCode and returns false on ineligibility.
@@ -739,15 +753,7 @@ class W3InfusionService extends IScriptable
 		category = inv.GetItemCategory( targetId );
 		quality = RoundMath( CalculateAttributeValue( inv.GetItemAttributeValue( targetId, 'quality' ) ) );
 
-		// Specialization: swordsmith for swords, armorer for armor pieces.
-		if ( category == 'steelsword' || category == 'silversword' )
-		{
-			requiredType = ECT_Smith;
-		}
-		else
-		{
-			requiredType = ECT_Armorer;
-		}
+		requiredType = GetRequiredCraftsmanType( category );
 
 		if ( !comp.IsCraftsmanType( requiredType ) )
 		{
