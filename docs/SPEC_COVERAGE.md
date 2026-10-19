@@ -48,7 +48,7 @@ silently dropped; the deviations below are deliberate and documented.
 | §11 | Bonus merging (optional) | — | M8. The core has no extension point yet (§11.3). |
 | §12 | Modular architecture | ✅ | Config / service / grid / menu separated; the service is used by the console tests. |
 | §13.1–13.3 | Validate before commit, rollback, no partial state | ✅ | Level verified after applying; abilities rolled back on mismatch; money → materials → sacrifice. |
-| §13.4 | Save/load integrity | ✅ | Verified several times (armor). Swords/upgrades pending with §4.4. |
+| §13.4 | Save/load integrity | ✅ | Verified several times (armor) and by `infuseScenario(persist)` + `infuseScenarioPersistCheck` (steel sword, 2026-10-19). |
 | §14 | Compatibility investigation | ❌ 🟡 | `blacksmithMenu.ws` is a **full file override** → conflicts with any mod touching it. `commonMenu.ws` moved to annotations 2026-10-19 (test pending). Scaling mods, crafting overhauls and UI mods untested. |
 | §14.2 | Exclusion list with explanation | ⚠️ | List exists (quest, body, hidden, Aerondight, merchant autogen). Excluded items are hidden without explanation. |
 | §15.1/15.2 | Core and rejection tests | ⚠️ | Rejections covered by the M2–M5 console harness and gating tests; sword/Witcher-sword/upgrade cases open (§4.4). |
@@ -74,6 +74,7 @@ silently dropped; the deviations below are deliberate and documented.
    Second run: **22/22 PASS** — §4.4 matrix (silver, Witcher sword + rune, Witcher armor +
    glyph, relic + runeword, boots), NG+ above the cap, salvage off, fee by tier, all rejections.
    Persistence check: the sword survived the reload but the check looked for a script-added tag,
-   which the game does not save — now matched by name and level (re-run pending).
+   which the game does not save — now matched by name and level. Re-run: **PASS** (L69,
+   stat 576, full durability after save/reload).
 4. **Uninstall test** (§15.6): infuse, save, remove the mod, load.
 5. M7 documents: install, configuration (constants + console overrides), known issues.
