@@ -52,7 +52,7 @@ silently dropped; the deviations below are deliberate and documented.
 | §14 | Compatibility investigation | ❌ 🟡 | `blacksmithMenu.ws` is a **full file override** → conflicts with any mod touching it. `commonMenu.ws` moved to annotations 2026-10-19 (test pending). Scaling mods, crafting overhauls and UI mods untested. |
 | §14.2 | Exclusion list with explanation | ⚠️ | List exists (quest, body, hidden, Aerondight, merchant autogen). Excluded items are hidden without explanation. |
 | §15.1/15.2 | Core and rejection tests | ⚠️ | Rejections covered by the M2–M5 console harness and gating tests; sword/Witcher-sword/upgrade cases open (§4.4). |
-| §15.6 | Regression | ⚠️ | ✅ repair, repair all, dismantle. ✅ crafting / alchemy / inventory menus with the annotation tab (2026-10-19). ⚠️ removing the mod from an existing save (2026-10-19): save loads without new errors, menus vanilla, items looked normal — but the infused items' levels were not compared. Expected safe: infused levels are vanilla `autogen_fixed_*` crafted abilities saved with the item; no mod class or tag is saved. |
+| §15.6 | Regression | ✅ | ✅ repair, repair all, dismantle. ✅ crafting / alchemy / inventory menus with the annotation tab (2026-10-19). ✅ removing the mod from an existing save (2026-10-19): an infused armor and sword kept their levels after save → uninstall → load; the save loads without new errors and the menus are vanilla. Infused levels are vanilla `autogen_fixed_*` crafted abilities saved with the item; no mod class or tag is saved. |
 | §16 M7 | Release preparation | ❌ | Compatibility, config docs, install instructions, known issues, packaging. |
 
 ## Proposals (not implemented)
@@ -76,8 +76,5 @@ silently dropped; the deviations below are deliberate and documented.
    Persistence check: the sword survived the reload but the check looked for a script-added tag,
    which the game does not save — now matched by name and level. Re-run: **PASS** (L69,
    stat 576, full durability after save/reload).
-4. **Uninstall test** (§15.6): first pass done (loads, menus vanilla). Closing it fully:
-   `infuseScenario(persist)` → save → remove the mod → load, note the sword's level → save →
-   reinstall → load → `infuseScenarioPersistCheck` (proves the item survived a save made without
-   the mod).
+4. **Uninstall test** (§15.6) — **done 2026-10-19** (armor and sword survived save, uninstall, load).
 5. M7 documents: install, configuration (constants + console overrides), known issues.
