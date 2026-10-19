@@ -375,8 +375,10 @@ can't be annotated) drives the label from the selection. If the engine doesn't d
 calls to non-event functions, nothing changes (constant label; no `selection event received`
 log line).
 
-Check next launch: in step 2, select the target → E reads **Abbrechen**; select a sacrifice →
-**Infundieren**; hovering other items does not change it. Log: `selection event received`.
+Result (2026-10-19): header fits; the selection experiment failed — no log line, label stayed
+"Infundieren". Flash calls only reach script events, which annotations can't add, so the
+script never knows the selected item. Final: constant E label + header "Ziel (E: abbrechen)";
+the experiment code was removed. Scenario suite: 22/22 after the port.
 
 ### Test checklist (port)
 
