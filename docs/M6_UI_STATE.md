@@ -22,8 +22,8 @@ best available sacrifice, `have/need` in green/red. E = **Infundieren**.
 
 **Step 2 — sacrifice selection** (same grid, rebuilt): section headers **Target** (the picked
 item) and **Choose a sacrifice** (every valid sacrifice for this craftsman), each priced for that
-exact pair. E = **Infundieren**; selecting the target again (header "Ziel – erneut wählen zum
-Abbrechen") or switching tabs returns to step 1 (Space / X until 2026-10-19 — dropped with the
+exact pair. E = **Infundieren**; selecting the target again (header "Ziel (E: abbrechen)") or
+switching tabs returns to step 1 (Space / X until 2026-10-19 — dropped with the
 annotation port, see below). A sacrifice whose
 remaining materials are missing is disabled (`disableAction`: greyed panel, no E button, denied
 sound, warning line "Fehlende Materialien").
@@ -365,6 +365,18 @@ Unverified until the next launch: wrappers/added methods reading the menu's **pr
 (`_curInv`, `m_sectionsList`, `m_menuInited`, `m_standaloneMode`); conditional `wrappedMethod`
 calls; another file's class (the popup) calling an `@addMethod` method.
 Fallback: `git revert` of the port commit restores the override.
+
+**Port test (2026-10-19): all 7 points passed.** Follow-ups: the long header overflowed the
+target section → shortened to "Ziel (E: abbrechen)". User idea: E = "Abbrechen" on the selected
+target, "Infundieren" on sacrifices. Flash's grid sends `OnInventoryItemSelected(id)` on every
+selection change (SlotsListGrid.as `handleSelectChange`; click/keyboard/gamepad, not hover); the
+blacksmith menu never handled it. Experiment: an `@addMethod` function of that name (events
+can't be annotated) drives the label from the selection. If the engine doesn't deliver Flash
+calls to non-event functions, nothing changes (constant label; no `selection event received`
+log line).
+
+Check next launch: in step 2, select the target → E reads **Abbrechen**; select a sacrifice →
+**Infundieren**; hovering other items does not change it. Log: `selection event received`.
 
 ### Test checklist (port)
 

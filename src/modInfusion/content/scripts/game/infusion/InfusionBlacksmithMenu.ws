@@ -17,6 +17,8 @@
 /** 	  ShowItemTooltip         re-applies the button label (called from the
 /** 	                          OnGetItemData event)
 /** 	  InventoryUpdateAll      invalidates the grid's verdict cache
+/** 	  + OnInventoryItemSelected (added, experiment): Flash's selection
+/** 	                          event drives the E label (Cancel on the target)
 /** 	Vanilla's Space/X handler stays untouched: Flash only sends it while
 /** 	the key has a label, and the Disassemble page clears it. Cancelling a
 /** 	target choice = selecting the target again (or switching tabs).
@@ -37,6 +39,9 @@
 @addField( CR4BlacksmithMenu ) var _infusionSacrificeId : SItemUniqueId;
 @addField( CR4BlacksmithMenu ) var _infusionActive : bool;
 @addField( CR4BlacksmithMenu ) var _infusionCraftsman : CGameplayEntity;
+// Last item the grid reported as selected (OnInventoryItemSelected).
+@addField( CR4BlacksmithMenu ) var _infusionSelectedId : SItemUniqueId;
+@addField( CR4BlacksmithMenu ) var _infusionSelectionSeen : bool;
 
 // ---------------------------------------------------------------------
 // Wrapped vanilla methods
@@ -289,12 +294,41 @@
 	}
 }
 
-// One constant "Infuse" label on the execute button. Flash only tells
-// script which item is hovered (OnGetItemData), not which one is selected,
-// so a per-item label could mismatch with the mouse.
+// Selection hook (experiment 2026-10-19). Flash's grid (SlotsListGrid.as
+// handleSelectChange) sends OnInventoryItemSelected(id) on every SELECTION
+// change - click or keyboard/gamepad navigation, not hover - the same
+// moment the info panel switches. The vanilla blacksmith menu has no
+// handler. Events can't be annotated, so this is a plain added function;
+// whether the engine delivers Flash calls to it is what the experiment
+// tests (log line on the first call). If it never arrives, the label stays
+// the constant "Infuse" (and the section header names the cancel action).
+@addMethod( CR4BlacksmithMenu ) function OnInventoryItemSelected( itemId : SItemUniqueId ) : void
+{
+	_infusionSelectedId = itemId;
+	if ( !_infusionSelectionSeen )
+	{
+		_infusionSelectionSeen = true;
+		LogChannel( 'Infusion', "selection event received - E label follows the selection" );
+	}
+	InfusionUpdateActionLabel();
+}
+
+// Execute button label: "Cancel" while the picked target is selected in
+// step 2 (selecting it again cancels), otherwise "Infuse". Only the
+// selection hook above sets _infusionSelectedId - hover (OnGetItemData)
+// never changes the label, so it can't mismatch with the mouse.
 @addMethod( CR4BlacksmithMenu ) function InfusionUpdateActionLabel() : void
 {
-	if ( m_menuState == 'Infuse' )
+	if ( m_menuState != 'Infuse' )
+	{
+		return;
+	}
+	if ( _infusionInv && _infusionInv.IsInSacrificePhase()
+		&& _inv.IsIdValid( _infusionSelectedId ) && _infusionSelectedId == _infusionInv.GetPhaseTarget() )
+	{
+		InfusionSetButtonLabel( GetLocStringByKeyExt( "panel_common_cancel" ) );
+	}
+	else
 	{
 		InfusionSetButtonLabel( GetLocStringByKeyExt( "panel_button_inventory_infuse" ) );
 	}

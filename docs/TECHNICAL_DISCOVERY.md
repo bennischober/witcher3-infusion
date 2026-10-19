@@ -71,7 +71,10 @@ it now costs nothing locally and remains essential for distribution:
   `ShowItemTooltip`); move `OnConfigUI` setup to the first call of a wrapped function.
   `RequestSubMenu` is native (`flashScriptImports.ws`), so popups opened by events can't be
   intercepted. Flash's `BlacksmithMenu.as` only sends Space/X (`OnRepairAllItems`) while
-  `_xActionLabel` is non-empty.
+  `_xActionLabel` is non-empty. Flash's item grids (`SlotsListGrid.as`) send
+  `OnInventoryItemSelected(id)` on every selection change; menus without a handler ignore it.
+  Whether an `@addMethod` *function* (not an event) receives such Flash calls: experiment
+  pending (InfusionBlacksmithMenu.ws).
   First launch: **loose scripts parse annotations** (the error came from the token after
   `@wrapMethod(...)`, not from the annotation itself). Syntax rule found: **no access modifier
   after the annotation** — `@wrapMethod(C) private function F()` fails with "unexpected
