@@ -5,15 +5,16 @@ INFUSION_SPEC.md compared section by section with the implementation. Updated 20
 Legend: ✅ implemented and verified in game · ⚠️ partial, or a deliberate deviation
 (TECHNICAL_DISCOVERY.md §9) · ❌ missing · — optional, not planned yet
 
-"Scenario" = verified by the one-command scenario suite (`infuseScenarioAll`: 22/22 PASS on 2026-10-19, now 25 scenarios;
-tests/modInfusion/README.md).
+"Scenario" = verified by the one-command scenario suite (`infuseScenarioAll`, 25 scenarios;
+tests/modInfusion/README.md). Re-audited against every spec section on 2026-10-19.
 
 ## Summary
 
 The **core system is complete and verified**: two-item model, level transfer, salvage and
 materials, labor fee, craftsman gating, durability, transaction safety, persistence, uninstall
-safety and the production UI — with no vanilla script override. Open: **NG+ balance playtesting** (§6.4), **compatibility testing with other mods**
-(§14), and the **M7 release work**. Bonus merging (§11, M8) has not started.
+safety and the production UI with rejection reasons — with no vanilla script override.
+Open, in spec order, see [Open items](#open-items-top-to-bottom). Bonus merging (§11, M8) has not
+started.
 
 ## Section by section
 
@@ -22,7 +23,7 @@ safety and the production UI — with no vanilla script override. Open: **NG+ ba
 | §1.3 | Non-goals | ✅ | No auto-scaling, no new NPC/quest, no random failure, no level cap, no new resource. |
 | §2 | Technical discovery | ✅ | TECHNICAL_DISCOVERY.md. |
 | §3.1 | Two distinct items, target kept, sacrifice consumed | ✅ | Scenario. |
-| §3.2 | New level = sacrifice level; equal/lower rejected | ✅ | Scenario (`reject_equal`, `reject_lower`). No `AllowEqualLevelInfusion` switch. |
+| §3.2 | New level = sacrifice level; equal/lower rejected | ✅ | Scenario (`reject_equal`, `reject_lower`). Deliberately no `AllowEqualLevelInfusion` switch: an equal-level infusion is zero-benefit, which §3.2 forbids ("never consume an item for an invalid or zero-benefit infusion"); no use case found. |
 | §3.3 | Compatibility | ✅ ⚠️ | Same item **category** (chest↔chest, boots↔boots, steel↔steel, silver↔silver) — stricter than the spec. Scenario (`reject_category`, `reject_steel_silver`). |
 | §3.4 | Full durability restore, stated in the UI | ✅ | Scenario (damaged targets); popup note. |
 | §4.1–4.3 | Identity kept, stats recalculated from the target's own definition | ✅ | Only step abilities are added. Scenario: rune, glyph and runeword kept, all previous abilities kept. |
@@ -39,21 +40,32 @@ safety and the production UI — with no vanilla script override. Open: **NG+ ba
 | §8.2 | Tier + specialization from game data | ✅ | Scenario (`reject_craftsman_type`, `reject_tier_witcher`, `reject_tier_relic`, `master_relic_ok`). Relic → master, Witcher gear → grandmaster (config). |
 | §8.3 | No level cap, overflow-safe | ✅ | Scenario (`ngplus_uncapped`); gap factor capped at 3 sets. |
 | §9.1 | Select target and sacrifice | ✅ | Two-step flow (UI.md). |
-| §9.2 | Preview contents | ⚠️ | ✅ names, icons, levels, fee, covered/remaining materials, consumption + repair note, eligibility (blocked targets with reason). ❌ projected stats (allowed to omit). |
-| §9.3 | Clear rejection messages | ✅ | Blocked targets are listed disabled with the reason in the tooltip (tier with the game's rank name, no/only-lower/only-equipped sacrifices); popup-time rejections as localized notifications (en/de). Scenario (`block_tier`, `block_no_higher`, `block_ok`); in-game UI check pending. |
+| §9.2 | Preview contents | ⚠️ | ✅ names, icons, levels, fee, covered/remaining materials, consumption + repair note, eligibility (blocked targets with reason). ❌ projected stats — reliably calculable (current stat + steps × the step ability's fixed value), so no reason to omit them. |
+| §9.3 | Clear rejection messages | ✅ | Blocked targets are listed disabled with the reason in the tooltip (tier with the game's rank name, no/only-lower/only-equipped sacrifices); popup-time rejections as localized notifications (en/de). Scenario (`block_tier`, `block_no_higher`, `block_ok`); UI checked in game (one-line reasons, no Space hint). |
 | §9.5 | Confirmation with fresh data | ✅ | Fresh `Preview` before the popup; `Execute` re-validates. |
-| §10 | Configuration | ⚠️ | Script constants in `InfusionConfig.ws` (no settings menu — broken on 5.01); dev overrides via `infuseSetConfig`. Missing switches: `RequireCraftingMaterials`, `AllowEqualLevelInfusion`, `AllowSpecialItems`. Salvage toggle verified (scenario `salvage_off`). ❌ player-facing configuration doc. |
+| §10 | Configuration | ⚠️ | Script constants in `InfusionConfig.ws` (no settings menu — broken on 5.01); dev overrides via `infuseSetConfig`. Missing switches: `RequireCraftingMaterials`, `AllowEqualLevelInfusion`, `AllowSpecialItems`. Salvage toggle verified (scenario `salvage_off`). ❌ **values are not validated**: a 0 `LEVELS_PER_FULL_SET` divides by zero, negative multipliers/minimum fee give negative fees, a negative yield multiplier negative salvage. ❌ player-facing configuration doc. |
 | §11 | Bonus merging | — | M8; the core has no extension point yet (§11.3). |
 | §12 | Modular architecture | ✅ | Config / service / grid / menu hooks separated; the service is driven directly by the tests. |
 | §13 | Transaction safety | ✅ | Level verified after applying, rollback on mismatch; charge → materials → sacrifice. |
 | §13.4 | Save/load integrity | ✅ | Scenario (`persist` + `infuseScenarioPersistCheck`) and manual rounds. |
 | §14 | Compatibility | ⚠️ | No vanilla script override (annotations, UI.md). Remaining surface: the global `HaxGetPanelStateName` replacement. Not tested alongside scaling, crafting or UI overhaul mods. |
-| §14.2 | Exclusion list with explanation | ⚠️ | Quest, hidden/body, Aerondight, merchant-range items. Excluded items stay hidden (no explanation) — they are never infusion candidates. |
-| §15.1–15.5 | Core, rejection, salvage, pricing, persistence tests | ✅ | Scenario suite. |
-| §15.6 | Regression | ✅ | Repair, repair all, dismantle, sockets; crafting/alchemy/inventory menus; removing the mod from a save (infused items keep their levels). |
+| §14.2 | Exclusion list with explanation | ⚠️ | Quest, hidden/body, Aerondight, merchant-range items. ❌ explanation: excluded gear (quest items, Aerondight) is hidden in the grid; it could be listed disabled with "can't be infused safely" like the other block reasons. Hidden/body items stay hidden. |
+| §15.1–15.3, 15.5 | Core, rejection, salvage, persistence tests | ✅ | Scenario suite. |
+| §15.4 | Pricing tests | ⚠️ | ✅ master > journeyman (`fee_by_tier`), no negative/overflow at NG+ levels (`ngplus_uncapped`), salvage doesn't touch the fee. ❌ target-tier multiplier, larger gap → higher fee, config change → price change. "Journeymen > lower tier" doesn't apply (no lower tier in the game). |
+| §15.6 | Regression | ✅ | Repair, repair all, dismantle, sockets; crafting/alchemy/inventory menus; removing the mod from a save (infused items keep their levels). `EnableInfusion = false` (empty tab, clicks refused) untested in game. |
 | §16 M7 | Release preparation | ❌ | Install guide, configuration doc, known issues, release-build check, packaging. |
 
-## Next
+## Open items, top to bottom
 
-1. **M7 release work** (see §16 above).
-2. **NG+ balance playtest** (§6.4).
+| # | Spec | Item | Who | Size |
+| --- | --- | --- | --- | --- |
+| 1 | §9.2 | Projected primary stat in the confirmation popup ("Rüstung 129 -> 164"), plus a scenario that compares projection and result | code | S |
+| 2 | §10 | Validate config values (clamp to safe ranges, no division by zero, fee ≥ 0, yield ≥ 0) | code | S |
+| 3 | §10 | `RequireCraftingMaterials` switch (off = labor fee only) | code | S |
+| 4 | §14.2 | List excluded gear disabled with "can't be infused safely" | code | S |
+| 5 | §15.4 | Scenarios: target-tier multiplier, gap → fee, config change → fee | tests | S |
+| 6 | §6.4 | NG+ balance playtest with real high-level gear | playtest | M |
+| 7 | §14 | Test next to popular mods (scaling, crafting, UI overhauls) | playtest | M |
+| 8 | §16 M7 | Install guide, configuration doc, known issues, release build without the test scripts, packaging | docs | M |
+| — | §10 | `AllowSpecialItems`: nothing special is allowed today; add a switch only for a category that gets tested | — | — |
+| — | §11 / M8 | Bonus merging (optional, separate module) | — | L |
