@@ -328,11 +328,24 @@
 // script events, which annotations can't add (verified 2026-10-19). A
 // per-item label would mismatch with the mouse; the step-2 header names
 // the cancel action instead ("Ziel (E: abbrechen)").
+//
+// The Space hint ("repair equipped items") must stay off here: it showed up
+// in the Infuse tab after selecting equipped items (2026-10-19, cause not
+// pinned down), and Space would trigger vanilla repair-all. An empty label
+// removes it (BlacksmithMenu.as setXActionLabel); vanilla also passes a
+// string variable, not a literal (RepairAll).
 @addMethod( CR4BlacksmithMenu ) function InfusionUpdateActionLabel() : void
 {
+	var noLabel : string;
+
 	if ( m_menuState == 'Infuse' )
 	{
 		InfusionSetButtonLabel( GetLocStringByKeyExt( "panel_button_inventory_infuse" ) );
+		noLabel = "";
+		if ( m_fxSetXActionLabel )
+		{
+			m_fxSetXActionLabel.InvokeSelfOneArg( FlashArgString( noLabel ) );
+		}
 	}
 }
 

@@ -38,8 +38,8 @@
 2112345036||panel_infusion_err_craftsman_type|Dieser Handwerker kann diese Ausrüstung nicht infundieren.
 2112345037||panel_infusion_err_craftsman_level|Dafür wird ein erfahrenerer Handwerker benötigt.
 2112345038||panel_infusion_target_cancel|Ziel (E: abbrechen)
-2112345039||panel_infusion_block_no_candidates|Kein anderer Gegenstand dieser Art im Inventar.
-2112345040||panel_infusion_block_no_higher|Kein Gegenstand dieser Art mit höherer Stufe im Inventar.
-2112345041||panel_infusion_block_equipped|Nur angelegte Gegenstände haben eine höhere Stufe - zuerst ablegen.
-2112345042||panel_infusion_block_tier|Erfordert einen Handwerker mindestens dieses Rangs:
+2112345039||panel_infusion_block_no_candidates|Kein anderer Gegenstand dieser Art
+2112345040||panel_infusion_block_no_higher|Kein höherstufiger Gegenstand
+2112345041||panel_infusion_block_equipped|Höherstufiger Gegenstand angelegt
+2112345042||panel_infusion_block_tier|Benötigter Rang:
 2112345043||panel_infusion_blocked_warning|Hier nicht infundierbar - siehe Tooltip

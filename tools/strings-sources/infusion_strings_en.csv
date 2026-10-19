@@ -38,8 +38,8 @@
 2112345036||panel_infusion_err_craftsman_type|This craftsman cannot infuse this equipment.
 2112345037||panel_infusion_err_craftsman_level|A more experienced craftsman is required.
 2112345038||panel_infusion_target_cancel|Target (E: cancel)
-2112345039||panel_infusion_block_no_candidates|No other item of this type in your inventory.
-2112345040||panel_infusion_block_no_higher|No higher-level item of this type in your inventory.
-2112345041||panel_infusion_block_equipped|Only equipped items have a higher level - unequip one first.
-2112345042||panel_infusion_block_tier|Requires a craftsman of at least this rank:
+2112345039||panel_infusion_block_no_candidates|No other item of this type
+2112345040||panel_infusion_block_no_higher|No higher-level item
+2112345041||panel_infusion_block_equipped|Higher-level item is equipped
+2112345042||panel_infusion_block_tier|Required rank:
 2112345043||panel_infusion_blocked_warning|Can't be infused here - see the tooltip

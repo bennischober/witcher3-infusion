@@ -19,10 +19,13 @@ the reason in its warning line (spec §9.3):
 
 | Reason | Tooltip text |
 | --- | --- |
-| Craftsman's tier too low (relic → master, Witcher gear → grandmaster) | "Erfordert einen Handwerker mindestens dieses Rangs:" + the game's tier name |
-| No other item of the category | "Kein anderer Gegenstand dieser Art im Inventar." |
-| None with a higher level | "Kein Gegenstand dieser Art mit höherer Stufe im Inventar." |
-| Only equipped items are higher | "Nur angelegte Gegenstände haben eine höhere Stufe - zuerst ablegen." |
+| Craftsman's tier too low (relic → master, Witcher gear → grandmaster) | "Benötigter Rang: Meister" (the game's tier name) |
+| No other item of the category | "Kein anderer Gegenstand dieser Art" |
+| None with a higher level | "Kein höherstufiger Gegenstand" |
+| Only equipped items are higher | "Höherstufiger Gegenstand angelegt" |
+
+The tooltip's warning line holds one line (~40 characters at its font size); longer text wraps
+over the item name, so keep reasons short.
 
 Items of the other specialization (swords at an armorer) and excluded items (quest, hidden)
 stay hidden.
@@ -71,6 +74,9 @@ Key mechanics:
   `TooltipInventory.as`). The tooltip follows the hovered item, which is the item the reason
   belongs to. The page's disabled warning line is one text per page: "Hier nicht infundierbar"
   in step 1, "Fehlende Materialien" in step 2.
+- **Space hint off:** the Infuse tab clears the vanilla "repair equipped items" Space label
+  (`setXActionLabel` with an empty string) whenever it sets its button label — it once appeared
+  after selecting equipped items, and Space would run vanilla repair-all.
 
 ## Flash protocol facts (REDkit ActionScript sources)
 
@@ -101,7 +107,7 @@ launch: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, Infusion tab.
 2. Step 1: infusable items with cost row (green/red `have/need`), E = Infundieren. Blocked items
    (e.g. Witcher gear at a journeyman, your highest-level piece) are greyed with "Hier nicht
    infundierbar - siehe Tooltip"; hovering shows the reason in the tooltip's warning line; E does
-   nothing on them.
+   nothing on them. The reason fits on one line; no Space hint, also on equipped items.
 3. Step 2: headers "Ziel (E: abbrechen)" / "Opfer wählen"; per-sacrifice fee and row; a sacrifice
    with missing materials is disabled with "Fehlende Materialien".
 4. Selecting the target again cancels; switching tabs cancels; Space does nothing.
