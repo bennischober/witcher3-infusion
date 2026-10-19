@@ -25,11 +25,11 @@ crowns and materials restored to the exact amounts from before.
 
 | Command | Effect |
 | --- | --- |
-| `infuseScenarioAll` | Runs all scenarios below. Summary on screen and in the log: `SCENARIOS: 21/22 PASS \| FAIL: … \| SKIP: …`; one `scenario <name>: PASS/FAIL/SKIP (detail)` line per scenario. |
+| `infuseScenarioAll` | Runs all scenarios below. Summary on screen and in the log: `SCENARIOS: 22/22 PASS` (or `\| FAIL: … \| SKIP: …`); one `scenario <name>: PASS/FAIL/SKIP (detail)` line per scenario. |
 | `infuseScenario(name)` | Runs one scenario, e.g. `infuseScenario(silver_sword)`. |
 | `infuseScenarioN(n)` | Same by number (1-based, order below) — fallback if the console rejects a bare name. |
 | `infuseScenarioList` | Lists the names with their numbers. |
-| `infuseScenario(persist)` + `infuseScenarioPersistCheck` | Persistence (§13.4): infuses a sword and keeps it; save, reload, then the check verifies level, stat and durability and removes the sword. |
+| `infuseScenario(persist)` + `infuseScenarioPersistCheck` | Persistence (§13.4): infuses a `Novigraadan sword 1` and keeps it; save, reload, then the check finds it by name + level (script-added tags are not saved), verifies level, stat and durability, and removes it. |
 
 Successful infusions check: new level = sacrifice level, primary stat higher, durability 100 %
 (target damaged first where marked), sacrifice consumed, item identity, socketed upgrades,

@@ -343,7 +343,7 @@ Setup: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)` (armorer) or `infuseO
 `infuseScenarioAll` (tests/modInfusion/README.md) covers the service-level checks in one
 command. First run: 12/22 (see docs/SPEC_COVERAGE.md); its fee check found that **master
 armorers charged the journeyman fee** (tier read as smith) — fixed. In the menu, master
-armorers now show 1.5× the journeyman fee.
+armorers now show 1.5× the journeyman fee. Second run: **22/22 PASS**.
 
 ## Open items
 

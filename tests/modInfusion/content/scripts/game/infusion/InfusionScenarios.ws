@@ -82,6 +82,10 @@ class W3InfusionScenarioRunner extends IScriptable
 	public var keepTarget : bool;            // persist scenario: target stays in the inventory
 	public var lastTarget : SItemUniqueId;
 
+	// The persist scenario's target; PersistCheck finds it by name + level.
+	private const var PERSIST_ITEM : name;
+	default PERSIST_ITEM = 'Novigraadan sword 1';
+
 	// Crowns/materials before the scenario touched them (RestoreSnapshot).
 	private var snapTaken : bool;
 	private var snapMoney : int;
@@ -515,15 +519,15 @@ class W3InfusionScenarioRunner extends IScriptable
 		var spec : SInfScnSpec;
 		var status : EInfScnStatus;
 
-		spec.targetName = 'Novigraadan sword 1';
+		spec.targetName = PERSIST_ITEM;
 		spec.sacrificeName = 'Novigraadan sword 3';
 		spec.gap = 10;
 		spec.damageTarget = true;
 		status = RunInfusion( spec, NULL );
 		if ( status == ISS_Pass )
 		{
+			// Keep the sword (cleanup removes tagged items only).
 			inv.RemoveItemTag( lastTarget, 'InfusionScenarioItem' );
-			inv.AddItemTag( lastTarget, 'InfusionPersistItem' );
 			FactsSet( "InfScn_PersistLevel", Level( lastTarget ) );
 			FactsSet( "InfScn_PersistStat", RoundMath( PrimaryStat( lastTarget ) ) );
 			detail += " - now save, reload and run infuseScenarioPersistCheck";
@@ -539,6 +543,7 @@ class W3InfusionScenarioRunner extends IScriptable
 		var i : int;
 		var expectedLevel, expectedStat : int;
 		var status : EInfScnStatus;
+		var levelsSeen : string;
 
 		expectedLevel = FactsQuerySum( "InfScn_PersistLevel" );
 		expectedStat = FactsQuerySum( "InfScn_PersistStat" );
@@ -548,19 +553,34 @@ class W3InfusionScenarioRunner extends IScriptable
 			return ISS_Skip;
 		}
 
+		// Script-added item tags are not saved (verified 2026-10-19: the
+		// 'InfusionPersistItem' tag was gone after reload), so the sword is
+		// found by its name and the recorded level and stat.
 		inv.GetAllItems( all );
+		levelsSeen = "";
 		for ( i = 0; i < all.Size(); i += 1 )
 		{
-			if ( inv.ItemHasTag( all[i], 'InfusionPersistItem' ) )
+			if ( inv.GetItemName( all[i] ) != PERSIST_ITEM )
+			{
+				continue;
+			}
+			if ( !found && Level( all[i] ) == expectedLevel && AbsF( PrimaryStat( all[i] ) - expectedStat ) <= 1.0f )
 			{
 				t = all[i];
 				found = true;
-				break;
 			}
+			levelsSeen += " L" + Level( all[i] );
 		}
 		if ( !found )
 		{
-			detail = "infused item not found after reload (tag not saved?) - check the sword manually";
+			if ( levelsSeen == "" )
+			{
+				detail = "no " + PERSIST_ITEM + " in the inventory after reload";
+			}
+			else
+			{
+				detail = "no " + PERSIST_ITEM + " at L" + expectedLevel + " / stat " + expectedStat + " after reload (found:" + levelsSeen + ")";
+			}
 			return ISS_Fail;
 		}
 

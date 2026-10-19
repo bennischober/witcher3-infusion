@@ -60,7 +60,11 @@ it now costs nothing locally and remains essential for distribution:
   replaced, native functions can be wrapped only in mod.io (precompiled) mods. No message refers
   to a global `@wrapMethod`, so it is treated as unsupported. Spike: `commonMenu.ws` override
   replaced by `InfusionMenuTab.ws` (wrap `DefineSceneMenuStructure` + insert the tab, replace
-  `HaxGetPanelStateName`) — in-game result pending.
+  `HaxGetPanelStateName`) — verified in game 2026-10-19 (tab after Repair, other menus normal).
+- *Finding 2026-10-19 (scenario tests):* item tags added by script (`AddItemTag`) are **not
+  saved** — gone after a save/reload. Never use them to find items across sessions. Item stats
+  (damage, armor) live in `SAbilityAttributeValue.valueBase`; `CalculateAttributeValue` returns 0
+  for them (it multiplies by `valueMultiplicative`, which is 0 on items).
   First launch: **loose scripts parse annotations** (the error came from the token after
   `@wrapMethod(...)`, not from the annotation itself). Syntax rule found: **no access modifier
   after the annotation** — `@wrapMethod(C) private function F()` fails with "unexpected

@@ -71,5 +71,9 @@ silently dropped; the deviations below are deliberate and documented.
    relic pass; every infusion executed correctly but the test's stat read returned 0 (fixed:
    item stats are in `valueBase`). `fee_by_tier` found a **real bug**: the fee tier was read as
    the smith tier, so armorers always charged the journeyman rate (fixed in `Preview`).
+   Second run: **22/22 PASS** — §4.4 matrix (silver, Witcher sword + rune, Witcher armor +
+   glyph, relic + runeword, boots), NG+ above the cap, salvage off, fee by tier, all rejections.
+   Persistence check: the sword survived the reload but the check looked for a script-added tag,
+   which the game does not save — now matched by name and level (re-run pending).
 4. **Uninstall test** (§15.6): infuse, save, remove the mod, load.
 5. M7 documents: install, configuration (constants + console overrides), known issues.
