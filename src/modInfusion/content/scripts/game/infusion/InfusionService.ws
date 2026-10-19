@@ -417,7 +417,7 @@ class W3InfusionService extends IScriptable
 		var data : SInfusionCategoryData;
 
 		inv = GetWitcherPlayer().inv;
-		if ( !inv.IsIdValid( item ) )
+		if ( !GetConfig().EnableInfusion() || !inv.IsIdValid( item ) )
 		{
 			return false;
 		}
@@ -622,8 +622,8 @@ class W3InfusionService extends IScriptable
 			return preview.errorCode;
 		}
 
-		// Category feature gate (spec §10).
-		if ( !GetConfig().IsCategoryEnabled( targetData.category ) )
+		// Master switch and category feature gate (spec §10).
+		if ( !GetConfig().EnableInfusion() || !GetConfig().IsCategoryEnabled( targetData.category ) )
 		{
 			preview.errorCode = IFE_DisabledCategory;
 			return preview.errorCode;
@@ -676,9 +676,14 @@ class W3InfusionService extends IScriptable
 		// deviation from "recipes are not gap-dependent": both the fee
 		// (labor) and the materials (physical work per level) grow with the
 		// gap - a 1-level touch-up must not cost the same as a 30-level jump.
+		// With salvage disabled (spec §10 EnableSalvage) nothing is recovered
+		// and the player supplies the full recipe.
 		GetRecipeForTarget( inv, targetId, targetData.category, gap, preview.materials );
-		GetSalvageYield( inv, sacrificeId, preview.salvaged );
-		ApplySalvageMultiplier( preview.salvaged );
+		if ( GetConfig().SalvageEnabled() )
+		{
+			GetSalvageYield( inv, sacrificeId, preview.salvaged );
+			ApplySalvageMultiplier( preview.salvaged );
+		}
 		remaining.Clear();
 		ComputeRemainingMaterials( preview.materials, preview.salvaged, remaining, preview.covered );
 		preview.materials = remaining;
@@ -852,7 +857,7 @@ class W3InfusionService extends IScriptable
 	}
 
 	// ---------------------------------------------------------------------
-	// Labor fee (auto-balanced: fraction of the sacrifice's market value,
+	// Labor fee (auto-balanced: fraction of the target's market value,
 	// scaled by craftsman tier, target tier, and level gap — spec §6.2/§6.3)
 	// ---------------------------------------------------------------------
 
@@ -966,11 +971,10 @@ class W3InfusionService extends IScriptable
 		// 5) Commit irreversible parts, in loss-minimizing order:
 		//    charge money, consume materials, then consume the sacrifice
 		//    (spec §13.2).
+		// preview.materials is already net of salvage (or the full recipe with
+		// salvage disabled); it is always charged.
 		inv.RemoveMoney( preview.laborFee );
-		if ( GetConfig().SalvageEnabled() )
-		{
-			RemoveMaterials( inv, preview.materials );
-		}
+		RemoveMaterials( inv, preview.materials );
 		inv.RemoveItem( sacrificeId );
 
 		// 6) Restore durability as part of the paid service (spec §3.4).
