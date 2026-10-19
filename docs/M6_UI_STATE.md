@@ -22,7 +22,9 @@ best available sacrifice, `have/need` in green/red. E = **Infundieren**.
 
 **Step 2 — sacrifice selection** (same grid, rebuilt): section headers **Target** (the picked
 item) and **Choose a sacrifice** (every valid sacrifice for this craftsman), each priced for that
-exact pair. E = **Infundieren**, Space / X = **Abbrechen** (back to step 1). A sacrifice whose
+exact pair. E = **Infundieren**; selecting the target again (header "Ziel – erneut wählen zum
+Abbrechen") or switching tabs returns to step 1 (Space / X until 2026-10-19 — dropped with the
+annotation port, see below). A sacrifice whose
 remaining materials are missing is disabled (`disableAction`: greyed panel, no E button, denied
 sound, warning line "Fehlende Materialien").
 
@@ -41,7 +43,8 @@ no click ever reaches the vanilla path (Flash shows the Disassemble page there �
 | File | Role |
 | --- | --- |
 | `src/modInfusion/content/scripts/game/infusion/InfusionMenuTab.ws` | **Annotations** (no file override, since 2026-10-19): `@wrapMethod` on `CR4CommonMenu.DefineSceneMenuStructure` inserts the Infusion tab after Repair; `@replaceMethod` on the global `HaxGetPanelStateName` adds `"Infuse"`. Replaces the former `commonMenu.ws` override. |
-| `src/modInfusion/content/scripts/game/gui/menus/blacksmithMenu.ws` | **Override** of vanilla (changes marked `modInfusion`): Infuse state, confirmation routing, Flash handshake, button labels, popup class. |
+| `src/modInfusion/content/scripts/game/infusion/InfusionBlacksmithMenu.ws` | **Annotations** (since 2026-10-19, replaces the `blacksmithMenu.ws` override): fields and helpers via `@addField`/`@addMethod`; wraps `SetMenuState`, `ApplyMenuState`, `SetSectionsDataList`, `InventoryUpdateAll`, `ShowItemTooltip`, `ProcessRequestConfirmation`, `CR4MenuBase.RefreshMenuState`. |
+| `src/modInfusion/content/scripts/game/infusion/InfusionConfirmationPopup.ws` | Popup class (new class, moved out of the old override). |
 | `src/modInfusion/content/scripts/game/gui/_old/components/guiInfusionInventoryComponent.ws` | **New class** (extends `W3GuiRepairInventoryComponent`): Infuse-tab grid, two phases, craftsman-aware verdicts cached per refresh, fee + material row per item. |
 | `src/modInfusion/content/strings/{en,de}.w3strings` | UI labels, popup, notifications, localized rejection messages. |
 | `tools/strings-sources/infusion_strings_{en,de}.csv` | Editable sources for the strings. |
@@ -345,12 +348,42 @@ command. First run: 12/22 (see docs/SPEC_COVERAGE.md); its fee check found that 
 armorers charged the journeyman fee** (tier read as smith) — fixed. In the menu, master
 armorers now show 1.5× the journeyman fee. Second run: **22/22 PASS**.
 
+## Annotation port of blacksmithMenu.ws (2026-10-19)
+
+The mod no longer overrides any vanilla script. Events can't be annotated, so each event hook
+moved to a function vanilla calls from that event:
+
+| Old override | Now |
+| --- | --- |
+| `OnConfigUI` creates service + grid | first `ApplyMenuState('Infuse')` creates them (`InfusionEnsureInit`, craftsman from `GetMenuInitData()`) |
+| `OnRequestConfirmation` routes Infuse clicks | `ProcessRequestConfirmation` wrapper (vanilla calls it for every non-standalone click) |
+| `OnGetItemData` re-applies the label | `ShowItemTooltip` wrapper |
+| `RefreshMenuState` override | `@wrapMethod(CR4MenuBase)` — inherited methods must be wrapped in the declaring class |
+| `OnRepairAllItems` + key label: Space cancels | **dropped**: the event opens the repair-all popup via the native `RequestSubMenu` (natives can't be wrapped outside mod.io mods). Flash only sends Space while the key has a label (BlacksmithMenu.as), and the Disassemble page clears it, so vanilla is safe in the Infuse tab. |
+
+Unverified until the next launch: wrappers/added methods reading the menu's **private** fields
+(`_curInv`, `m_sectionsList`, `m_menuInited`, `m_standaloneMode`); conditional `wrappedMethod`
+calls; another file's class (the popup) calling an `@addMethod` method.
+Fallback: `git revert` of the port commit restores the override.
+
+### Test checklist (port)
+
+1. Compiles. If not: first `scriptslog.txt` error.
+2. `infuseScenarioAll` still 22/22 (service unchanged — sanity check).
+3. `infuseOpenMenu(true)` → **Infusion** tab: grid, cost row, E = Infundieren, empty-grid text,
+   "Fehlende Materialien" on a disabled sacrifice; the **Zerlegen** tab shows its vanilla warning.
+4. Step 2: header "Ziel – erneut wählen zum Abbrechen" (readable, not cut off); selecting the
+   target cancels; switching tabs cancels; a sacrifice opens the popup; accept infuses, decline
+   does nothing.
+5. **Space in the Infusion tab does nothing** (no repair-all popup) — in step 1 and step 2.
+6. Close the menu on the Infusion tab and reopen it: opens on the tab with the grid (no blank page).
+7. Reparieren / Zerlegen / Sockel tabs behave like vanilla (repair, repair all, dismantle).
+
 ## Open items
 
-1. **Compatibility (M7):** `blacksmithMenu.ws` is still a full override — any mod touching it
-   conflicts. `commonMenu.ws` moved to annotations (spike, test pending); `blacksmithMenu.ws`
-   next — its hooks include events (`OnRequestConfirmation`, `OnGetItemData`), whose wrapping
-   isn't documented.
+1. **Compatibility (M7):** no vanilla script override left (pending the port test). Remaining
+   conflict surface: `@replaceMethod HaxGetPanelStateName` (a second replacement elsewhere fails
+   to compile); other mods hooking the same blacksmith methods chain with ours.
 2. **Rejection reasons in the grid (spec §9.3):** items that can't be infused here are hidden
    without a reason (e.g. Witcher gear at a journeyman). See docs/SPEC_COVERAGE.md.
 3. Optional hint in the empty step-2 target panel; tooltip `WarningMessage` idea

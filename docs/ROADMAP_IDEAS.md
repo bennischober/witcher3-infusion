@@ -84,10 +84,10 @@ Migration plan, smallest first (one test launch each):
    (call the original, then add/insert the Infuse tab) + `@replaceMethod function
    HaxGetPanelStateName` (vanilla body + `"Infuse"`). Removes the 2,400-line override. Tab order
    may need an insert into `m_menuData` instead of an append.
-2. **`blacksmithMenu.ws` → annotations.** Fields via `@addField`, helpers via `@addMethod`,
-   `ApplyMenuState`/`SetMenuState`/`InventoryUpdateAll`/`OnRepairItem` via `@wrapMethod`. Open
-   risk: `OnRequestConfirmation` and `OnGetItemData` are **events** — if events can't be wrapped,
-   this file needs a different hook or stays an override.
+2. **`blacksmithMenu.ws` → annotations — implemented 2026-10-19, in-game test pending.** Events
+   can't be annotated (parser expects `function` after the annotation); each event hook moved to
+   a function vanilla calls from it (docs/M6_UI_STATE.md, "Annotation port"). Space-to-cancel
+   was dropped (native `RequestSubMenu`).
 3. Update the skill reference (`.opencode/skills/witcher-script/references/debugging-and-remaster.md`)
    with the verified facts.
 

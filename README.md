@@ -136,8 +136,11 @@ out-of-game test runner.
 ## Compatibility notes
 
 - **Remastered 5.01+** (the 2026 "Remastered" edition, game version 5.0). The mod ships only
-  **new** script files — it never overrides base game scripts, so it needs no script merger
-  and coexists with other mods that do.
+  **new** script files — it never overrides base game scripts (menu integration via REDkit
+  script annotations, `@wrapMethod`/`@addMethod`), so it needs no script merger and coexists
+  with other mods that do. One exception to chaining: it replaces the global
+  `HaxGetPanelStateName` (`@replaceMethod`); another mod replacing the same function would
+  fail to compile.
 - Scripts are UTF-8 with BOM (the Remastered encoding requirement).
 - Known safe alongside texture/asset mods. Gameplay overhauls that change damage/armor math
   may shift level formulas; the infusion transaction verifies level equality before committing

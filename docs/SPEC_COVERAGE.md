@@ -49,7 +49,7 @@ silently dropped; the deviations below are deliberate and documented.
 | §12 | Modular architecture | ✅ | Config / service / grid / menu separated; the service is used by the console tests. |
 | §13.1–13.3 | Validate before commit, rollback, no partial state | ✅ | Level verified after applying; abilities rolled back on mismatch; money → materials → sacrifice. |
 | §13.4 | Save/load integrity | ✅ | Verified several times (armor) and by `infuseScenario(persist)` + `infuseScenarioPersistCheck` (steel sword, 2026-10-19). |
-| §14 | Compatibility investigation | ❌ 🟡 | `blacksmithMenu.ws` is a **full file override** → conflicts with any mod touching it. `commonMenu.ws` moved to annotations 2026-10-19 (test pending). Scaling mods, crafting overhauls and UI mods untested. |
+| §14 | Compatibility investigation | ⚠️ 🟡 | **No vanilla script override left** (2026-10-19): `commonMenu.ws` (verified) and `blacksmithMenu.ws` (test pending) moved to annotations. Remaining surface: the global `HaxGetPanelStateName` replacement. Scaling mods, crafting overhauls and UI mods untested. |
 | §14.2 | Exclusion list with explanation | ⚠️ | List exists (quest, body, hidden, Aerondight, merchant autogen). Excluded items are hidden without explanation. |
 | §15.1/15.2 | Core and rejection tests | ⚠️ | Rejections covered by the M2–M5 console harness and gating tests; sword/Witcher-sword/upgrade cases open (§4.4). |
 | §15.6 | Regression | ✅ | ✅ repair, repair all, dismantle. ✅ crafting / alchemy / inventory menus with the annotation tab (2026-10-19). ✅ removing the mod from an existing save (2026-10-19): an infused armor and sword kept their levels after save → uninstall → load; the save loads without new errors and the menus are vanilla. Infused levels are vanilla `autogen_fixed_*` crafted abilities saved with the item; no mod class or tag is saved. |
@@ -64,7 +64,7 @@ silently dropped; the deviations below are deliberate and documented.
    would have to be updated from `OnGetItemData` (hover), with the known hover/selection
    mismatch. Alternative: the reason as the item tooltip's `WarningMessage`
    (docs/ROADMAP_IDEAS.md).
-2. **Annotations** for `blacksmithMenu.ws` after the `commonMenu.ws` spike passes (compatibility, §14).
+2. **Annotations** for `blacksmithMenu.ws` — implemented 2026-10-19, test pending (§14).
 3. **Validation round** for the §4.4 matrix — **scenario tests built 2026-10-19**
    (`infuseScenarioAll`: 22 scenarios incl. rejections, salvage-off, fee by tier, NG+; plus a
    two-step persistence check). First run 2026-10-19: 12/22 — all 11 rejections and the master

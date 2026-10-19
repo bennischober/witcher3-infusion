@@ -65,6 +65,13 @@ it now costs nothing locally and remains essential for distribution:
   saved** — gone after a save/reload. Never use them to find items across sessions. Item stats
   (damage, armor) live in `SAbilityAttributeValue.valueBase`; `CalculateAttributeValue` returns 0
   for them (it multiplies by `valueMultiplicative`, which is 0 on items).
+- *Finding 2026-10-19 (blacksmithMenu port):* events (`event OnX`) cannot be annotated — the
+  parser expects `function` after `@wrapMethod(...)`. Workaround: wrap the function the event
+  calls (`OnRequestConfirmation` → `ProcessRequestConfirmation`, `OnGetItemData` →
+  `ShowItemTooltip`); move `OnConfigUI` setup to the first call of a wrapped function.
+  `RequestSubMenu` is native (`flashScriptImports.ws`), so popups opened by events can't be
+  intercepted. Flash's `BlacksmithMenu.as` only sends Space/X (`OnRepairAllItems`) while
+  `_xActionLabel` is non-empty.
   First launch: **loose scripts parse annotations** (the error came from the token after
   `@wrapMethod(...)`, not from the annotation itself). Syntax rule found: **no access modifier
   after the annotation** — `@wrapMethod(C) private function F()` fails with "unexpected
