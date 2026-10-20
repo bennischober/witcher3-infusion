@@ -111,14 +111,36 @@ on items).
   multi-step changes. There are no atomic inventory transactions — safety comes from the order
   validate → apply level → verify → charge → consume (spec §13.2).
 - `GetItemPriceModified` is native and scales with level and NG+ (the fee anchor). The fee asks
-  the **player's** inventory, so shop/region factors presumably don't apply — to be measured
-  with `infusePriceProbe` (spec §6.3). Vanilla's price levers (script view, `inventoryComponent.ws`):
+  the **player's** inventory, so shop/region factors don't apply. Vanilla's price levers (script
+  view, `inventoryComponent.ws`):
   - per-merchant `priceMult` (`SetPriceMultiplier`, set by quests, e.g. `quest_function.ws`);
   - `GetMerchantPriceModifier(shopNPC, item)`: zone × the NPC's item-type multiplier
     (`armor_price_mult`, `weapon_price_mult`, …) × import origin × `priceMult`. No script caller
     — if used, the engine calls it. Its zone `switch` has no `break`s;
   - repairs: `merchantInv.GetItemPriceRepair(invItem, perPoint, total)` on the **craftsman's**
     inventory (vanilla repair grid), i.e. repair prices can differ per craftsman.
+- **Measured** (`infusePriceProbeAll`, 2026-10-20, NGP Lynx Armor 4 L61, player value 4,801; ten
+  spawned community templates, run in Velen and again after `gotoNovigrad`):
+
+  | Craftsman template | Shop price of a copy | vs. Velen | Repair per point | vs. Velen |
+  | --- | --- | --- | --- | --- |
+  | Velen armorers (Baron's Keep, Mouth) | 19,155 (×3.96 player value) | 1.00 | 12 | 1.00 |
+  | Velen smith (Snots) | 18,546 | 0.97 | 12 | 1.00 |
+  | Novigrad armorers (rich district, White Bridge) | 23,412 | 1.22 | 14 | 1.17 |
+  | Novigrad market smith | 22,667 | 1.18 | 14 | 1.17 |
+  | Skellige armorers (Kaer Trolde, Larvik) | 22,347 | 1.17 | 13 | 1.08 |
+  | Skellige smiths (Kaer Trolde, Larvik) | 21,636 | 1.13 | 13 | 1.08 |
+
+  - The economy is **regional and comes with the craftsman's template** (Novigrad +17–22 %,
+    Skellige +8–17 % over Velen). Same region → same prices, regardless of tier (master and
+    journeyman equal); a smith prices armor 3 % below an armorer.
+  - **The player's position doesn't matter**: identical numbers in Velen and Novigrad.
+    `theGame.GetCurrentZone()` returned 0 (undefined) in both places, and the script-side
+    `GetMerchantPriceModifier` always returned 1.0 — the native code doesn't use it.
+  - Player-side prices ignore all of it: value 4,801, `GetItemPriceModified(item, true)` (selling)
+    also 4,801.
+  - Vanilla's full repair (repair per point × 100) is exactly 25 % of the item value in Velen
+    (1,200 = 4,801 × 0.25, our fee fraction) and follows the region elsewhere (1,400 / 1,300).
 
 ## 7. Exclusions
 
