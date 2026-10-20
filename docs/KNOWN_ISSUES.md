@@ -2,6 +2,12 @@
 
 ## Interface
 
+The Infusion tab reuses the game's own blacksmith menu, so it works next to other mods. Changing
+that menu's layout would mean replacing it, which would conflict with every mod that touches it —
+hence the limits below.
+
+- **Gamepad play hasn't been tested yet.** The menu uses the game's own controls, so it should
+  work; reports are welcome.
 - **The button always says "Infuse".** The game's menu doesn't tell mods which item is
   selected, so the label can't change between "pick target" and "cancel". In step 2 the section
   header says how to cancel: select the target again (or switch tabs). The header names the

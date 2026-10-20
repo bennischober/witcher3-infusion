@@ -17,3 +17,40 @@ Bonus merging as a separate module: needs an extension point in the core transac
 (§11.3: proposed changes validated by the core before commit). Since wrapping the mod's own
 classes works, the extension point can be an empty seam method the module wraps
 (SPEC_COVERAGE §11).
+
+## 3. Road to 1.0
+
+**Why 0.9 is a beta.** No bug is known; what's missing is exposure. One tester on one setup
+(keyboard and mouse), so these are unconfirmed:
+
+- gamepad play (the step-2 header's device switch included);
+- 16 of the 18 languages (unreviewed, never seen in game; Arabic display untested);
+- long New Game+ runs (KNOWN_ISSUES "Prices");
+- other mods next to it (KNOWN_ISSUES "Compatibility").
+
+**1.0 when:**
+
+- [ ] a gamepad pass (UI.md checklist item 9), by a player who has one;
+- [ ] a look at a few languages in game (switch the game language, open the menu): texts fit,
+      CJK and Cyrillic render; Arabic if possible;
+- [ ] some weeks of player feedback without crash, lost-item or wrong-charge reports;
+- [ ] a scaling mod and a blacksmith/inventory UI mod tried alongside it.
+
+**Refinement candidates** (small, inside the current no-override approach):
+
+- **Projected stat for blunt weapons:** the popup leaves the line out for maces (their primary
+  stat isn't the one the step raises, TECHNICAL_DISCOVERY §3). Option: project the damage the
+  step adds instead; needs a check of what the tooltip shows for them.
+- **Target's runes and glyphs in the panel:** the Disassemble panel has three hidden rune slots
+  fed by `socketsData` (UI.md, Flash table) that the Infuse tab never fills. Listing the target's
+  installed upgrades there would show what is kept. Unverified: they have no caption, so they may
+  read as more materials; needs a look in game.
+- **Step-1 button label:** constant per item (UI.md); only worth it if a single label reads
+  better for both steps than "Infuse".
+
+**Out of reach without replacing the game's menu.** The layout (pliers icon, no item picture or
+condition bar), the 5 material slots, the red tooltip bar, a per-item button label and a settings
+menu all live in the cooked blacksmith SWF or the broken settings UI (TECHNICAL_DISCOVERY §1–2).
+Changing them means shipping a modified `panel_blacksmith` SWF: Adobe Animate and cooking, and it
+replaces the vanilla menu for every mod, so it conflicts with any blacksmith or UI mod. Not
+planned.
