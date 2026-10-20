@@ -221,8 +221,54 @@ function InfusionPriceProbeTemplates()
 		LogChannel( 'Infusion', "price probe at " + npc.GetDisplayName() + " [" + npc.GetReadableName() + "]" );
 		InfusionPriceProbeSlot( npc, EES_SteelSword );
 		InfusionPriceProbeSlot( npc, EES_Armor );
+		InfusionPriceProbeRepair( npc, 'Light armor 01' );
+		InfusionPriceProbeRepair( npc, 'Novigraadan sword 1' );
+		InfusionPriceProbeRepair( npc, 'Bear Armor 1' );
 	}
 	theGame.GetGuiManager().ShowNotification( "price probe: " + existing.Size() + " template craftsmen probed (log)" );
+}
+
+// Repair-price precision for the fee anchor: a fresh copy of the item in the
+// player's inventory at 0 durability, priced by the craftsman's own repair
+// service (GetItemPriceRepair - whole crowns per point, so cheap items
+// round badly; the full-repair total may be finer). Also logs the
+// craftsman's repair multiplier and funds type, the candidate precise knobs.
+function InfusionPriceProbeRepair( craftsman : CNewNPC, itemName : name )
+{
+	var inv, shopInv : CInventoryComponent;
+	var copies : array<SItemUniqueId>;
+	var copy : SItemUniqueId;
+	var value, perPoint, total : int;
+	var maxDur : float;
+	var msg : string;
+
+	inv = thePlayer.inv;
+	shopInv = craftsman.GetInventory();
+	if ( !shopInv )
+	{
+		return;
+	}
+	copies = inv.AddAnItem( itemName, 1, true, true );
+	if ( copies.Size() == 0 )
+	{
+		LogChannel( 'Infusion', "repair probe: could not add " + itemName );
+		return;
+	}
+	copy = copies[0];
+	value = inv.GetItemPriceModified( copy, false );
+	maxDur = inv.GetItemMaxDurability( copy );
+	inv.SetItemDurabilityScript( copy, 0 );
+	shopInv.GetItemPriceRepair( inv.GetItem( copy ), perPoint, total );
+	msg = "repair probe: " + itemName + " value " + value + " | max durability " + maxDur
+		+ " | at 0 durability: per point " + perPoint + ", full repair " + total;
+	if ( value > 0 )
+	{
+		msg += " (" + FloatToString( (float)total / value ) + " x value)";
+	}
+	msg += " | craftsman repair mult " + FloatToString( shopInv.GetRepairPriceModifier( craftsman ) )
+		+ ", funds " + (int)shopInv.GetFundsType();
+	inv.RemoveItem( copy, 1 );
+	LogChannel( 'Infusion', msg );
 }
 
 function InfusionPriceProbeSlot( craftsman : CNewNPC, slot : EEquipmentSlots )
