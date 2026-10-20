@@ -1,0 +1,34 @@
+;meta[language=fr]
+; id | key(hex) | key(str) | text
+2112345013||panel_button_inventory_infuse|Infuser
+2112345014||panel_infusion_popup_title|Infuser un équipement
+2112345015||panel_infusion_recovered|Couvert par le sacrifice
+2112345016||panel_infusion_required|Matériaux supplémentaires requis
+2112345017||panel_infusion_consumed_note|L'objet sacrifié sera définitivement consommé. La cible sera entièrement réparée.
+2112345018||panel_infusion_done|Infusion terminée
+2112345019||panel_infusion_no_sacrifice|Aucun objet compatible à sacrifier
+2112345020||panel_title_infusion|Infusion
+2112345021||panel_title_infusion_desc|Sacrifiez des objets pour améliorer votre équipement favori
+2112345022||panel_infusion_target|Cible
+2112345023||panel_infusion_sacrifice|Sacrifice
+2112345024||panel_infusion_choose_sacrifice|Choisissez un sacrifice
+2112345025||panel_infusion_missing|Matériaux manquants
+2112345026||panel_infusion_err_unavailable|L'objet sélectionné n'est plus disponible.
+2112345027||panel_infusion_err_unsupported|Cet objet ne peut pas être infusé.
+2112345028||panel_infusion_err_disabled|L'infusion est désactivée pour ce type d'équipement.
+2112345029||panel_infusion_err_incompatible|Les objets sélectionnés sont incompatibles.
+2112345030||panel_infusion_err_same_item|La cible et le sacrifice doivent être deux objets différents.
+2112345031||panel_infusion_err_excluded|Cet objet ne peut pas être infusé sans risque.
+2112345032||panel_infusion_err_equipped|Le sacrifice est équipé. Retirez-le d'abord.
+2112345033||panel_infusion_err_level|Le sacrifice doit être d'un niveau supérieur à celui de la cible.
+2112345034||panel_infusion_err_aborted|Infusion annulée. Rien n'a été consommé.
+2112345035||panel_infusion_err_no_craftsman|Aucun artisan disponible.
+2112345036||panel_infusion_err_craftsman_type|Cet artisan ne peut pas infuser cet équipement.
+2112345037||panel_infusion_err_craftsman_level|Un artisan plus expérimenté est requis.
+2112345038||panel_infusion_target_cancel|Cible (E : annuler)
+2112345039||panel_infusion_block_no_candidates|Aucun autre objet de ce type
+2112345040||panel_infusion_block_no_higher|Aucun objet de niveau supérieur
+2112345041||panel_infusion_block_equipped|Objet de niveau supérieur équipé
+2112345042||panel_infusion_block_tier|Rang requis :
+2112345043||panel_infusion_blocked_warning|Infusion impossible ici - voir l'infobulle
+2112345044||panel_infusion_block_excluded|Infusion sans risque impossible

@@ -1,0 +1,34 @@
+;meta[language=cz]
+; id | key(hex) | key(str) | text
+2112345013||panel_button_inventory_infuse|Infuze
+2112345014||panel_infusion_popup_title|Infuze vybavení
+2112345015||panel_infusion_recovered|Pokryto obětí
+2112345016||panel_infusion_required|Potřebné další materiály
+2112345017||panel_infusion_consumed_note|Obětovaný předmět bude nenávratně spotřebován. Cíl bude plně opraven.
+2112345018||panel_infusion_done|Infuze dokončena
+2112345019||panel_infusion_no_sacrifice|Není k dispozici žádný vhodný předmět k obětování
+2112345020||panel_title_infusion|Infuze
+2112345021||panel_title_infusion_desc|Obětuj předměty a vylepši své oblíbené vybavení
+2112345022||panel_infusion_target|Cíl
+2112345023||panel_infusion_sacrifice|Oběť
+2112345024||panel_infusion_choose_sacrifice|Vyber oběť
+2112345025||panel_infusion_missing|Chybějící materiály
+2112345026||panel_infusion_err_unavailable|Vybraný předmět už není k dispozici.
+2112345027||panel_infusion_err_unsupported|Na tento předmět nelze provést infuzi.
+2112345028||panel_infusion_err_disabled|Infuze je pro tento typ vybavení vypnutá.
+2112345029||panel_infusion_err_incompatible|Vybrané předměty nejsou kompatibilní.
+2112345030||panel_infusion_err_same_item|Cíl a oběť musí být různé předměty.
+2112345031||panel_infusion_err_excluded|Na tento předmět nelze bezpečně provést infuzi.
+2112345032||panel_infusion_err_equipped|Oběť máš na sobě. Nejdřív ji sundej.
+2112345033||panel_infusion_err_level|Oběť musí mít vyšší úroveň než cíl.
+2112345034||panel_infusion_err_aborted|Infuze přerušena. Nic nebylo spotřebováno.
+2112345035||panel_infusion_err_no_craftsman|Žádný řemeslník není k dispozici.
+2112345036||panel_infusion_err_craftsman_type|Tento řemeslník nemůže provést infuzi tohoto vybavení.
+2112345037||panel_infusion_err_craftsman_level|Je potřeba zkušenější řemeslník.
+2112345038||panel_infusion_target_cancel|Cíl (E: zrušit)
+2112345039||panel_infusion_block_no_candidates|Žádný další předmět tohoto typu
+2112345040||panel_infusion_block_no_higher|Žádný předmět vyšší úrovně
+2112345041||panel_infusion_block_equipped|Předmět vyšší úrovně máš na sobě
+2112345042||panel_infusion_block_tier|Potřebná hodnost:
+2112345043||panel_infusion_blocked_warning|Zde nelze provést infuzi - viz popisek
+2112345044||panel_infusion_block_excluded|Nelze bezpečně provést infuzi

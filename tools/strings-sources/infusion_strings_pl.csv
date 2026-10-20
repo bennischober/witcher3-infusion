@@ -1,0 +1,34 @@
+;meta[language=pl]
+; id | key(hex) | key(str) | text
+2112345013||panel_button_inventory_infuse|Infuzja
+2112345014||panel_infusion_popup_title|Infuzja ekwipunku
+2112345015||panel_infusion_recovered|Pokryte przez ofiarę
+2112345016||panel_infusion_required|Wymagane dodatkowe materiały
+2112345017||panel_infusion_consumed_note|Przedmiot ofiarny zostanie bezpowrotnie zużyty. Cel zostanie w pełni naprawiony.
+2112345018||panel_infusion_done|Infuzja zakończona
+2112345019||panel_infusion_no_sacrifice|Brak pasujących przedmiotów na ofiarę
+2112345020||panel_title_infusion|Infuzja
+2112345021||panel_title_infusion_desc|Poświęć przedmioty, by ulepszyć ulubiony ekwipunek
+2112345022||panel_infusion_target|Cel
+2112345023||panel_infusion_sacrifice|Ofiara
+2112345024||panel_infusion_choose_sacrifice|Wybierz ofiarę
+2112345025||panel_infusion_missing|Brakujące materiały
+2112345026||panel_infusion_err_unavailable|Wybrany przedmiot nie jest już dostępny.
+2112345027||panel_infusion_err_unsupported|Tego przedmiotu nie można poddać infuzji.
+2112345028||panel_infusion_err_disabled|Infuzja jest wyłączona dla tego rodzaju ekwipunku.
+2112345029||panel_infusion_err_incompatible|Wybrane przedmioty są niezgodne.
+2112345030||panel_infusion_err_same_item|Cel i ofiara muszą być różnymi przedmiotami.
+2112345031||panel_infusion_err_excluded|Tego przedmiotu nie można bezpiecznie poddać infuzji.
+2112345032||panel_infusion_err_equipped|Ofiara jest założona. Najpierw ją zdejmij.
+2112345033||panel_infusion_err_level|Ofiara musi mieć wyższy poziom niż cel.
+2112345034||panel_infusion_err_aborted|Infuzja przerwana. Nic nie zostało zużyte.
+2112345035||panel_infusion_err_no_craftsman|Brak dostępnego rzemieślnika.
+2112345036||panel_infusion_err_craftsman_type|Ten rzemieślnik nie może poddać infuzji tego ekwipunku.
+2112345037||panel_infusion_err_craftsman_level|Potrzebny jest bardziej doświadczony rzemieślnik.
+2112345038||panel_infusion_target_cancel|Cel (E: anuluj)
+2112345039||panel_infusion_block_no_candidates|Brak innego przedmiotu tego rodzaju
+2112345040||panel_infusion_block_no_higher|Brak przedmiotu o wyższym poziomie
+2112345041||panel_infusion_block_equipped|Założony przedmiot o wyższym poziomie
+2112345042||panel_infusion_block_tier|Wymagana ranga:
+2112345043||panel_infusion_blocked_warning|Tu nie można wykonać infuzji - patrz opis
+2112345044||panel_infusion_block_excluded|Nie można bezpiecznie poddać infuzji

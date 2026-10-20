@@ -13,7 +13,9 @@
 - **No projected stat for blunt weapons.** The popup shows the stat after infusion
   ("Armor: 129 -> 164") only where the level step raises the item's main stat; for maces and
   other blunt weapons in the steel sword slot the line is left out.
-- **Texts are English and German only.** Every other game language shows English.
+- **Translations other than English and German are unreviewed.** They follow the game's own
+  terms (craftsman ranks, equipment, repair) but no native speaker has checked them, and they
+  have not been seen in game — longer texts may not fit their labels. Arabic display is untested.
 
 ## Rules
 

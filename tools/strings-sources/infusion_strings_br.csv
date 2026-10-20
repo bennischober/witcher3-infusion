@@ -1,0 +1,34 @@
+;meta[language=br]
+; id | key(hex) | key(str) | text
+2112345013||panel_button_inventory_infuse|Infundir
+2112345014||panel_infusion_popup_title|Infundir equipamento
+2112345015||panel_infusion_recovered|Coberto pelo sacrifício
+2112345016||panel_infusion_required|Materiais adicionais necessários
+2112345017||panel_infusion_consumed_note|O item sacrificado será consumido permanentemente. O alvo será totalmente reparado.
+2112345018||panel_infusion_done|Infusão concluída
+2112345019||panel_infusion_no_sacrifice|Nenhum item compatível para sacrificar
+2112345020||panel_title_infusion|Infusão
+2112345021||panel_title_infusion_desc|Sacrifique itens para melhorar seu equipamento favorito
+2112345022||panel_infusion_target|Alvo
+2112345023||panel_infusion_sacrifice|Sacrifício
+2112345024||panel_infusion_choose_sacrifice|Escolha um sacrifício
+2112345025||panel_infusion_missing|Materiais faltando
+2112345026||panel_infusion_err_unavailable|O item selecionado não está mais disponível.
+2112345027||panel_infusion_err_unsupported|Este item não pode ser infundido.
+2112345028||panel_infusion_err_disabled|A infusão está desativada para este tipo de equipamento.
+2112345029||panel_infusion_err_incompatible|Os itens selecionados são incompatíveis.
+2112345030||panel_infusion_err_same_item|O alvo e o sacrifício precisam ser itens diferentes.
+2112345031||panel_infusion_err_excluded|Este item não pode ser infundido com segurança.
+2112345032||panel_infusion_err_equipped|O sacrifício está equipado. Desequipe-o primeiro.
+2112345033||panel_infusion_err_level|O sacrifício precisa ter nível maior que o alvo.
+2112345034||panel_infusion_err_aborted|Infusão cancelada. Nada foi consumido.
+2112345035||panel_infusion_err_no_craftsman|Nenhum artesão disponível.
+2112345036||panel_infusion_err_craftsman_type|Este artesão não pode infundir este equipamento.
+2112345037||panel_infusion_err_craftsman_level|É necessário um artesão mais experiente.
+2112345038||panel_infusion_target_cancel|Alvo (E: cancelar)
+2112345039||panel_infusion_block_no_candidates|Nenhum outro item deste tipo
+2112345040||panel_infusion_block_no_higher|Nenhum item de nível maior
+2112345041||panel_infusion_block_equipped|Item de nível maior equipado
+2112345042||panel_infusion_block_tier|Grau necessário:
+2112345043||panel_infusion_blocked_warning|Não pode ser infundido aqui - veja a dica
+2112345044||panel_infusion_block_excluded|Não pode ser infundido com segurança

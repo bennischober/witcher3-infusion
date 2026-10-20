@@ -1,0 +1,34 @@
+;meta[language=ru]
+; id | key(hex) | key(str) | text
+2112345013||panel_button_inventory_infuse|Насытить
+2112345014||panel_infusion_popup_title|Насыщение снаряжения
+2112345015||panel_infusion_recovered|Покрыто за счёт жертвы
+2112345016||panel_infusion_required|Нужны дополнительные материалы
+2112345017||panel_infusion_consumed_note|Жертвенный предмет будет безвозвратно израсходован. Целевой предмет будет полностью починен.
+2112345018||panel_infusion_done|Насыщение завершено
+2112345019||panel_infusion_no_sacrifice|Нет подходящих предметов для жертвы
+2112345020||panel_title_infusion|Насыщение
+2112345021||panel_title_infusion_desc|Жертвуйте предметами, чтобы улучшить любимое снаряжение
+2112345022||panel_infusion_target|Цель
+2112345023||panel_infusion_sacrifice|Жертва
+2112345024||panel_infusion_choose_sacrifice|Выберите жертву
+2112345025||panel_infusion_missing|Не хватает материалов
+2112345026||panel_infusion_err_unavailable|Выбранный предмет больше недоступен.
+2112345027||panel_infusion_err_unsupported|Этот предмет нельзя насытить.
+2112345028||panel_infusion_err_disabled|Насыщение отключено для этого типа снаряжения.
+2112345029||panel_infusion_err_incompatible|Выбранные предметы несовместимы.
+2112345030||panel_infusion_err_same_item|Цель и жертва должны быть разными предметами.
+2112345031||panel_infusion_err_excluded|Этот предмет нельзя безопасно насытить.
+2112345032||panel_infusion_err_equipped|Жертва надета. Сначала снимите её.
+2112345033||panel_infusion_err_level|Уровень жертвы должен быть выше уровня цели.
+2112345034||panel_infusion_err_aborted|Насыщение прервано. Ничего не израсходовано.
+2112345035||panel_infusion_err_no_craftsman|Нет доступного ремесленника.
+2112345036||panel_infusion_err_craftsman_type|Этот ремесленник не может насытить это снаряжение.
+2112345037||panel_infusion_err_craftsman_level|Нужен более опытный ремесленник.
+2112345038||panel_infusion_target_cancel|Цель (E: отмена)
+2112345039||panel_infusion_block_no_candidates|Нет других предметов этого типа
+2112345040||panel_infusion_block_no_higher|Нет предметов более высокого уровня
+2112345041||panel_infusion_block_equipped|Надет предмет более высокого уровня
+2112345042||panel_infusion_block_tier|Требуемый ранг:
+2112345043||panel_infusion_blocked_warning|Здесь насыщение невозможно - см. подсказку
+2112345044||panel_infusion_block_excluded|Безопасное насыщение невозможно

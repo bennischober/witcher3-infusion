@@ -1,0 +1,34 @@
+;meta[language=ua]
+; id | key(hex) | key(str) | text
+2112345013||panel_button_inventory_infuse|Наситити
+2112345014||panel_infusion_popup_title|Насичення спорядження
+2112345015||panel_infusion_recovered|Покрито за рахунок жертви
+2112345016||panel_infusion_required|Потрібні додаткові матеріали
+2112345017||panel_infusion_consumed_note|Жертовну річ буде безповоротно витрачено. Цільову річ буде повністю полагоджено.
+2112345018||panel_infusion_done|Насичення завершено
+2112345019||panel_infusion_no_sacrifice|Немає відповідних речей для жертви
+2112345020||panel_title_infusion|Насичення
+2112345021||panel_title_infusion_desc|Жертвуйте речами, щоб покращити улюблене спорядження
+2112345022||panel_infusion_target|Ціль
+2112345023||panel_infusion_sacrifice|Жертва
+2112345024||panel_infusion_choose_sacrifice|Виберіть жертву
+2112345025||panel_infusion_missing|Бракує матеріалів
+2112345026||panel_infusion_err_unavailable|Вибрана річ більше недоступна.
+2112345027||panel_infusion_err_unsupported|Цю річ не можна наситити.
+2112345028||panel_infusion_err_disabled|Насичення вимкнено для цього типу спорядження.
+2112345029||panel_infusion_err_incompatible|Вибрані речі несумісні.
+2112345030||panel_infusion_err_same_item|Ціль і жертва мають бути різними речами.
+2112345031||panel_infusion_err_excluded|Цю річ не можна безпечно наситити.
+2112345032||panel_infusion_err_equipped|Жертву вдягнено. Спершу зніміть її.
+2112345033||panel_infusion_err_level|Рівень жертви має бути вищим за рівень цілі.
+2112345034||panel_infusion_err_aborted|Насичення перервано. Нічого не витрачено.
+2112345035||panel_infusion_err_no_craftsman|Немає доступного ремісника.
+2112345036||panel_infusion_err_craftsman_type|Цей ремісник не може наситити це спорядження.
+2112345037||panel_infusion_err_craftsman_level|Потрібен досвідченіший ремісник.
+2112345038||panel_infusion_target_cancel|Ціль (E: скасувати)
+2112345039||panel_infusion_block_no_candidates|Немає інших речей цього типу
+2112345040||panel_infusion_block_no_higher|Немає речей вищого рівня
+2112345041||panel_infusion_block_equipped|Вдягнено річ вищого рівня
+2112345042||panel_infusion_block_tier|Потрібний ранг:
+2112345043||panel_infusion_blocked_warning|Тут насичення неможливе - див. підказку
+2112345044||panel_infusion_block_excluded|Безпечне насичення неможливе

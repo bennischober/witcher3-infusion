@@ -1,0 +1,34 @@
+;meta[language=cn]
+; id | key(hex) | key(str) | text
+2112345013||panel_button_inventory_infuse|灌注
+2112345014||panel_infusion_popup_title|灌注装备
+2112345015||panel_infusion_recovered|由祭品抵扣
+2112345016||panel_infusion_required|所需额外材料
+2112345017||panel_infusion_consumed_note|祭品将被永久消耗。目标装备将被完全修复。
+2112345018||panel_infusion_done|灌注完成
+2112345019||panel_infusion_no_sacrifice|没有可用的兼容祭品
+2112345020||panel_title_infusion|灌注
+2112345021||panel_title_infusion_desc|牺牲装备来强化你心爱的装备
+2112345022||panel_infusion_target|目标
+2112345023||panel_infusion_sacrifice|祭品
+2112345024||panel_infusion_choose_sacrifice|选择祭品
+2112345025||panel_infusion_missing|缺少材料
+2112345026||panel_infusion_err_unavailable|所选物品已不可用。
+2112345027||panel_infusion_err_unsupported|该物品无法灌注。
+2112345028||panel_infusion_err_disabled|此类装备已禁用灌注。
+2112345029||panel_infusion_err_incompatible|所选物品互不兼容。
+2112345030||panel_infusion_err_same_item|目标和祭品必须是不同的物品。
+2112345031||panel_infusion_err_excluded|该物品无法安全灌注。
+2112345032||panel_infusion_err_equipped|祭品已装备。请先卸下。
+2112345033||panel_infusion_err_level|祭品的等级必须高于目标。
+2112345034||panel_infusion_err_aborted|灌注已中止。未消耗任何物品。
+2112345035||panel_infusion_err_no_craftsman|没有可用的工匠。
+2112345036||panel_infusion_err_craftsman_type|该工匠无法灌注此装备。
+2112345037||panel_infusion_err_craftsman_level|需要更有经验的工匠。
+2112345038||panel_infusion_target_cancel|目标（E：取消）
+2112345039||panel_infusion_block_no_candidates|没有其他同类物品
+2112345040||panel_infusion_block_no_higher|没有更高等级的物品
+2112345041||panel_infusion_block_equipped|已装备更高等级的物品
+2112345042||panel_infusion_block_tier|所需等级：
+2112345043||panel_infusion_blocked_warning|无法在此灌注 - 请查看提示
+2112345044||panel_infusion_block_excluded|无法安全灌注

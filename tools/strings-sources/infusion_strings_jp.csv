@@ -1,0 +1,34 @@
+;meta[language=jp]
+; id | key(hex) | key(str) | text
+2112345013||panel_button_inventory_infuse|融合
+2112345014||panel_infusion_popup_title|装備品を融合
+2112345015||panel_infusion_recovered|犠牲アイテムで補填
+2112345016||panel_infusion_required|追加の材料が必要
+2112345017||panel_infusion_consumed_note|犠牲アイテムは永久に失われる。対象は完全に修理される。
+2112345018||panel_infusion_done|融合完了
+2112345019||panel_infusion_no_sacrifice|融合できる犠牲アイテムがない
+2112345020||panel_title_infusion|融合
+2112345021||panel_title_infusion_desc|装備品を犠牲にして、お気に入りの装備を強化する
+2112345022||panel_infusion_target|対象
+2112345023||panel_infusion_sacrifice|犠牲
+2112345024||panel_infusion_choose_sacrifice|犠牲を選択
+2112345025||panel_infusion_missing|材料不足
+2112345026||panel_infusion_err_unavailable|選択したアイテムは使用できない。
+2112345027||panel_infusion_err_unsupported|このアイテムは融合できない。
+2112345028||panel_infusion_err_disabled|この種類の装備品は融合が無効になっている。
+2112345029||panel_infusion_err_incompatible|選択したアイテム同士は融合できない。
+2112345030||panel_infusion_err_same_item|対象と犠牲には別々のアイテムを選ぶ必要がある。
+2112345031||panel_infusion_err_excluded|このアイテムは安全に融合できない。
+2112345032||panel_infusion_err_equipped|犠牲アイテムを装備中。先に装備を解除すること。
+2112345033||panel_infusion_err_level|犠牲アイテムは対象より高レベルである必要がある。
+2112345034||panel_infusion_err_aborted|融合を中止した。何も消費されていない。
+2112345035||panel_infusion_err_no_craftsman|職人がいない。
+2112345036||panel_infusion_err_craftsman_type|この職人はこの装備品を融合できない。
+2112345037||panel_infusion_err_craftsman_level|より熟練した職人が必要だ。
+2112345038||panel_infusion_target_cancel|対象 (E: キャンセル)
+2112345039||panel_infusion_block_no_candidates|同じ種類の他のアイテムがない
+2112345040||panel_infusion_block_no_higher|より高レベルのアイテムがない
+2112345041||panel_infusion_block_equipped|高レベルのアイテムを装備中
+2112345042||panel_infusion_block_tier|必要な等級：
+2112345043||panel_infusion_blocked_warning|ここでは融合できない - ツールチップを参照
+2112345044||panel_infusion_block_excluded|安全に融合できない

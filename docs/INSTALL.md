@@ -11,7 +11,8 @@ cost, and the craftsman charges for the work.
 - Nothing else: no script merger, no other mods. The mod adds only new script files and never
   overrides the game's own scripts.
 
-Texts: English and German. Every other game language shows the English texts.
+Texts: all 18 game languages. Only English and German have been reviewed by native speakers so
+far — corrections for the other languages are welcome.
 
 ## Install
 

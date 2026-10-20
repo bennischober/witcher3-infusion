@@ -1,0 +1,34 @@
+;meta[language=es]
+; id | key(hex) | key(str) | text
+2112345013||panel_button_inventory_infuse|Infundir
+2112345014||panel_infusion_popup_title|Infundir equipo
+2112345015||panel_infusion_recovered|Cubierto por el sacrificio
+2112345016||panel_infusion_required|Materiales adicionales necesarios
+2112345017||panel_infusion_consumed_note|El objeto sacrificado se consumirá para siempre. El objetivo quedará totalmente reparado.
+2112345018||panel_infusion_done|Infusión completada
+2112345019||panel_infusion_no_sacrifice|No hay ningún objeto compatible para sacrificar
+2112345020||panel_title_infusion|Infusión
+2112345021||panel_title_infusion_desc|Sacrifica objetos para mejorar tu equipo favorito
+2112345022||panel_infusion_target|Objetivo
+2112345023||panel_infusion_sacrifice|Sacrificio
+2112345024||panel_infusion_choose_sacrifice|Elige un sacrificio
+2112345025||panel_infusion_missing|Faltan materiales
+2112345026||panel_infusion_err_unavailable|El objeto seleccionado ya no está disponible.
+2112345027||panel_infusion_err_unsupported|Este objeto no se puede infundir.
+2112345028||panel_infusion_err_disabled|La infusión está desactivada para este tipo de equipo.
+2112345029||panel_infusion_err_incompatible|Los objetos seleccionados no son compatibles.
+2112345030||panel_infusion_err_same_item|El objetivo y el sacrificio deben ser objetos distintos.
+2112345031||panel_infusion_err_excluded|Este objeto no se puede infundir de forma segura.
+2112345032||panel_infusion_err_equipped|El sacrificio está equipado. Desequípalo primero.
+2112345033||panel_infusion_err_level|El sacrificio debe tener un nivel superior al del objetivo.
+2112345034||panel_infusion_err_aborted|Infusión cancelada. No se ha consumido nada.
+2112345035||panel_infusion_err_no_craftsman|No hay ningún artesano disponible.
+2112345036||panel_infusion_err_craftsman_type|Este artesano no puede infundir este equipo.
+2112345037||panel_infusion_err_craftsman_level|Se necesita un artesano más experimentado.
+2112345038||panel_infusion_target_cancel|Objetivo (E: cancelar)
+2112345039||panel_infusion_block_no_candidates|No hay otro objeto de este tipo
+2112345040||panel_infusion_block_no_higher|No hay objetos de nivel superior
+2112345041||panel_infusion_block_equipped|Hay un objeto de nivel superior equipado
+2112345042||panel_infusion_block_tier|Rango necesario:
+2112345043||panel_infusion_blocked_warning|No se puede infundir aquí - consulta la descripción
+2112345044||panel_infusion_block_excluded|No se puede infundir de forma segura

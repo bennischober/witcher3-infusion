@@ -1,0 +1,34 @@
+;meta[language=hu]
+; id | key(hex) | key(str) | text
+2112345013||panel_button_inventory_infuse|Infúzió
+2112345014||panel_infusion_popup_title|Felszerelés infúziója
+2112345015||panel_infusion_recovered|Az áldozat fedezi
+2112345016||panel_infusion_required|További szükséges anyagok
+2112345017||panel_infusion_consumed_note|Az áldozati tárgy végleg elhasználódik. A cél teljesen megjavul.
+2112345018||panel_infusion_done|Infúzió kész
+2112345019||panel_infusion_no_sacrifice|Nincs megfelelő áldozati tárgy
+2112345020||panel_title_infusion|Infúzió
+2112345021||panel_title_infusion_desc|Áldozz fel tárgyakat, hogy fejleszd kedvenc felszerelésed
+2112345022||panel_infusion_target|Cél
+2112345023||panel_infusion_sacrifice|Áldozat
+2112345024||panel_infusion_choose_sacrifice|Válassz áldozatot
+2112345025||panel_infusion_missing|Hiányzó anyagok
+2112345026||panel_infusion_err_unavailable|A kiválasztott tárgy már nem érhető el.
+2112345027||panel_infusion_err_unsupported|Ez a tárgy nem fejleszthető infúzióval.
+2112345028||panel_infusion_err_disabled|Az infúzió ki van kapcsolva ennél a felszereléstípusnál.
+2112345029||panel_infusion_err_incompatible|A kiválasztott tárgyak nem kompatibilisek.
+2112345030||panel_infusion_err_same_item|A cél és az áldozat nem lehet ugyanaz a tárgy.
+2112345031||panel_infusion_err_excluded|Ez a tárgy nem fejleszthető biztonságosan infúzióval.
+2112345032||panel_infusion_err_equipped|Az áldozat fel van szerelve. Előbb vedd le.
+2112345033||panel_infusion_err_level|Az áldozat szintjének magasabbnak kell lennie a célénál.
+2112345034||panel_infusion_err_aborted|Infúzió megszakítva. Semmi sem használódott el.
+2112345035||panel_infusion_err_no_craftsman|Nincs elérhető kézműves.
+2112345036||panel_infusion_err_craftsman_type|Ez a kézműves nem tudja infúzióval fejleszteni ezt a felszerelést.
+2112345037||panel_infusion_err_craftsman_level|Tapasztaltabb kézműves szükséges.
+2112345038||panel_infusion_target_cancel|Cél (E: mégse)
+2112345039||panel_infusion_block_no_candidates|Nincs más ilyen típusú tárgy
+2112345040||panel_infusion_block_no_higher|Nincs magasabb szintű tárgy
+2112345041||panel_infusion_block_equipped|A magasabb szintű tárgy fel van szerelve
+2112345042||panel_infusion_block_tier|Szükséges rang:
+2112345043||panel_infusion_blocked_warning|Itt nem lehetséges az infúzió - lásd a leírást
+2112345044||panel_infusion_block_excluded|Biztonságosan nem lehetséges az infúzió

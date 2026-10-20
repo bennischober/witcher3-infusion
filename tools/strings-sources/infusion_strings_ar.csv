@@ -1,0 +1,34 @@
+;meta[language=ar]
+; id | key(hex) | key(str) | text
+2112345013||panel_button_inventory_infuse|دمج
+2112345014||panel_infusion_popup_title|دمج المعدات
+2112345015||panel_infusion_recovered|يغطيها القربان
+2112345016||panel_infusion_required|مواد إضافية مطلوبة
+2112345017||panel_infusion_consumed_note|سيتم استهلاك القربان بشكل دائم. سيتم إصلاح الهدف بالكامل.
+2112345018||panel_infusion_done|اكتمل الدمج
+2112345019||panel_infusion_no_sacrifice|لا يوجد قربان متوافق
+2112345020||panel_title_infusion|الدمج
+2112345021||panel_title_infusion_desc|استخدم المعدات كقربان لتطوير عتادك المفضل
+2112345022||panel_infusion_target|الهدف
+2112345023||panel_infusion_sacrifice|القربان
+2112345024||panel_infusion_choose_sacrifice|اختر القربان
+2112345025||panel_infusion_missing|المواد الناقصة
+2112345026||panel_infusion_err_unavailable|لم تعد الأداة المحددة متوفرة.
+2112345027||panel_infusion_err_unsupported|لا يمكن دمج هذه الأداة.
+2112345028||panel_infusion_err_disabled|الدمج معطل لهذا النوع من المعدات.
+2112345029||panel_infusion_err_incompatible|الأدوات المحددة غير متوافقة.
+2112345030||panel_infusion_err_same_item|يجب أن يكون الهدف والقربان أداتين مختلفتين.
+2112345031||panel_infusion_err_excluded|لا يمكن دمج هذه الأداة بأمان.
+2112345032||panel_infusion_err_equipped|القربان مجهز. انزعه أولا.
+2112345033||panel_infusion_err_level|يجب أن يكون مستوى القربان أعلى من مستوى الهدف.
+2112345034||panel_infusion_err_aborted|تم إلغاء الدمج. لم يتم استهلاك أي شيء.
+2112345035||panel_infusion_err_no_craftsman|لا يوجد حرفي متاح.
+2112345036||panel_infusion_err_craftsman_type|لا يستطيع هذا الحرفي دمج هذه المعدات.
+2112345037||panel_infusion_err_craftsman_level|يلزم حرفي أكثر خبرة.
+2112345038||panel_infusion_target_cancel|الهدف (E: إلغاء)
+2112345039||panel_infusion_block_no_candidates|لا توجد أداة أخرى من هذا النوع
+2112345040||panel_infusion_block_no_higher|لا توجد أداة ذات مستوى أعلى
+2112345041||panel_infusion_block_equipped|الأداة ذات المستوى الأعلى مجهزة
+2112345042||panel_infusion_block_tier|الرتبة المطلوبة:
+2112345043||panel_infusion_blocked_warning|لا يمكن الدمج هنا - راجع التلميح
+2112345044||panel_infusion_block_excluded|لا يمكن الدمج بأمان

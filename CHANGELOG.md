@@ -16,4 +16,4 @@ playtested in long New Game+ runs or alongside other mods.
 - Items that can't be infused here are listed greyed out with the reason in the tooltip.
 - Confirmation popup with level and stat change, covered and additional materials, and price.
 - No level cap (New Game+ safe); no game script overridden; safe to uninstall.
-- English and German texts; other languages show English.
+- Texts in all 18 game languages (only English and German reviewed so far).

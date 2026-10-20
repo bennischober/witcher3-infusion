@@ -1,0 +1,34 @@
+;meta[language=tr]
+; id | key(hex) | key(str) | text
+2112345013||panel_button_inventory_infuse|Kaynaştır
+2112345014||panel_infusion_popup_title|Teçhizatı Kaynaştır
+2112345015||panel_infusion_recovered|Kurbandan karşılanır
+2112345016||panel_infusion_required|Gereken ek malzemeler
+2112345017||panel_infusion_consumed_note|Kurban eşya kalıcı olarak yok olacak. Hedef eşya tamamen onarılacak.
+2112345018||panel_infusion_done|Kaynaştırma tamamlandı
+2112345019||panel_infusion_no_sacrifice|Uygun kurban eşya yok
+2112345020||panel_title_infusion|Kaynaştırma
+2112345021||panel_title_infusion_desc|Sevdiğin teçhizatı geliştirmek için eşya kurban et
+2112345022||panel_infusion_target|Hedef
+2112345023||panel_infusion_sacrifice|Kurban
+2112345024||panel_infusion_choose_sacrifice|Bir kurban seç
+2112345025||panel_infusion_missing|Eksik malzemeler
+2112345026||panel_infusion_err_unavailable|Seçilen eşya artık mevcut değil.
+2112345027||panel_infusion_err_unsupported|Bu eşya kaynaştırılamaz.
+2112345028||panel_infusion_err_disabled|Bu teçhizat türü için kaynaştırma devre dışı.
+2112345029||panel_infusion_err_incompatible|Seçilen eşyalar uyumsuz.
+2112345030||panel_infusion_err_same_item|Hedef ve kurban farklı eşyalar olmalı.
+2112345031||panel_infusion_err_excluded|Bu eşya güvenle kaynaştırılamaz.
+2112345032||panel_infusion_err_equipped|Kurban kuşanılmış. Önce çıkart.
+2112345033||panel_infusion_err_level|Kurbanın seviyesi hedeften yüksek olmalı.
+2112345034||panel_infusion_err_aborted|Kaynaştırma iptal edildi. Hiçbir şey harcanmadı.
+2112345035||panel_infusion_err_no_craftsman|Uygun zanaatkâr yok.
+2112345036||panel_infusion_err_craftsman_type|Bu zanaatkâr bu teçhizatı kaynaştıramaz.
+2112345037||panel_infusion_err_craftsman_level|Daha deneyimli bir zanaatkâr gerekli.
+2112345038||panel_infusion_target_cancel|Hedef (E: iptal)
+2112345039||panel_infusion_block_no_candidates|Bu türde başka eşya yok
+2112345040||panel_infusion_block_no_higher|Daha yüksek seviyeli eşya yok
+2112345041||panel_infusion_block_equipped|Daha yüksek seviyeli eşya kuşanılmış
+2112345042||panel_infusion_block_tier|Gereken rütbe:
+2112345043||panel_infusion_blocked_warning|Burada kaynaştırılamaz - ipucuna bak
+2112345044||panel_infusion_block_excluded|Güvenle kaynaştırılamaz
