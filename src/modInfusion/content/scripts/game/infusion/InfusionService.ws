@@ -1124,6 +1124,18 @@ class W3InfusionService extends IScriptable
 			added += 1;
 		}
 
+		// Fault injection (scenario rollback_mismatch): overshoot by real step
+		// abilities so the rollback below runs on genuine duplicates.
+		if ( GetConfig().TestForceLevelMismatch() )
+		{
+			guard = added + MAX_CORRECTION_STEPS;
+			while ( ComputeItemLevel( inv, targetId ) == preview.sacrificeLevel && added < guard )
+			{
+				inv.AddItemCraftedAbility( targetId, preview.stepAbility, true );
+				added += 1;
+			}
+		}
+
 		// 4) Verify the derived level actually moved as projected (spec §13.2).
 		//    If not, roll back everything we added and abort without consuming anything.
 		levelAfter = ComputeItemLevel( inv, targetId );

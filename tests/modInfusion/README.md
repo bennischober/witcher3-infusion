@@ -36,7 +36,7 @@ crowns and materials restored to the exact amounts from before.
 
 | Command | Effect |
 | --- | --- |
-| `infuseScenarioAll` | Runs all scenarios below. Summary on screen and in the log: `SCENARIOS: 32/32 PASS` (or `\| FAIL: … \| SKIP: …`); one `scenario <name>: PASS/FAIL/SKIP (detail)` line per scenario. |
+| `infuseScenarioAll` | Runs all scenarios below. Summary on screen and in the log: `SCENARIOS: 33/33 PASS` (or `\| FAIL: … \| SKIP: …`); one `scenario <name>: PASS/FAIL/SKIP (detail)` line per scenario. |
 | `infuseScenario(name)` | Runs one scenario, e.g. `infuseScenario(silver_sword)`. |
 | `infuseScenarioN(n)` | Same by number (1-based, order below) — fallback if the console rejects a bare name. |
 | `infuseScenarioList` | Lists the names with their numbers. |
@@ -70,11 +70,12 @@ enchantment and all previous abilities intact, crowns charged = fee, materials u
 | 30 | `fee_config` | doubling the fee multiplier doubles the fee, with the soft ceiling lifted (§15.4) |
 | 31 | `fee_soft_cap` | a fee above the soft ceiling becomes √(fee × ceiling), one below it is unchanged (§6.3, §15.4) |
 | 32 | `materials_by_tier` | a master armorer's recipe is the journeyman's × the master's material efficiency, rounded to the nearest, and smaller in total (§7.2) |
+| 33 | `rollback_mismatch` | the level check after applying fails (forced by the dev fact `InfCfg_TestLevelMismatch`, which makes `Execute` overshoot by real step abilities): `IFE_LevelMismatch`, and the pre-boosted target keeps its level, primary stat, step-ability count and damaged durability; crowns, materials and sacrifice untouched (§13.2–13.3) |
 
 Every successful infusion scenario also checks that the popup's projected primary stat equals
 the result (§9.2).
 
-Scenarios 1–9 and 24–31 run without a craftsman (eligibility bypass, mechanics only); 10–11,
+Scenarios 1–9, 24–31 and 33 run without a craftsman (eligibility bypass, mechanics only); 10–11,
 the three craftsman rejections, `block_tier` and `materials_by_tier` spawn journeyman/master test craftsmen (despawn after 5 min). SKIP means a
 precondition did not hold (game data differs, a freshly spawned craftsman was not ready yet —
 run again). Still manual: everything visual in the menu (docs/UI.md checklists).

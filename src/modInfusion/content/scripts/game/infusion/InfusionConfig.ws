@@ -190,6 +190,8 @@ class W3InfusionConfig extends IScriptable
 	//   InfCfg_Salvage  - nonzero disables salvage (no discount: full recipe)
 	//   InfCfg_NoMaterials - nonzero disables material requirements
 	//   InfCfg_Debug    - nonzero enables the per-item grid logging
+	//   InfCfg_TestLevelMismatch - nonzero makes Execute overshoot the level
+	//                     on purpose, so its rollback runs (scenario test)
 	private const var FACT_BASE_FEE : string;
 	default FACT_BASE_FEE = "InfCfg_BaseFee";
 
@@ -207,6 +209,9 @@ class W3InfusionConfig extends IScriptable
 
 	private const var FACT_NO_MATERIALS : string;
 	default FACT_NO_MATERIALS = "InfCfg_NoMaterials";
+
+	private const var FACT_TEST_LEVEL_MISMATCH : string;
+	default FACT_TEST_LEVEL_MISMATCH = "InfCfg_TestLevelMismatch";
 
 	// ---------------------------------------------------------------------
 	// Accessors (the service's only interface)
@@ -415,6 +420,12 @@ class W3InfusionConfig extends IScriptable
 	public function DebugLogging() : bool
 	{
 		return DEBUG_LOGGING || FactsQuerySum( FACT_DEBUG_LOG ) > 0;
+	}
+
+	// Fault injection for the rollback test; never set in normal play.
+	public function TestForceLevelMismatch() : bool
+	{
+		return FactsQuerySum( FACT_TEST_LEVEL_MISMATCH ) > 0;
 	}
 
 	// --------------------------- validation ------------------------------

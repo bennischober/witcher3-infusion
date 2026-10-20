@@ -81,6 +81,7 @@ function InfusionScenarioNames( out names : array<name> )
 	names.PushBack( 'fee_config' );
 	names.PushBack( 'fee_soft_cap' );
 	names.PushBack( 'materials_by_tier' );
+	names.PushBack( 'rollback_mismatch' );
 }
 
 class W3InfusionScenarioRunner extends IScriptable
@@ -207,6 +208,8 @@ class W3InfusionScenarioRunner extends IScriptable
 				return ScenarioRejectCraftsman( 'Bear Armor 1', 'Light armor 06', true, IFE_CraftsmanLevelTooLow, 5 );
 			case 'reject_tier_relic':
 				return ScenarioRejectCraftsman( 'Abarad', 'Novigraadan sword 3', false, IFE_CraftsmanLevelTooLow, 4 );
+			case 'rollback_mismatch':
+				return ScenarioRollbackMismatch();
 
 			// ---- block reasons for the grid (spec §9.3) ----
 			case 'block_tier':
@@ -808,6 +811,93 @@ class W3InfusionScenarioRunner extends IScriptable
 			}
 		}
 		return ExpectRejection( t, s, IFE_NotEnoughMaterials, NULL );
+	}
+
+	// Spec §13.2: the level check after applying fails (forced via
+	// InfCfg_TestLevelMismatch) -> every added step ability is removed and
+	// nothing is consumed. The target is pre-boosted, so it already carries
+	// the same step ability: the rollback must remove only the new copies.
+	// The primary stat sums every copy, so it catches a wrong removal count
+	// even if GetItemAbilities lists an ability only once.
+	private function ScenarioRollbackMismatch() : EInfScnStatus
+	{
+		var t, s : SItemUniqueId;
+		var p : SInfusionPreview;
+		var err : EInfusionError;
+		var before, after : SInfScnItemState;
+		var stepsBefore, moneyBefore, totalBefore, prevFact : int;
+		var durabilityBefore : float;
+
+		if ( !Spawn( 'Novigraadan sword 1', t ) || !Spawn( 'Novigraadan sword 3', s ) )
+		{
+			return ISS_Fail;
+		}
+		if ( !BoostTo( t, Level( t ) + 3 ) || !BoostTo( s, Level( t ) + 10 ) )
+		{
+			return ISS_Fail;
+		}
+		if ( inv.HasItemDurability( t ) )
+		{
+			inv.SetItemDurabilityScript( t, inv.GetItemMaxDurability( t ) * 0.5f );
+		}
+
+		if ( svc.Preview( t, s, p ) != IFE_Ok )
+		{
+			detail = "setup pair invalid";
+			return ISS_Fail;
+		}
+		TakeSnapshot( p );
+		Fund( p );
+
+		before = Capture( t );
+		stepsBefore = CountAbility( before.abilities, p.stepAbility );
+		durabilityBefore = inv.GetItemDurability( t );
+		moneyBefore = inv.GetMoney();
+		totalBefore = TotalQuantity();
+
+		prevFact = SetFactTemp( "InfCfg_TestLevelMismatch", 1 );
+		err = svc.Execute( t, s, p );
+		RestoreFact( "InfCfg_TestLevelMismatch", prevFact );
+
+		if ( err != IFE_LevelMismatch )
+		{
+			detail = "expected '" + InfusionErrorToString( IFE_LevelMismatch ) + "', got '" + InfusionErrorToString( err ) + "'";
+			return ISS_Fail;
+		}
+		if ( !inv.IsIdValid( t ) || !inv.IsIdValid( s ) )
+		{
+			detail = "an item was consumed";
+			return ISS_Fail;
+		}
+		after = Capture( t );
+		if ( after.level != before.level )
+		{
+			detail = "level " + after.level + " after rollback, was " + before.level;
+			return ISS_Fail;
+		}
+		if ( CountAbility( after.abilities, p.stepAbility ) != stepsBefore )
+		{
+			detail = p.stepAbility + " x" + CountAbility( after.abilities, p.stepAbility ) + " after rollback, was x" + stepsBefore;
+			return ISS_Fail;
+		}
+		if ( AbsF( after.stat - before.stat ) > 0.01f )
+		{
+			detail = "primary stat " + FloatToString( after.stat ) + " after rollback, was " + FloatToString( before.stat );
+			return ISS_Fail;
+		}
+		if ( inv.HasItemDurability( t ) && AbsF( inv.GetItemDurability( t ) - durabilityBefore ) > 0.5f )
+		{
+			detail = "durability changed on an aborted infusion";
+			return ISS_Fail;
+		}
+		if ( inv.GetMoney() != moneyBefore || TotalQuantity() != totalBefore )
+		{
+			detail = "aborted correctly, but crowns or materials changed";
+			return ISS_Fail;
+		}
+		detail = InfusionErrorToString( err ) + "; L" + before.level + " and " + p.statAttribute + " "
+			+ RoundMath( before.stat ) + " kept (" + p.stepAbility + " listed x" + stepsBefore + "); nothing consumed";
+		return ISS_Pass;
 	}
 
 	// Real craftsman gate (spec §8.2): journeyman armorer or smith.
@@ -1435,6 +1525,21 @@ class W3InfusionScenarioRunner extends IScriptable
 			return false;
 		}
 		return true;
+	}
+
+	private function CountAbility( abilities : array<name>, ability : name ) : int
+	{
+		var i, count : int;
+
+		count = 0;
+		for ( i = 0; i < abilities.Size(); i += 1 )
+		{
+			if ( abilities[i] == ability )
+			{
+				count += 1;
+			}
+		}
+		return count;
 	}
 
 	// Sum of all stack quantities: any consumed item or material changes it.
