@@ -10,12 +10,14 @@
 | `shape-arabic.py` | Shapes the Arabic source into the presentation forms the game expects (called by `build-strings.ps1`; see TECHNICAL_DISCOVERY.md). |
 | `package-release.ps1` | Player release: `dist\modInfusion-<VERSION>.zip` (`mods\modInfusion\` with the `src/` content and the player docs). Release check: no `tests/` file, no `exec function`, UTF-8 BOM on every script, a strings file per language. `-Deploy` also installs the package into the game (release test); `-SkipStrings` skips the string build. |
 | `strings-sources/infusion_strings_<lang>.csv` | Source of the mod's UI strings, one per game language (id space `2112345NNN`). Arabic is kept unshaped (readable). |
+| `check-mod-conflicts.ps1` | Compatibility scan (read-only): compares every other mod in the game's `mods` folder with Infusion's script hooks, read from `src/` (never hard-coded). CONFLICT = won't compile together or one replaces the other (same `@replaceMethod` target, same added method/field or global name, same script path); CHECK = play-test the blacksmith menu (replaces a method we wrap, or overrides a whole vanilla script defining a class we hook); info = both wrap the same method. Exit code 1 on a conflict. `-ModsDir` scans another folder. |
 | `console-toggle.ahk` | AutoHotkey v1 fallback: F12 sends the console key for keyboard layouts without a reachable tilde. |
 
 ```powershell
 powershell -File tools\deploy-mod.ps1 -Dev
 powershell -File tools\launch-debug.ps1
 powershell -File tools\package-release.ps1 -Deploy
+powershell -File tools\check-mod-conflicts.ps1
 python tools\infusion-cost-table.py --target "Light armor 01" --sacrifice "Light armor 06" --gap 9
 ```
 
