@@ -7,6 +7,7 @@ excluded from release builds.
 | --- | --- |
 | `InfusionDebug.ws` | Console commands (thin wrappers) |
 | `InfusionScenarios.ws` | Scenario tests (below) |
+| `InfusionBalanceReport.ws` | High-level cost report (`infuseBalanceReport`, below) |
 | `InfusionTestTools.ws` | Shared helpers: service factory, test items, test craftsmen, opening the service menu, cleanup |
 
 ## Console commands
@@ -21,6 +22,7 @@ excluded from release builds.
 | `infuseCraftsmanReport` | Log type/tier of every craftsman within 40 m |
 | `infusePriceProbe` | Price experiment (spec §6.3): for the equipped steel sword and chest armor, log the fee anchor (player-side market value) next to the nearest craftsman's price for a copy of the same item, vanilla's shop modifier and his repair price per point. Compare runs at craftsmen in different regions. |
 | `infusePriceProbeAll` | Same probe without travelling: spawns 10 real community craftsman templates (Velen, Novigrad, Skellige — their merchant data comes with the template), probes each, despawns them after 2 min. The zone factor still follows where you stand. If a line says "could not add copies", run it again (re-probes the spawned ones). |
+| `infuseBalanceReport` | Cost check for long NG+ runs (spec §6.4), preview only — nothing is charged. Raises real items to L30/60/100/150 and logs one `balance:` line per item, level and gap (5 and 20 levels; the sacrifice is a copy of the target raised by the gap): the fee at a journeyman, master and grandmaster craftsman, the fee anchor, both items' sell prices, the materials to buy and what the salvage covers. Items: ordinary armor (`Light armor 01`), ordinary steel sword (`Novigraadan sword 1`), relic (`Abarad`, master and up), Witcher armor (`Bear Armor 1`, grandmaster only). Spawns test craftsmen (grandmasters from the Toussaint templates, so Blood and Wine is needed); a fresh spawn isn't ready at once — if the notification says craftsmen were just spawned, run it again. |
 | `infuseSetConfig(key, n)` | Dev config override via facts: `fee` (multiplier on the craftsman's full-repair price ×1000, 0 = default 1.0), `minfee`, `salvage` (1 = off), `materials` (1 = no material requirements), `debug` (1 = per-item grid log) |
 | `infuseDumpConfig` | Log the effective configuration |
 | `infuseTestStrings` | Check that the mod's `.w3strings` load |

@@ -59,8 +59,11 @@ lower bound. The grid log prints the real value per item (`target value N`) for 
 
 ## Open balancing questions (need playtesting)
 
-- Is 25% of the target's value per 10 levels right? NG+ Witcher gear values are unknown until
-  read from the grid log.
+`infuseBalanceReport` (dev console, tests/modInfusion/README.md) logs fees and materials for real
+items at L30/60/100/150 and every craftsman tier, so these can be judged without a long NG+ run.
+
+- Is the fee (the craftsman's full-repair price × rank × gap) still meaningful at L100+, and
+  not prohibitive? Spec §6.4.
 - Should the recipe use fewer materials for ordinary gear (e.g. drop the smallest components)?
 - 3-set cap for very large NG+ jumps — enough?
 - Price of rare materials vs. crowns: is buying them at merchants a viable path?

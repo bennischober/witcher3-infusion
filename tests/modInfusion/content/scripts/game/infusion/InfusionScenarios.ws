@@ -1126,7 +1126,7 @@ class W3InfusionScenarioRunner extends IScriptable
 	// Helpers
 	// =====================================================================
 
-	private function Spawn( itemName : name, out id : SItemUniqueId ) : bool
+	protected function Spawn( itemName : name, out id : SItemUniqueId ) : bool
 	{
 		var ids : array<SItemUniqueId>;
 
@@ -1141,7 +1141,7 @@ class W3InfusionScenarioRunner extends IScriptable
 		return true;
 	}
 
-	private function Level( id : SItemUniqueId ) : int
+	protected function Level( id : SItemUniqueId ) : int
 	{
 		return svc.ComputeItemLevel( inv, id );
 	}
@@ -1162,7 +1162,7 @@ class W3InfusionScenarioRunner extends IScriptable
 		return '';
 	}
 
-	private function BoostTo( id : SItemUniqueId, wanted : int ) : bool
+	protected function BoostTo( id : SItemUniqueId, wanted : int ) : bool
 	{
 		var ability : name;
 		var guard : int;
@@ -1345,7 +1345,7 @@ class W3InfusionScenarioRunner extends IScriptable
 		snapTaken = false;
 	}
 
-	private function RemoveScenarioItems()
+	protected function RemoveScenarioItems()
 	{
 		var all : array<SItemUniqueId>;
 		var i : int;
@@ -1365,10 +1365,21 @@ class W3InfusionScenarioRunner extends IScriptable
 	// NULL = SKIP: spawn failed or the entity has no craftsman component yet.
 	private function GetCraftsman( armorer : bool, master : bool ) : CGameplayEntity
 	{
+		if ( master )
+		{
+			return GetCraftsmanAt( armorer, ECL_Master );
+		}
+		return GetCraftsmanAt( armorer, ECL_Journeyman );
+	}
+
+	// Same for any tier: journeyman (Velen), master (Novigrad), grandmaster
+	// (Toussaint, Blood and Wine templates; tiers read from the templates'
+	// W3CraftsmanComponent, docs/CRAFTSMAN_MAP.md).
+	protected function GetCraftsmanAt( armorer : bool, requiredLevel : ECraftsmanLevel ) : CGameplayEntity
+	{
 		var existing : array<CEntity>;
 		var comp : W3CraftsmanComponent;
 		var requiredType : ECraftsmanType;
-		var requiredLevel : ECraftsmanLevel;
 		var path : string;
 		var smith : CEntity;
 		var i : int;
@@ -1376,34 +1387,39 @@ class W3InfusionScenarioRunner extends IScriptable
 		if ( armorer )
 		{
 			requiredType = ECT_Armorer;
-			if ( master )
+			switch ( requiredLevel )
 			{
-				path = "gameplay\community\shops_and_craftsmen\novigrad\rich_district\novigrad_rich_district_armorer_01.w2ent";
-			}
-			else
-			{
-				path = "gameplay\community\shops_and_craftsmen\no_mans_land\barons_keep\barons_keep_armorer_01.w2ent";
+				case ECL_Journeyman:
+					path = "gameplay\community\shops_and_craftsmen\no_mans_land\barons_keep\barons_keep_armorer_01.w2ent";
+					break;
+				case ECL_Master:
+					path = "gameplay\community\shops_and_craftsmen\novigrad\rich_district\novigrad_rich_district_armorer_01.w2ent";
+					break;
+				case ECL_Grand_Master:
+					path = "dlc\bob\data\living_world\merchants\shop_38_city_west_armourer.w2ent";
+					break;
 			}
 		}
 		else
 		{
 			requiredType = ECT_Smith;
-			if ( master )
+			switch ( requiredLevel )
 			{
-				path = "gameplay\community\shops_and_craftsmen\novigrad\market\novigrad_market_smith_01.w2ent";
-			}
-			else
-			{
-				path = "gameplay\community\shops_and_craftsmen\no_mans_land\snots\snots_blacksmith_01.w2ent";
+				case ECL_Journeyman:
+					path = "gameplay\community\shops_and_craftsmen\no_mans_land\snots\snots_blacksmith_01.w2ent";
+					break;
+				case ECL_Master:
+					path = "gameplay\community\shops_and_craftsmen\novigrad\market\novigrad_market_smith_01.w2ent";
+					break;
+				case ECL_Grand_Master:
+					path = "dlc\bob\data\living_world\merchants\shop_39_city_west_blacksmith.w2ent";
+					break;
 			}
 		}
-		if ( master )
+		if ( path == "" )
 		{
-			requiredLevel = ECL_Master;
-		}
-		else
-		{
-			requiredLevel = ECL_Journeyman;
+			detail = "no craftsman template for this tier";
+			return NULL;
 		}
 
 		theGame.GetEntitiesByTag( 'InfusionTestSmith', existing );

@@ -16,6 +16,7 @@
 /** 	  infuseCraftsmanReport      - report nearby craftsmen (type/tier)
 /** 	  infusePriceProbe           - fee anchor vs. the nearest craftsman's prices
 /** 	  infusePriceProbeAll        - same for spawned regional craftsman templates
+/** 	  infuseBalanceReport        - fees and materials at L30-150 per craftsman tier
 /** 	  infuseSetConfig(key, n)    - dev config override (fee/minfee/salvage/materials/debug)
 /** 	  infuseDumpConfig           - log the effective configuration
 /** 	  infuseTestStrings          - check that the mod's strings load
@@ -27,7 +28,7 @@
 exec function infuseHelp()
 {
 	theGame.GetGuiManager().ShowNotification(
-		"Infusion: scenarioAll / scenario(name) / scenarioN(n) / scenarioList / scenarioPersistCheck / openMenu(armorer, master) / spawnTestPair(armor) / cleanTestItems / despawnTestSmith / craftsmanReport / setConfig(key, n) / dumpConfig / testStrings", 9.0 );
+		"Infusion: scenarioAll / scenario(name) / scenarioN(n) / scenarioList / scenarioPersistCheck / openMenu(armorer, master) / spawnTestPair(armor) / cleanTestItems / despawnTestSmith / craftsmanReport / balanceReport / setConfig(key, n) / dumpConfig / testStrings", 9.0 );
 }
 
 exec function infuseCleanTestItems()
@@ -51,6 +52,13 @@ exec function infusePriceProbe()
 exec function infusePriceProbeAll()
 {
 	InfusionPriceProbeTemplates();
+}
+
+// Spec §6.4: what infusions cost at L30/60/100/150 for every craftsman tier
+// (log). The first run spawns the craftsmen; run it again if it says so.
+exec function infuseBalanceReport()
+{
+	InfusionBalanceReport();
 }
 
 exec function infuseDespawnTestSmith()
