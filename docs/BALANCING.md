@@ -134,8 +134,7 @@ The top fees of the second run were too high for real income: about 10,000 crown
 after finishing the game (user feedback), and merchants run out of money, so NG+ loot doesn't
 turn into crowns one to one. Fees above `FEE_SOFT_CAP` (2,000) now grow with the square root:
 `fee = sqrt(raw × 2,000)`. A costlier job still costs more, but four times the raw fee only
-doubles the price. Fees up to 2,000 are unchanged. Second-run fees above 2,000, computed
-(not yet seen in game):
+doubles the price. Fees up to 2,000 are unchanged. Second-run fees above 2,000:
 
 | Raw | 2,138 | 2,400 | 3,150 | 3,600 | 4,200 | 4,800 | 6,300 | 7,200 | 8,400 | 9,200 | 10,800 | 12,150 | 15,000 | 18,000 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -146,6 +145,13 @@ L150 at a journeyman 2,898 instead of 4,200. Big jumps get relatively cheaper th
 steps, since each small step stays below the ceiling longer; the sacrifices they need still
 make small steps the slower path. `infuseSetConfig('softcap', 10000000)` switches the ceiling
 off in a dev build.
+
+**Third run** (2026-10-20, player level 61 with 10,607 crowns): `infuseScenarioAll` passed
+31/31, including `fee_soft_cap`. Every fee in `infuseBalanceReport` matched the table above,
+except the ordinary sword L60 → L150 at a grandmaster: 4,775 instead of 4,648. Its fee base
+came out at 1,900 instead of 1,800 this time (the freshly spawned sacrifice's repair price
+landed one crown per point higher), so the raw fee was 11,400. Fees up to 2,000 were
+unchanged. The highest fee is now 6,000 (relic L60 → L150 at a grandmaster).
 
 ## Open balancing questions (need playtesting)
 
