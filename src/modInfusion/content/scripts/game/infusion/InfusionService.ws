@@ -1070,12 +1070,35 @@ class W3InfusionService extends IScriptable
 	// Transaction (spec §13: validate -> verify -> commit -> verify)
 	// ---------------------------------------------------------------------
 
+	// Adds fixed step abilities until the target's UNCAPPED level equals the
+	// sacrifice's level (see ComputeItemLevel for why uncapped); returns how
+	// many were added, which is what Execute's rollback removes.
+	// Each autogen_fixed_* ability carries exactly one level's worth of stats,
+	// so the expected count is preview.levelGap; the small correction budget
+	// absorbs rounding or overhaul-mod drift. The loop condition (<) can never
+	// overshoot; the guard prevents runaway if ability addition were ever
+	// ineffective. The dev overlay wraps this to force a mismatch
+	// (tests/.../InfusionFaultInjection.ws).
+	private function ApplyLevelSteps( inv : CInventoryComponent, targetId : SItemUniqueId, preview : SInfusionPreview ) : int
+	{
+		var added, guard : int;
+
+		added = 0;
+		guard = preview.stepsToAdd + MAX_CORRECTION_STEPS;
+		while ( ComputeItemLevel( inv, targetId ) < preview.sacrificeLevel && added < guard )
+		{
+			inv.AddItemCraftedAbility( targetId, preview.stepAbility, true );
+			added += 1;
+		}
+		return added;
+	}
+
 	public function Execute( targetId : SItemUniqueId, sacrificeId : SItemUniqueId, out preview : SInfusionPreview, optional craftsman : CGameplayEntity ) : EInfusionError
 	{
 		var inv : CInventoryComponent;
 		var err : EInfusionError;
 		var levelBefore, levelAfter : int;
-		var added, guard : int;
+		var added : int;
 		var i : int;
 		var sacrificeName : name;
 
@@ -1109,32 +1132,8 @@ class W3InfusionService extends IScriptable
 		// 2) Begin deferred inventory update (verified vanilla pattern).
 		GetWitcherPlayer().StartInvUpdateTransaction();
 
-		// 3) Apply level: add fixed step abilities until the target's UNCAPPED level
-		//    equals the sacrifice's level (see ComputeItemLevel for why uncapped).
-		//    Each autogen_fixed_* ability carries exactly one level's worth of stats,
-		//    so the expected count is preview.levelGap; the
-		//    small correction budget absorbs rounding or overhaul-mod drift. The loop
-		//    condition (<) can never overshoot; the guard prevents runaway if ability
-		//    addition were ever ineffective.
-		added = 0;
-		guard = preview.stepsToAdd + MAX_CORRECTION_STEPS;
-		while ( ComputeItemLevel( inv, targetId ) < preview.sacrificeLevel && added < guard )
-		{
-			inv.AddItemCraftedAbility( targetId, preview.stepAbility, true );
-			added += 1;
-		}
-
-		// Fault injection (scenario rollback_mismatch): overshoot by real step
-		// abilities so the rollback below runs on genuine duplicates.
-		if ( GetConfig().TestForceLevelMismatch() )
-		{
-			guard = added + MAX_CORRECTION_STEPS;
-			while ( ComputeItemLevel( inv, targetId ) == preview.sacrificeLevel && added < guard )
-			{
-				inv.AddItemCraftedAbility( targetId, preview.stepAbility, true );
-				added += 1;
-			}
-		}
+		// 3) Apply level (see ApplyLevelSteps).
+		added = ApplyLevelSteps( inv, targetId, preview );
 
 		// 4) Verify the derived level actually moved as projected (spec §13.2).
 		//    If not, roll back everything we added and abort without consuming anything.

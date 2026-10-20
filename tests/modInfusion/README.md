@@ -70,7 +70,7 @@ enchantment and all previous abilities intact, crowns charged = fee, materials u
 | 30 | `fee_config` | doubling the fee multiplier doubles the fee, with the soft ceiling lifted (§15.4) |
 | 31 | `fee_soft_cap` | a fee above the soft ceiling becomes √(fee × ceiling), one below it is unchanged (§6.3, §15.4) |
 | 32 | `materials_by_tier` | a master armorer's recipe is the journeyman's × the master's material efficiency, rounded to the nearest, and smaller in total (§7.2) |
-| 33 | `rollback_mismatch` | the level check after applying fails (forced by the dev fact `InfCfg_TestLevelMismatch`, which makes `Execute` overshoot by real step abilities): `IFE_LevelMismatch`, and the pre-boosted target keeps its level, primary stat, step-ability count and damaged durability; crowns, materials and sacrifice untouched (§13.2–13.3) |
+| 33 | `rollback_mismatch` | the level check after applying fails (forced by the dev fact `InfCfg_TestLevelMismatch`: `InfusionFaultInjection.ws` wraps the service's `ApplyLevelSteps` with `@wrapMethod` and overshoots by real step abilities; release builds don't contain it): `IFE_LevelMismatch`, and the pre-boosted target keeps its level, primary stat, step-ability count and damaged durability; crowns, materials and sacrifice untouched (§13.2–13.3) |
 
 Every successful infusion scenario also checks that the popup's projected primary stat equals
 the result (§9.2).

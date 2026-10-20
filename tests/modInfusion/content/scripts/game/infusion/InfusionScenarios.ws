@@ -814,7 +814,8 @@ class W3InfusionScenarioRunner extends IScriptable
 	}
 
 	// Spec §13.2: the level check after applying fails (forced via
-	// InfCfg_TestLevelMismatch) -> every added step ability is removed and
+	// InfCfg_TestLevelMismatch and the ApplyLevelSteps wrapper in
+	// InfusionFaultInjection.ws) -> every added step ability is removed and
 	// nothing is consumed. The target is pre-boosted, so it already carries
 	// the same step ability: the rollback must remove only the new copies.
 	// The primary stat sums every copy, so it catches a wrong removal count
@@ -859,6 +860,11 @@ class W3InfusionScenarioRunner extends IScriptable
 		err = svc.Execute( t, s, p );
 		RestoreFact( "InfCfg_TestLevelMismatch", prevFact );
 
+		if ( err == IFE_Ok )
+		{
+			detail = "infusion succeeded - the ApplyLevelSteps wrapper (InfusionFaultInjection.ws) did not run";
+			return ISS_Fail;
+		}
 		if ( err != IFE_LevelMismatch )
 		{
 			detail = "expected '" + InfusionErrorToString( IFE_LevelMismatch ) + "', got '" + InfusionErrorToString( err ) + "'";
