@@ -79,6 +79,7 @@ function InfusionScenarioNames( out names : array<name> )
 	names.PushBack( 'fee_formula' );
 	names.PushBack( 'fee_by_gap' );
 	names.PushBack( 'fee_config' );
+	names.PushBack( 'fee_soft_cap' );
 }
 
 class W3InfusionScenarioRunner extends IScriptable
@@ -225,6 +226,8 @@ class W3InfusionScenarioRunner extends IScriptable
 				return ScenarioFeeByGap();
 			case 'fee_config':
 				return ScenarioFeeConfig();
+			case 'fee_soft_cap':
+				return ScenarioFeeSoftCap();
 		}
 		detail = "unknown scenario - run infuseScenarioList";
 		return ISS_Skip;
@@ -951,7 +954,8 @@ class W3InfusionScenarioRunner extends IScriptable
 	}
 
 	// The fee follows the configured formula: anchor x multiplier x
-	// craftsman x target tier x gap, floored and capped (spec §6.3; the
+	// craftsman x target tier x gap, softened above the soft ceiling,
+	// floored and capped (spec §6.3; the
 	// target-tier multiplier is part of it). Without a craftsman the anchor
 	// is the value fallback (ordinary and Witcher target); at a journeyman
 	// armorer it is his full-repair price, read here independently from his
@@ -991,7 +995,7 @@ class W3InfusionScenarioRunner extends IScriptable
 		var t, s : SItemUniqueId;
 		var p : SInfusionPreview;
 		var err : EInfusionError;
-		var quality, craftsmanLevel, perPoint, total, sacrificePerPoint : int;
+		var quality, craftsmanLevel, perPoint, total, sacrificePerPoint, softCap : int;
 		var anchor, expected : float;
 		var comp : W3CraftsmanComponent;
 		var label : string;
@@ -1028,6 +1032,12 @@ class W3InfusionScenarioRunner extends IScriptable
 		expected = anchor * cfg.GetFeeMultiplier()
 			* cfg.GetCraftsmanMultiplier( craftsmanLevel ) * cfg.GetTargetTierMultiplier( quality )
 			* cfg.GetLevelGapMultiplier( p.levelGap );
+		softCap = cfg.GetFeeSoftCap();
+		if ( softCap > 0 && expected > softCap )
+		{
+			expected = SqrtF( expected * softCap );
+			label += ", softened";
+		}
 		expected = ClampF( expected, cfg.GetMinLaborFee(), cfg.GetMaxLaborFee() );
 		detail = targetName + " (" + label + ", quality " + quality + ", tier x" + cfg.GetTargetTierMultiplier( quality )
 			+ "): fee " + p.laborFee + ", formula " + RoundMath( expected );
@@ -1068,13 +1078,14 @@ class W3InfusionScenarioRunner extends IScriptable
 	}
 
 	// A config change changes the price (spec §15.4): doubling the fee
-	// multiplier doubles the fee (within rounding).
+	// multiplier doubles the fee (within rounding). The soft ceiling is
+	// lifted so the fee stays linear at any player level.
 	private function ScenarioFeeConfig() : EInfScnStatus
 	{
 		var t, s : SItemUniqueId;
 		var pa, pb : SInfusionPreview;
 		var errA, errB : EInfusionError;
-		var prevFee, prevMin : int;
+		var prevFee, prevMin, prevCap : int;
 		var multiplier : float;
 
 		if ( !Spawn( 'Novigraadan sword 1', t ) || !Spawn( 'Novigraadan sword 3', s ) || !BoostTo( s, Level( t ) + 10 ) )
@@ -1083,10 +1094,12 @@ class W3InfusionScenarioRunner extends IScriptable
 		}
 		prevMin = SetFactTemp( "InfCfg_MinFee", 1 );
 		prevFee = SetFactTemp( "InfCfg_BaseFee", 0 );
+		prevCap = SetFactTemp( "InfCfg_SoftCap", svc.GetPublicConfig().GetMaxLaborFee() );
 		errA = svc.Preview( t, s, pa, NULL );
 		multiplier = svc.GetPublicConfig().GetFeeMultiplier();
 		FactsSet( "InfCfg_BaseFee", RoundMath( multiplier * 2000 ) );
 		errB = svc.Preview( t, s, pb, NULL );
+		RestoreFact( "InfCfg_SoftCap", prevCap );
 		RestoreFact( "InfCfg_BaseFee", prevFee );
 		RestoreFact( "InfCfg_MinFee", prevMin );
 		if ( errA != IFE_Ok || errB != IFE_Ok )
@@ -1096,6 +1109,55 @@ class W3InfusionScenarioRunner extends IScriptable
 		}
 		detail = "multiplier " + multiplier + ": " + pa.laborFee + ", multiplier " + ( multiplier * 2 ) + ": " + pb.laborFee + " crowns";
 		if ( pa.laborFee <= 1 || Abs( pb.laborFee - 2 * pa.laborFee ) > 2 )
+		{
+			return ISS_Fail;
+		}
+		return ISS_Pass;
+	}
+
+	// The soft ceiling (spec §6.4): a fee below it is unchanged, a fee
+	// above it becomes sqrt(fee x ceiling) - lower, but still more than
+	// the ceiling. The ceiling is set relative to the unsoftened fee, so
+	// the check works at any player level.
+	private function ScenarioFeeSoftCap() : EInfScnStatus
+	{
+		var t, s : SItemUniqueId;
+		var pRaw, pLow, pHigh : SInfusionPreview;
+		var errRaw, errLow, errHigh : EInfusionError;
+		var prevMin, prevCap, cap, expected : int;
+		var rawFee : float;
+
+		if ( !Spawn( 'Novigraadan sword 1', t ) || !Spawn( 'Novigraadan sword 3', s ) || !BoostTo( s, Level( t ) + 20 ) )
+		{
+			return ISS_Fail;
+		}
+		prevMin = SetFactTemp( "InfCfg_MinFee", 1 );
+		prevCap = SetFactTemp( "InfCfg_SoftCap", svc.GetPublicConfig().GetMaxLaborFee() );
+		errRaw = svc.Preview( t, s, pRaw, NULL );
+		cap = Max( 1, pRaw.laborFee / 4 );
+		FactsSet( "InfCfg_SoftCap", cap );
+		errLow = svc.Preview( t, s, pLow, NULL );
+		FactsSet( "InfCfg_SoftCap", pRaw.laborFee * 2 );
+		errHigh = svc.Preview( t, s, pHigh, NULL );
+		RestoreFact( "InfCfg_SoftCap", prevCap );
+		RestoreFact( "InfCfg_MinFee", prevMin );
+		if ( errRaw != IFE_Ok || errLow != IFE_Ok || errHigh != IFE_Ok )
+		{
+			detail = "preview refused: " + InfusionErrorToString( errRaw ) + " / " + InfusionErrorToString( errLow )
+				+ " / " + InfusionErrorToString( errHigh );
+			return ISS_Fail;
+		}
+		rawFee = pRaw.laborFee;
+		expected = RoundMath( SqrtF( rawFee * cap ) );
+		detail = "unsoftened " + pRaw.laborFee + "; ceiling " + cap + ": " + pLow.laborFee + " (expected " + expected
+			+ "); ceiling " + ( pRaw.laborFee * 2 ) + ": " + pHigh.laborFee;
+		if ( pRaw.laborFee < 8 )
+		{
+			detail += " - fee too small to soften";
+			return ISS_Skip;
+		}
+		if ( Abs( pLow.laborFee - expected ) > 1 || pLow.laborFee <= cap || pLow.laborFee >= pRaw.laborFee
+			|| pHigh.laborFee != pRaw.laborFee )
 		{
 			return ISS_Fail;
 		}

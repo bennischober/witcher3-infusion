@@ -17,7 +17,7 @@
 /** 	  infusePriceProbe           - fee anchor vs. the nearest craftsman's prices
 /** 	  infusePriceProbeAll        - same for spawned regional craftsman templates
 /** 	  infuseBalanceReport        - fees and materials at L60-150 per craftsman tier
-/** 	  infuseSetConfig(key, n)    - dev config override (fee/minfee/salvage/materials/debug)
+/** 	  infuseSetConfig(key, n)    - dev config override (fee/minfee/softcap/salvage/materials/debug)
 /** 	  infuseDumpConfig           - log the effective configuration
 /** 	  infuseTestStrings          - check that the mod's strings load
 /**
@@ -115,6 +115,7 @@ exec function infuseTestStrings()
 //   infuseSetConfig('fee', 1500)     -> fee = 1.5 x the craftsman's full repair (x1000 stored)
 //   infuseSetConfig('fee', 0)        -> clear override
 //   infuseSetConfig('minfee', 25)    -> minimum labor fee
+//   infuseSetConfig('softcap', 5000) -> soft fee ceiling (0 = default; 10000000 = off)
 //   infuseSetConfig('salvage', 1)    -> disable salvage (full recipe, no discount)
 //   infuseSetConfig('salvage', 0)    -> re-enable salvage
 //   infuseSetConfig('materials', 1)  -> no material requirements (labor fee only)
@@ -149,6 +150,19 @@ exec function infuseSetConfig( key : string, value : int )
 		{
 			FactsRemove( "InfCfg_MinFee" );
 			LogChannel( 'Infusion', "config override: min fee cleared (default 10)" );
+		}
+	}
+	else if ( keyNorm == "softcap" )
+	{
+		if ( value > 0 )
+		{
+			FactsSet( "InfCfg_SoftCap", value );
+			LogChannel( 'Infusion', "config override: soft fee ceiling = " + value );
+		}
+		else
+		{
+			FactsRemove( "InfCfg_SoftCap" );
+			LogChannel( 'Infusion', "config override: soft fee ceiling cleared (default 2000)" );
 		}
 	}
 	else if ( keyNorm == "salvage" )
@@ -192,7 +206,7 @@ exec function infuseSetConfig( key : string, value : int )
 	}
 	else
 	{
-		LogChannel( 'Infusion', "infuseSetConfig: unknown key '" + key + "' (fee | minfee | salvage | materials | debug)" );
+		LogChannel( 'Infusion', "infuseSetConfig: unknown key '" + key + "' (fee | minfee | softcap | salvage | materials | debug)" );
 	}
 
 	theGame.GetGuiManager().ShowNotification( "config override applied - see log", 6.0 );
@@ -212,6 +226,7 @@ exec function infuseDumpConfig()
 	LogChannel( 'Infusion', "config dump: feeMultiplier=" + c.GetFeeMultiplier()
 		+ " fallbackValueFraction=" + c.GetFallbackValueFraction()
 		+ " minFee=" + c.GetMinLaborFee()
+		+ " softCap=" + c.GetFeeSoftCap()
 		+ " materials=" + c.RequireCraftingMaterials()
 		+ " salvage=" + c.SalvageEnabled()
 		+ " salvageMult=" + c.SalvageYieldMultiplier()
