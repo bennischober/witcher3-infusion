@@ -57,9 +57,10 @@ The minimum craftsman rank per item tier: `1` journeyman, `2` master, `3` grandm
 fee = full repair price × FEE_REPAIR_MULT × level-gap factor × craftsman multiplier × item tier multiplier
 ```
 
-The **full repair price** is what this craftsman charges to repair the target from 0 to 100 %
+The **full repair price** is what this craftsman charges to repair an item from 0 to 100 %
 durability — the game's own repair price, so it follows the item's value, NG+ and the region
-(Novigrad and Skellige are more expensive than Velen). The **level-gap factor** is
+(Novigrad and Skellige are more expensive than Velen). The fee uses the target's or the
+sacrifice's, whichever is higher, so a big jump costs what the new level is worth. The **level-gap factor** is
 `gap ÷ LEVELS_PER_FULL_SET`, at most `MAX_SETS` — a 10-level jump costs one full repair at a
 journeyman.
 
@@ -71,7 +72,7 @@ journeyman.
 | `MULT_MASTER` | `1.5` | 0–100 | … master. |
 | `MULT_GRAND_MASTER` | `2.0` | 0–100 | … grandmaster. |
 | `MULT_ARCH_MASTER` | `2.5` | 0–100 | … arch master. |
-| `TIER_MULT_1` … `TIER_MULT_5` | `1.0` | 0–100 | Fee multiplier by item tier: 1 common, 2 master-crafted, 3 magic, 4 relic, 5 Witcher gear. The repair price already grows with the item's value, so all are 1.0. |
+| `TIER_MULT_1` … `TIER_MULT_5` | `1.0`, `1.0`, `1.0`, `1.5`, `2.0` | 0–100 | Fee multiplier by the target's tier: 1 common, 2 master-crafted, 3 magic, 4 relic, 5 Witcher gear. The repair price barely grows with rarity, so relics and Witcher gear get their own. |
 | `LEVELS_PER_FULL_SET` | `10` | 1–1000 | Levels per "full" fee and material set (smaller = larger jumps cost more). |
 | `MAX_SETS` | `3` | 0.1–100 | Cap of the level-gap factor: huge NG+ jumps cost at most this many sets. |
 | `FALLBACK_VALUE_FRACTION` | `0.25` | 0–100 | Only used if the craftsman has no repair price: fee anchor = this fraction of the item's value. |

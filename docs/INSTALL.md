@@ -48,7 +48,8 @@ Rules in short:
 - The sacrifice must have a **higher** level and must not be equipped.
 - Blacksmiths infuse swords, armorers infuse armor. Relics need a **master**, Witcher gear a
   **grandmaster** or better.
-- The fee depends on the craftsman's rank and region and on the size of the jump.
+- The fee depends on the craftsman's rank and region, the size of the jump and the item:
+  relics and Witcher gear cost more.
 
 ## Update
 

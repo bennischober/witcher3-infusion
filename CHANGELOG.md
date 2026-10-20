@@ -3,6 +3,12 @@
 Versions follow [semantic versioning](https://semver.org). 0.x: feature-complete, not yet
 playtested in long New Game+ runs or alongside other mods.
 
+## Unreleased
+
+- Big level jumps cost what the new level is worth: the labor fee is based on the craftsman's
+  repair price of the target or the sacrifice, whichever is higher.
+- Relics cost 1.5× and Witcher gear 2× the labor fee of ordinary gear.
+
 ## 0.9.0 — first public release
 
 - Infusion tab in every blacksmith and armorer menu, right after Repair: pick a target, then a

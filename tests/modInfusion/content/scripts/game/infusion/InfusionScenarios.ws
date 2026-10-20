@@ -991,7 +991,7 @@ class W3InfusionScenarioRunner extends IScriptable
 		var t, s : SItemUniqueId;
 		var p : SInfusionPreview;
 		var err : EInfusionError;
-		var quality, craftsmanLevel, perPoint, total : int;
+		var quality, craftsmanLevel, perPoint, total, sacrificePerPoint : int;
 		var anchor, expected : float;
 		var comp : W3CraftsmanComponent;
 		var label : string;
@@ -1011,15 +1011,18 @@ class W3InfusionScenarioRunner extends IScriptable
 		craftsmanLevel = 0;   // no craftsman (test bypass): priced like a journeyman
 		if ( craftsman )
 		{
+			// Fee base = the higher full-repair price of target and sacrifice.
 			craftsman.GetInventory().GetItemPriceRepair( inv.GetItem( t ), perPoint, total );
 			anchor = perPoint * inv.GetItemMaxDurability( t );
+			craftsman.GetInventory().GetItemPriceRepair( inv.GetItem( s ), sacrificePerPoint, total );
+			anchor = MaxF( anchor, sacrificePerPoint * inv.GetItemMaxDurability( s ) );
 			comp = (W3CraftsmanComponent)craftsman.GetComponentByClassName( 'W3CraftsmanComponent' );
 			craftsmanLevel = comp.GetCraftsmanLevel( ECT_Armorer );
-			label = "repair " + perPoint + "/pt";
+			label = "repair " + perPoint + "/pt, sacrifice " + sacrificePerPoint + "/pt";
 		}
 		else
 		{
-			anchor = cfg.GetTargetValue( inv, t ) * cfg.GetFallbackValueFraction();
+			anchor = MaxF( cfg.GetTargetValue( inv, t ), cfg.GetTargetValue( inv, s ) ) * cfg.GetFallbackValueFraction();
 			label = "value fallback";
 		}
 		expected = anchor * cfg.GetFeeMultiplier()

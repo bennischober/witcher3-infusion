@@ -783,7 +783,7 @@ class W3InfusionService extends IScriptable
 
 		preview.stepsToAdd = gap;
 		preview.newLevel = targetLevel + gap;
-		preview.laborFee = GetLaborFee( inv, targetId, gap, quality, craftsmanLevel, craftsman );
+		preview.laborFee = GetLaborFee( inv, targetId, sacrificeId, gap, quality, craftsmanLevel, craftsman );
 		ProjectPrimaryStat( inv, targetId, targetData, preview );
 		preview.errorCode = IFE_Ok;
 		return preview.errorCode;
@@ -976,17 +976,17 @@ class W3InfusionService extends IScriptable
 
 	// ---------------------------------------------------------------------
 	// Labor fee (auto-balanced: the craftsman's full-repair price of the
-	// target, scaled by craftsman tier, target tier, and level gap — spec
-	// §6.2/§6.3)
+	// target or the sacrifice, whichever is higher, scaled by craftsman
+	// tier, target tier, and level gap — spec §6.2/§6.3)
 	// ---------------------------------------------------------------------
 
-	// The fee anchor: what this craftsman charges for repairing the target
-	// from 0 to full durability. GetItemPriceRepair prices per durability
+	// The fee anchor of one item: what this craftsman charges for repairing
+	// it from 0 to full durability. GetItemPriceRepair prices per durability
 	// point on the craftsman's own inventory (the call the vanilla repair
 	// tab makes), so the item's value and the craftsman's regional economy
 	// flow through; the per-point price is whole crowns, rounded up (cheap
 	// items: 1 crown per point). Without a craftsman (scenario tests) or
-	// repair price: a fraction of the target's market value.
+	// repair price: a fraction of the item's market value.
 	public function GetFeeAnchor( inv : CInventoryComponent, targetId : SItemUniqueId, optional craftsman : CGameplayEntity ) : float
 	{
 		var shopInv : CInventoryComponent;
@@ -1009,7 +1009,17 @@ class W3InfusionService extends IScriptable
 		return GetConfig().GetTargetValue( inv, targetId ) * GetConfig().GetFallbackValueFraction();
 	}
 
-	private function GetLaborFee( inv : CInventoryComponent, targetId : SItemUniqueId, gap : int, quality : int, craftsmanLevel : int, craftsman : CGameplayEntity ) : int
+	// The fee base: the higher anchor of target and sacrifice. The target's
+	// own anchor reflects its current (lower) level, so a big jump from a
+	// low-level target would be priced at the old level; the sacrifice's
+	// anchor stands in for the level the target is raised to (balance
+	// report 2026-10-20, BALANCING.md).
+	public function GetFeeBase( inv : CInventoryComponent, targetId : SItemUniqueId, sacrificeId : SItemUniqueId, optional craftsman : CGameplayEntity ) : float
+	{
+		return MaxF( GetFeeAnchor( inv, targetId, craftsman ), GetFeeAnchor( inv, sacrificeId, craftsman ) );
+	}
+
+	private function GetLaborFee( inv : CInventoryComponent, targetId : SItemUniqueId, sacrificeId : SItemUniqueId, gap : int, quality : int, craftsmanLevel : int, craftsman : CGameplayEntity ) : int
 	{
 		var fee : float;
 		var mult : float;
@@ -1019,7 +1029,7 @@ class W3InfusionService extends IScriptable
 			* GetConfig().GetTargetTierMultiplier( quality )
 			* GetConfig().GetLevelGapMultiplier( gap );
 
-		fee = GetFeeAnchor( inv, targetId, craftsman ) * GetConfig().GetFeeMultiplier() * mult;
+		fee = GetFeeBase( inv, targetId, sacrificeId, craftsman ) * GetConfig().GetFeeMultiplier() * mult;
 
 		// Labor floor: small upgrades of cheap items still cost labor.
 		minFee = GetConfig().GetMinLaborFee();

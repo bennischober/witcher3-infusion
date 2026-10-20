@@ -150,7 +150,8 @@ on items).
   - `GetRepairPriceModifier` is 1.0 at every craftsman and the funds type (Poor/Avg/Rich)
     doesn't match the price differences — neither is the regional knob, and the native factor
     isn't readable from script.
-  - → The fee anchor is the craftsman's full-repair price (`W3InfusionService.GetFeeAnchor`).
+  - → The fee anchor is the craftsman's full-repair price (`W3InfusionService.GetFeeAnchor`);
+    the fee uses the higher one of target and sacrifice (`GetFeeBase`).
 
 ## 7. Exclusions
 
@@ -171,10 +172,11 @@ tests/modInfusion/README.md) for the service, the manual checklist in [UI.md](UI
 1. §6.2/§10: craftsman tiers are Journeyman / Master / Grand Master / Arch Master (no Amateur).
 2. §5.2: salvage uses native `recycling_parts`; the per-category table is only a fallback for
    items without data.
-3. §6.3: the labor fee's base is **this craftsman's full-repair price of the target**
-   (`GetItemPriceRepair` × max durability; target value × 0.25 as fallback), not a fixed base
-   fee — it follows level, rarity, patch prices and the craftsman's regional economy (§6). The
-   spec allows refining the formula during testing.
+3. §6.3: the labor fee's base is **this craftsman's full-repair price of the target or the
+   sacrifice, whichever is higher** (`GetItemPriceRepair` × max durability; item value × 0.25
+   as fallback), not a fixed base fee — it follows level, rarity, patch prices and the
+   craftsman's regional economy (§6). The spec allows refining the formula during testing; the
+   sacrifice's price was added after the balance report (2026-10-20, BALANCING.md).
 4. §5.4/§7.1: the level gap scales both the fee (labor) and the recipe (physical work) —
    deliberate double scaling. Details: [BALANCING.md](BALANCING.md).
 5. §3.3: compatibility is by item **category** (chest↔chest, boots↔boots, steel↔steel,

@@ -2,10 +2,10 @@
 /** 	Witcher Gear Infusion — configuration
 /** 	Balance model and knobs in one place.
 /**
-/** 	Auto-balance: the labor fee anchors to the TARGET item's market
-/** 	value (GetItemPriceModified — the game's own level/tier-scaled price)
-/** 	as a fraction, so official economy updates rebalance infusion fees
-/** 	automatically. Multipliers (§6.2) shape it; a labor floor keeps
+/** 	Auto-balance: the labor fee anchors to the craftsman's full-repair
+/** 	price of the target or the sacrifice, whichever is higher (the game's
+/** 	own level-scaled, regional price), so official economy updates
+/** 	rebalance infusion fees automatically. Multipliers (§6.2) shape it; a labor floor keeps
 /** 	cheap targets meaningful. Model: docs/BALANCING.md.
 /**
 /** 	Settings menu: NOT used (the Remastered settings UI is broken for mod
@@ -51,12 +51,14 @@ class W3InfusionConfig extends IScriptable
 
 	// ============================= labor fees ==============================
 
-	// The fee is anchored to what THIS craftsman charges for a full repair of
-	// the TARGET (vanilla repair service: price per durability point x max
-	// durability). That price follows the item's level, rarity and NG+ value
-	// and the craftsman's regional economy (measured: Novigrad +17 %,
-	// Skellige +8 % over Velen; TECHNICAL_DISCOVERY.md §6). The sacrifice
-	// doesn't matter - sacrifices are usually cheap loot.
+	// The fee is anchored to what THIS craftsman charges for a full repair
+	// (vanilla repair service: price per durability point x max durability)
+	// of the target or the sacrifice, whichever is higher. That price follows
+	// the item's level, rarity and NG+ value and the craftsman's regional
+	// economy (measured: Novigrad +17 %, Skellige +8 % over Velen;
+	// TECHNICAL_DISCOVERY.md §6). The sacrifice's price stands in for the
+	// level the target is raised to: priced on the target alone, a big jump
+	// from a low level cost less than a small one at a high level.
 	// fee = fullRepair * FEE_REPAIR_MULT * gapFactor * craftsman * tier.
 	// At a 10-level gap the fee is one full repair at this craftsman.
 	private const var FEE_REPAIR_MULT : float;
@@ -88,9 +90,11 @@ class W3InfusionConfig extends IScriptable
 	private const var MULT_ARCH_MASTER : float;
 	default MULT_ARCH_MASTER = 2.5f;
 
-	// Target tier multipliers by item quality (1..5) (spec §6.3 knob). 1.0 by
-	// default: the target's market value already scales with its tier
-	// (Witcher armor ~4,500 base vs ~250 for ordinary armor).
+	// Target tier multipliers by item quality (1..5) (spec §6.3 knob). The
+	// repair price barely follows rarity at high levels (balance report
+	// 2026-10-20: Witcher armor ~1.4x ordinary armor, a relic sword ~1.1x an
+	// ordinary sword at L150), so relics and Witcher gear - the items that
+	// need a master or grandmaster - get their own multiplier.
 	private const var TIER_MULT_1 : float;
 	default TIER_MULT_1 = 1.0f;
 
@@ -101,10 +105,10 @@ class W3InfusionConfig extends IScriptable
 	default TIER_MULT_3 = 1.0f;
 
 	private const var TIER_MULT_4 : float;
-	default TIER_MULT_4 = 1.0f;
+	default TIER_MULT_4 = 1.5f;   // relic
 
 	private const var TIER_MULT_5 : float;
-	default TIER_MULT_5 = 1.0f;
+	default TIER_MULT_5 = 2.0f;   // Witcher gear
 
 	// Level-gap factor (spec §7.1), shared by the fee and the material
 	// recipe: gapFactor = gap / LEVELS_PER_FULL_SET, capped at MAX_SETS.

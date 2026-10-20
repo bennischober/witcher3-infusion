@@ -9,9 +9,10 @@ r4data) and applies the same balancing formulas as the mod
   gapFactor = min(gap / LEVELS_PER_FULL_SET, MAX_SETS)
   covered   = min(sacrifice salvage, recipe) per recipe material
   remaining = recipe - covered
-  fee       = max(MIN_FEE, round(targetValue x FEE_FRACTION x gapFactor x craftsman x tier))
+  fee       = max(MIN_FEE, round(max(targetValue, sacrificeValue) x FEE_FRACTION x gapFactor x craftsman x tier))
 
-The mod anchors the fee to the craftsman's full-repair price instead
+The mod anchors the fee to the craftsman's full-repair price of the target
+or the sacrifice, whichever is higher, instead
 (GetItemPriceRepair per point x max durability: regional, whole crowns per
 point rounded up). In Velen that is about targetValue x 0.25, which this
 tool uses; Novigrad is ~17 % and Skellige ~8 % higher, and cheap items pay
@@ -19,10 +20,11 @@ vanilla's rounding (1 crown per point minimum).
 
 KEEP THE CONSTANTS BELOW IN SYNC WITH InfusionConfig.ws.
 
-Recipes are exact (game data). The fee needs the target's in-game value
-(GetItemPriceModified is native and scales with level/NG+): pass it with
---value (the crown value in the item tooltip). Without --value the base
-price from the XML is used - a rough lower bound, labelled as such.
+Recipes are exact (game data). The fee needs the in-game values
+(GetItemPriceModified is native and scales with level/NG+): pass them with
+--value and --sacrifice-value (the crown values in the item tooltips).
+Without them the base prices from the XML are used - a rough lower bound,
+labelled as such.
 
 Examples:
   python tools/infusion-cost-table.py --target "Bear Armor 4" --sacrifice "Light armor 06" --gap 9 --craftsman grandmaster
@@ -45,7 +47,7 @@ LEVELS_PER_FULL_SET = 10.0
 MAX_SETS = 3.0
 SALVAGE_YIELD_MULT = 1.0
 CRAFTSMAN_MULT = {"journeyman": 1.0, "master": 1.5, "grandmaster": 2.0, "archmaster": 2.5}
-TIER_MULT = {1: 1.0, 2: 1.0, 3: 1.0, 4: 1.0, 5: 1.0}
+TIER_MULT = {1: 1.0, 2: 1.0, 3: 1.0, 4: 1.5, 5: 2.0}
 
 # Fallback recipes for targets without dismantle data (InfusionService.ws
 # GetRecipeForCategory).
@@ -198,7 +200,9 @@ def cmd_pair(items, args):
         print(f"WARNING: categories differ ({target['category']} vs {sacrifice['category']}) - the mod rejects this pair")
     recipe, from_data = recipe_for(target, args.gap)
     covered, remaining = apply_salvage(recipe, salvage_of(sacrifice))
-    value = args.value if args.value is not None else target["price"]
+    target_value = args.value if args.value is not None else target["price"]
+    sacrifice_value = args.sacrifice_value if args.sacrifice_value is not None else sacrifice["price"]
+    value = max(target_value, sacrifice_value)
     fee = fee_for(value, args.gap, args.craftsman, args.quality)
 
     print(f"Target    : {args.target} [{target['category']}] ({target['source']})")
@@ -212,9 +216,10 @@ def cmd_pair(items, args):
         have = parse_have(args.have)
         short = [(n, q - have.get(n, 0)) for n, q in remaining if have.get(n, 0) < q]
         print(f"Missing   : {fmt(short)}" if short else "Missing   : - (all materials available)")
-    basis = "in-game value" if args.value is not None else "BASE price from XML (rough lower bound; pass --value)"
+    in_game = args.value is not None and args.sacrifice_value is not None
+    basis = "higher in-game value" if in_game else "higher value, BASE price from XML where not passed (rough lower bound)"
     print(f"Fee       : {fee} crowns  ({basis} {value:g} x {FEE_FRACTION} x {gap_factor(args.gap):.2f}"
-          f" x {CRAFTSMAN_MULT[args.craftsman]} {args.craftsman})")
+          f" x {CRAFTSMAN_MULT[args.craftsman]} {args.craftsman} x {TIER_MULT.get(args.quality, 1.0)} tier)")
 
 
 def cmd_table(items, args):
@@ -237,8 +242,9 @@ def main():
     ap.add_argument("--sacrifice")
     ap.add_argument("--gap", type=int, default=10, help="level gap (sacrifice level - target level)")
     ap.add_argument("--value", type=float, help="target's in-game crown value (tooltip); default: XML base price")
+    ap.add_argument("--sacrifice-value", type=float, help="sacrifice's in-game crown value (tooltip); default: XML base price")
     ap.add_argument("--craftsman", choices=sorted(CRAFTSMAN_MULT), default="journeyman")
-    ap.add_argument("--quality", type=int, default=1, help="target quality 1-5 (tier multiplier; all 1.0 by default)")
+    ap.add_argument("--quality", type=int, default=1, help="target quality 1-5 (tier multiplier: 4 relic x1.5, 5 Witcher gear x2.0)")
     ap.add_argument("--have", help='inventory counts, e.g. "Thread=112,Leather squares=5"')
     ap.add_argument("--table", metavar="CATEGORY", help="cost table for a category (armor, boots, pants, gloves, steelsword, silversword)")
     ap.add_argument("--find", metavar="TEXT", help="list item names containing TEXT")
