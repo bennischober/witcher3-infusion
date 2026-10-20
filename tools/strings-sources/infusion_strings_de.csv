@@ -1,17 +1,5 @@
 ;meta[language=de]
 ; id | key(hex) | key(str) | text
-2112345001||option_Enable Infusion|Infusion aktivieren
-2112345002||option_Infuse steel swords|Stahlschwerter infundieren
-2112345003||option_Infuse silver swords|Silberschwerter infundieren
-2112345004||option_Infuse armor pieces|Rüstungsteile infundieren
-2112345005||option_Base labor fee|Grundlohn
-2112345006||option_Salvage yield multiplier|Salvage-Multiplikator
-2112345007||option_Salvage reduces material cost|Salvage reduziert Materialkosten
-2112345008||option_Restore durability on infusion|Haltbarkeit wiederherstellen
-2112345009||option_Fee growth per level gap|Lohnanstieg pro Levelabstand
-2112345010||option_Fee growth cap (x10)|Lohnanstieg Obergrenze (x10)
-2112345011||option_Witcher gear requires tier (1-4)|Hexer-Ausrüstung benötigt Stufe (1-4)
-2112345012||panel_Witcher Gear Infusion|Witcher Gear Infusion
 2112345013||panel_button_inventory_infuse|Infundieren
 2112345014||panel_infusion_popup_title|Ausrüstung infundieren
 2112345015||panel_infusion_recovered|Durch Opfer gedeckt
