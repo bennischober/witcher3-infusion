@@ -11,6 +11,9 @@ playtested in long New Game+ runs or alongside other mods.
 - Soft fee ceiling: above 2,000 crowns the labor fee grows with the square root, so the most
   expensive New Game+ jobs cost about 6,000 instead of 18,000 crowns. Configurable
   (`FEE_SOFT_CAP`, 0 = off).
+- Higher-ranked craftsmen need fewer materials: a master 85 %, a grandmaster 70 %, an arch
+  master 60 % of the recipe. Configurable (`MAT_EFF_*`).
+- A sacrifice's tooltip shows how much of the recipe it covers ("Covered by sacrifice: 7/18").
 
 ## 0.9.0 — first public release
 

@@ -38,7 +38,8 @@ Mod managers that install into `mods\` (e.g. Vortex) work the same way.
 3. **Pick the target** — the item you want to keep. Items this craftsman can't infuse right now
    are greyed out; their tooltip says why (no higher-level item, rank too low, …).
 4. **Pick the sacrifice** — a same-type item with a higher level. The panel shows the fee and
-   the materials you still need. Select the target again to go back.
+   the materials you still need; the sacrifice's tooltip shows how much of the recipe it covers.
+   Select the target again to go back.
 5. Press **E** (or the gamepad's accept button) and confirm. The target takes the sacrifice's
    level and is fully repaired; the sacrifice is gone.
 
@@ -50,6 +51,8 @@ Rules in short:
   **grandmaster** or better.
 - The fee depends on the craftsman's rank and region, the size of the jump and the item:
   relics and Witcher gear cost more. Above 2,000 crowns fees rise more slowly.
+- Higher-ranked craftsmen need fewer materials (a master 85 %, a grandmaster 70 %, an arch
+  master 60 %).
 
 ## Update
 

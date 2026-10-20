@@ -83,10 +83,16 @@ journeyman. Above the **soft ceiling** the fee grows with the square root: with 
 ## Materials
 
 The recipe is the target's own crafting components (from the game's dismantling data) × the
-level-gap factor; the sacrifice's dismantling yield covers part of it.
+level-gap factor × the craftsman's material efficiency; the sacrifice's dismantling yield
+covers part of it. A higher-ranked craftsman needs fewer materials: the efficiency multiplies
+each material, rounded to the nearest whole amount, at least 1.
 
 | Setting | Default | Range | Effect |
 | --- | --- | --- | --- |
+| `MAT_EFF_JOURNEYMAN` | `1.0` | 0–10 | Material efficiency of a journeyman (1.0 = the full recipe). |
+| `MAT_EFF_MASTER` | `0.85` | 0–10 | Material efficiency of a master. |
+| `MAT_EFF_GRAND_MASTER` | `0.7` | 0–10 | Material efficiency of a grandmaster. |
+| `MAT_EFF_ARCH_MASTER` | `0.6` | 0–10 | Material efficiency of an arch master. |
 | `SALVAGE_YIELD_MULT` | `1.0` | 0–10 | Multiplier on what the sacrifice yields (rounded down). Recovered materials only reduce the recipe — the rest is discarded, never added to your inventory. |
 
 ## Not meant to be changed

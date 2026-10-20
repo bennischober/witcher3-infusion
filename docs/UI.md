@@ -34,7 +34,9 @@ Items of the other specialization (swords at an armorer) and hidden/body items s
 item) and **Opfer wählen** (every valid sacrifice), each priced for that exact pair. Selecting a
 sacrifice and pressing E opens the confirmation; selecting the target again, or switching tabs,
 returns to step 1. A sacrifice whose remaining materials are missing is **disabled** (greyed
-panel, no E button, denied sound, warning "Fehlende Materialien").
+panel, no E button, denied sound, warning "Fehlende Materialien"). A sacrifice's tooltip shows
+how much of the recipe it covers in its warning line ("Durch Opfer gedeckt: 7/18", material
+units: covered / recipe total); without material requirements the line is left out.
 
 **Confirmation popup** (vanilla price popup): "Ziel: … (61 -> 68)", the projected primary stat
 with the tooltip's label ("Rüstung: 129 -> 164"; spec §9.2), "Opfer: … (68)", materials
@@ -73,7 +75,9 @@ Key mechanics:
 - **Block reasons in the tooltip:** the `ShowItemTooltip` wrapper builds the tooltip data like
   vanilla and sets its `WarningMessage` line (vanilla uses it for "not for sale"; rendered by
   `TooltipInventory.as`). The tooltip follows the hovered item, which is the item the reason
-  belongs to. The page's disabled warning line is one text per page: "Hier nicht infundierbar"
+  belongs to. In step 2 the same line carries a sacrifice's recipe coverage
+  (`GetSacrificeCoverText`); a block reason takes precedence. The page's disabled warning line
+  is one text per page: "Hier nicht infundierbar"
   in step 1, "Fehlende Materialien" in step 2.
 - **Space hint off:** after the Repair tab, the vanilla "repair equipped items" Space hint
   stayed in the Infuse tab's bottom bar although every label update was correct (debug log). The
@@ -114,7 +118,8 @@ launch: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, Infusion tab.
    nothing on them. The reason fits on one line; no Space hint and Space does nothing, also when coming from
    Reparieren.
 3. Step 2: headers "Ziel (E: abbrechen)" / "Opfer wählen"; per-sacrifice fee and row; a sacrifice
-   with missing materials is disabled with "Fehlende Materialien".
+   with missing materials is disabled with "Fehlende Materialien". Hovering a sacrifice shows
+   "Durch Opfer gedeckt: n/m" on one line in its tooltip; the target's tooltip has no such line.
 4. Selecting the target again cancels; switching tabs cancels; Space does nothing.
 5. Popup: names, levels, projected stat (matches the tooltip after infusing), covered/additional
    materials with icons, note, price — everything inside the frame; accept infuses

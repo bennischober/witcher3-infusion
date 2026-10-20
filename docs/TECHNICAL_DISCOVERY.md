@@ -186,5 +186,10 @@ tests/modInfusion/README.md) for the service, the manual checklist in [UI.md](UI
 8. §10: settings are script constants in `InfusionConfig.ws` (clamped when read), not a settings
    menu — mod menus are broken on 5.01 (§1); this is the spec's own fallback. Player doc:
    [CONFIGURATION.md](CONFIGURATION.md).
+9. §7.2: the craftsman efficiency discount was added before playtesting, at the project
+   owner's request (the spec says only if playtesting asks for it). It reduces **materials**
+   only (master 0.85, grandmaster 0.7, arch master 0.6, rounded to the nearest per material),
+   not the fee, so it offsets the higher fee instead of stacking with it.
+   [BALANCING.md](BALANCING.md).
 
 Reviewed with the project owner on 2026-10-20: 3, 4, 5 and 8 stay as they are for 1.0.

@@ -9,13 +9,14 @@ regardless of tier (user feedback 2026-10-18).
 | Part | Formula | Source in code |
 | --- | --- | --- |
 | Gap factor | `min(gap / 10, 3)` — 10 levels = 1 "set", capped at 3 | `InfusionConfig.GetLevelGapMultiplier` (`LEVELS_PER_FULL_SET`, `MAX_SETS`) |
-| Recipe | the **target's own dismantle data** (`recycling_parts`, what the item is made of) × gap factor, rounded up per material, at least 1 each | `InfusionService.GetRecipeForTarget` |
+| Recipe | the **target's own dismantle data** (`recycling_parts`, what the item is made of) × gap factor, rounded up per material, then × the craftsman's material efficiency, rounded to the nearest (half up); at least 1 each | `InfusionService.GetRecipeForTarget` |
 | Material filter | only `crafting_ingredient` / `alchemy_ingredient` parts count (dismantle data also lists junk like faction insignia, hafts, whole items, food) | `IsRecipeMaterial` |
 | Fallback recipe | old per-category table, only for targets without usable dismantle data | `GetRecipeForCategory` |
 | Salvage | the sacrifice's dismantle data × `SALVAGE_YIELD_MULT` (1.0) | `GetSalvageYield`, `ApplySalvageMultiplier` |
 | Covered / you pay | per recipe material: covered = `min(salvage, recipe)`, pay = `recipe − salvage`; salvage of non-recipe materials is discarded (spec §5.4) | `ComputeRemainingMaterials` (`preview.covered`, `preview.materials`) |
 | Fee | `raw = fullRepair × 1.0 × gapFactor × craftsman × tier`; above the soft ceiling of 2,000 crowns `sqrt(raw × 2,000)` (`FEE_SOFT_CAP`, `SoftenFee`); then `max(10, round(…))`, at most 10,000,000 (overflow guard). `fullRepair` = this craftsman's vanilla repair price from 0 to full durability (`GetItemPriceRepair` per point × max durability) of the **target or the sacrifice, whichever is higher** — the sacrifice's price stands in for the level the target is raised to (see the balance report below). Follows level, rarity, NG+ and his **regional economy** (Novigrad +17 %, Skellige +8 % over Velen). Per point is whole crowns, rounded up — cheap items cost 1 crown per point. Without a craftsman (tests): the higher item value × 0.25 | `GetLaborFee`, `GetFeeBase`, `GetFeeAnchor` |
 | Craftsman | journeyman 1.0, master 1.5, grandmaster 2.0, arch master 2.5 | `MULT_*` |
+| Material efficiency | journeyman 1.0, master 0.85, grandmaster 0.7, arch master 0.6 on the recipe (spec §7.2) | `MAT_EFF_*`, `GetMaterialEfficiency` |
 | Tier | by the target's quality: relic (4) 1.5, Witcher gear (5) 2.0, everything else 1.0 — the repair price barely follows rarity at high levels (balance report below) | `TIER_MULT_*` |
 
 Config values are clamped when read (`InfusionConfig.ws`): multipliers (incl. `FEE_REPAIR_MULT`) to
@@ -33,7 +34,7 @@ TECHNICAL_DISCOVERY §9.
 | Target ← sacrifice, gap 9 | Recipe | Covered by sacrifice | You pay | Fee |
 | --- | --- | --- | --- | --- |
 | Light armor 01 ← Light armor 06 (journeyman, value 288) | Linen 2, Leather squares 4, Leather straps 2, Thread 4, Cotton 6 | Linen 2, Leather straps 2, Thread 3 | Leather squares 4, Thread 1, **Cotton 6** | 65 |
-| NGP Bear Armor 4 ← Light armor 06 (grandmaster) | Hardened leather 2, Chitin scale 3, Infused dust 3, Dwimeryte enriched ore 2, Glowing ore 4 | — | all of it | 2,861 (raw 4,091 softened; base price, Witcher ×2; in-game value higher) |
+| NGP Bear Armor 4 ← Light armor 06 (grandmaster) | Hardened leather 1, Chitin scale 2, Infused dust 2, Dwimeryte enriched ore 1, Glowing ore 3 (×0.7) | — | all of it | 2,861 (raw 4,091 softened; base price, Witcher ×2; in-game value higher) |
 | NGP Bear Armor 4 ← NGP Wolf Armor 4 (grandmaster) | same | everything | — | 2,861 (raw 4,091 softened; base price) |
 | Novigraadan sword 1 ← Novigraadan sword 3 (journeyman) | Leather squares 1, Iron ingot 3 | — | Leather squares 1, Iron ingot 3 | 10 |
 
@@ -153,6 +154,24 @@ came out at 1,900 instead of 1,800 this time (the freshly spawned sacrifice's re
 landed one crown per point higher), so the raw fee was 11,400. Fees up to 2,000 were
 unchanged. The highest fee is now 6,000 (relic L60 → L150 at a grandmaster).
 
+### Craftsman material efficiency (2026-10-20)
+
+Spec §7.2, added at the project owner's request before playtesting: a higher-ranked craftsman
+needs fewer materials, which gives a reason to visit a specialist and offsets his higher fee.
+The fee is unchanged. The gap-scaled recipe is multiplied per material by 0.85 (master), 0.7
+(grandmaster) or 0.6 (arch master) and rounded to the nearest whole amount, at least 1.
+Rounding up would erase the discount on small recipes (2 × 0.85 = 1.7 → 2). `Light armor 01`,
+gap 10:
+
+| Craftsman | Recipe | Total |
+| --- | --- | --- |
+| journeyman | Linen 2, Leather squares 4, Leather straps 2, Thread 4, Cotton 6 | 18 |
+| master | Linen 2, Leather squares 3, Leather straps 2, Thread 3, Cotton 5 | 15 |
+| grandmaster | Linen 1, Leather squares 3, Leather straps 1, Thread 3, Cotton 4 | 12 |
+| arch master | Linen 1, Leather squares 2, Leather straps 1, Thread 2, Cotton 4 | 10 |
+
+Material counts in the balance report runs above predate this change.
+
 ## Open balancing questions (need playtesting)
 
 - Should the recipe use fewer materials for ordinary gear (e.g. drop the smallest components)?
@@ -161,3 +180,4 @@ unchanged. The highest fee is now 6,000 (relic L60 → L150 at a grandmaster).
 - Top fees with the soft ceiling (up to about 6,000 crowns at L150, relic at a grandmaster):
   right for real NG+ income? Needs a long playthrough, the report can't tell.
 - Price of rare materials vs. crowns: is buying them at merchants a viable path?
+- Material efficiency (85 / 70 / 60 %): noticeable enough to make a master worth the trip?
