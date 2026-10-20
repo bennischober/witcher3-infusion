@@ -48,32 +48,12 @@ piece stays Ursine — it gets stronger, but it never inherits the sacrificed it
 
 ## Status
 
-Work in progress — see [INFUSION_SPEC.md](INFUSION_SPEC.md) for the full design specification
-and development milestones.
+**0.9.0 — first public release (beta).** The core system is complete and verified in game; no
+game script is overridden. Changes: [CHANGELOG.md](CHANGELOG.md).
 
-- ✅ **Milestone 1** — technical discovery (game internals verified: level derivation, autogen
-  ability system, salvage data, craftsman tiers)
-- ✅ **Milestone 2** — core infusion transaction, verified in game (level transfer, sacrifice
-  consumption, save/reload persistence)
-- ✅ **Milestone 3** — material recipes and salvage recovery, verified in game (discount math,
-  deduction, missing-materials rejection with nothing consumed, side-effect-free test harness)
-- ✅ **Milestone 4** — craftsman eligibility, verified in game (specialization rejection,
-  tier acceptance at journeyman and master, real service delivery at spawned craftsman NPCs;
-  see docs/CRAFTSMAN_MAP.md)
-- ✅ **Milestone 5** — pricing and configuration: economy-anchored fee (the craftsman's own
-  full-repair price of the target — regional, follows official economy updates; model in
-  docs/BALANCING.md), tier/tier-target/gap
-  multipliers per spec §6.2, curated defaults without a settings menu (Remastered settings UI
-  is broken for mod groups; decision documented), dev-only console overrides for live tuning
-- ✅ **Milestone 6** — production UI, verified in game: a dedicated **Infusion tab** in the
-  blacksmith/armorer menu, two-step infusion (pick target, then sacrifice) with a crafting-style
-  material row, confirmation popup with the full cost breakdown, craftsman gating, vanilla
-  Repair tab untouched, save/reload persistence (docs/UI.md). Spec coverage and the
-  remaining gaps: docs/SPEC_COVERAGE.md
-- 🟡 **Milestone 7** — release preparation: install guide, configuration doc, known issues,
-  changelog, release package with automated release check (`tools/package-release.ps1`,
-  version in `VERSION`), release build tested in game. Open: NG+ balance check, compatibility tests
-- 🔜 **Milestone 8** — optional bonus-merging extension (separate module)
+- Limitations and compatibility notes: [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md)
+- What the [spec](INFUSION_SPEC.md) asks for, what is done and what is open (compatibility
+  tests next to other mods; optional bonus merging): [docs/SPEC_COVERAGE.md](docs/SPEC_COVERAGE.md)
 
 ## Repository structure
 
