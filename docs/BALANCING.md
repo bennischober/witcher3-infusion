@@ -53,6 +53,9 @@ python tools/infusion-cost-table.py --find "Bear Armor"
 ```
 
 Recipes are exact (REDkit item XML, base game + DLC, hidden/quest items filtered like the mod).
+The tier multiplier uses the target's quality as the game computes it (`GetItemQuality`: the sum
+of the additive `quality` attribute of the item's base abilities, 1 if none); `--quality`
+overrides it. Quality ranges (e.g. 1–3, rolled by the game) never cross the relic tier.
 The fee needs the **in-game values** (`--value` and `--sacrifice-value`, the crown values in the
 item tooltips):
 `GetItemPriceModified` is native and scales with level and NG+, so XML base prices are only a

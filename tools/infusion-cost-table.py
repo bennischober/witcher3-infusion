@@ -22,6 +22,10 @@ vanilla's rounding (1 crown per point minimum).
 
 KEEP THE CONSTANTS BELOW IN SYNC WITH InfusionConfig.ws.
 
+The item quality (tier multiplier) is read like the game's GetItemQuality:
+the sum of the additive 'quality' attribute of the item's base abilities,
+1 when none has one. --quality overrides it.
+
 Recipes are exact (game data). The fee needs the in-game values
 (GetItemPriceModified is native and scales with level/NG+): pass them with
 --value and --sacrifice-value (the crown values in the item tooltips).
@@ -91,13 +95,33 @@ ITEM_RE = re.compile(r"<item\s(?P<attrs>[^>]*?)>(?P<body>.*?)</item>", re.S)
 ATTR_RE = re.compile(r'(\w+)\s*=\s*"([^"]*)"')
 PART_RE = re.compile(r'<parts\s+count\s*=\s*"(\d+)"\s*>\s*([^<]+?)\s*</parts>')
 TAGS_RE = re.compile(r"<tags>\s*([^<]*?)\s*</tags>")
+ABILITY_RE = re.compile(r'<ability\s+name\s*=\s*"([^"]+)"[^>]*>(.*?)</ability>', re.S)
+QUALITY_RE = re.compile(r"<quality\b([^>]*)>")
+BASE_ABILITIES_RE = re.compile(r"<base_abilities>(.*?)</base_abilities>", re.S)
+ABILITY_REF_RE = re.compile(r"<a>\s*([^<]+?)\s*</a>")
 # The mod never infuses these (InfusionService.IsExcludedItem).
 EXCLUDED_TAGS = {"NoShow", "NoShowInPlayersInventory", "Body", "Quest", "Aerondight", "AutogenUseLevelRange"}
 
 
+def ability_quality(body):
+    """(min, max) of an ability's additive quality attribute, or None."""
+    m = QUALITY_RE.search(body)
+    if not m:
+        return None
+    attrs = dict(ATTR_RE.findall(m.group(1)))
+    if attrs.get("type", "add") != "add":
+        return None
+    try:
+        lo = float(attrs.get("min", "0") or 0)
+        hi = float(attrs.get("max", attrs.get("min", "0")) or 0)
+    except ValueError:
+        return None
+    return lo, max(lo, hi)
+
+
 def load_items(redkit):
-    """name -> dict(category, price, parts, source). First definition wins;
-    base game files are read before DLC files, items/ before items_plus/."""
+    """name -> dict(category, price, parts, quality, source). First definition
+    wins; base game files are read before DLC files, items/ before items_plus/."""
     root = os.path.join(redkit, "r4data")
     patterns = [
         os.path.join(root, "gameplay", "items", "*.xml"),
@@ -106,12 +130,16 @@ def load_items(redkit):
         os.path.join(root, "dlc", "*", "data", "gameplay", "items_plus", "*.xml"),
     ]
     items = {}
+    abilities = {}  # name -> (min, max) quality; first definition wins
     for pattern in patterns:
         for path in sorted(glob.glob(pattern)):
             try:
                 text = open(path, encoding="utf-8", errors="replace").read()
             except OSError:
                 continue
+            for m in ABILITY_RE.finditer(text):
+                if m.group(1) not in abilities:
+                    abilities[m.group(1)] = ability_quality(m.group(2))
             for m in ITEM_RE.finditer(text):
                 attrs = dict(ATTR_RE.findall(m.group("attrs")))
                 name = attrs.get("name")
@@ -120,6 +148,8 @@ def load_items(redkit):
                 parts = [(p[1], int(p[0])) for p in PART_RE.findall(m.group("body"))]
                 tags_m = TAGS_RE.search(m.group("body"))
                 tags = {t.strip() for t in tags_m.group(1).split(",")} if tags_m else set()
+                base_m = BASE_ABILITIES_RE.search(m.group("body"))
+                base = ABILITY_REF_RE.findall(base_m.group(1)) if base_m else []
                 try:
                     price = float(attrs.get("price", "0") or 0)
                 except ValueError:
@@ -130,8 +160,20 @@ def load_items(redkit):
                     "parts": parts,
                     "source": os.path.relpath(path, root),
                     "excluded": bool(tags & EXCLUDED_TAGS),
+                    "abilities": base,
                 }
+    # GetItemQuality: sum of the additive quality attribute, 1 when zero.
+    # Ranges (e.g. 1-3) are rolled by the game; the tier uses the minimum.
+    for it in items.values():
+        qs = [abilities[a] for a in it["abilities"] if abilities.get(a)]
+        lo = round(sum(q[0] for q in qs)) or 1
+        hi = round(sum(q[1] for q in qs)) or 1
+        it["quality"] = (lo, max(lo, hi))
     return items
+
+
+def quality_text(q):
+    return f"{q[0]}" if q[0] == q[1] else f"{q[0]}-{q[1]}"
 
 
 def gap_factor(gap):
@@ -220,9 +262,11 @@ def cmd_pair(items, args):
     target_value = args.value if args.value is not None else target["price"]
     sacrifice_value = args.sacrifice_value if args.sacrifice_value is not None else sacrifice["price"]
     value = max(target_value, sacrifice_value)
-    fee = fee_for(value, args.gap, args.craftsman, args.quality)
+    quality = args.quality if args.quality is not None else target["quality"][0]
+    quality_note = "--quality" if args.quality is not None else f"quality {quality_text(target['quality'])}"
+    fee = fee_for(value, args.gap, args.craftsman, quality)
 
-    print(f"Target    : {args.target} [{target['category']}] ({target['source']})")
+    print(f"Target    : {args.target} [{target['category']}, quality {quality_text(target['quality'])}] ({target['source']})")
     print(f"Sacrifice : {args.sacrifice} ({sacrifice['source']})")
     print(f"Gap       : {args.gap} levels -> factor {gap_factor(args.gap):.2f} sets")
     print(f"Recipe    : {fmt(recipe)}" + ("" if from_data else "   (fallback table: target has no dismantle data)")
@@ -237,8 +281,8 @@ def cmd_pair(items, args):
     in_game = args.value is not None and args.sacrifice_value is not None
     basis = "higher in-game value" if in_game else "higher value, BASE price from XML where not passed (rough lower bound)"
     print(f"Fee       : {fee} crowns  ({basis} {value:g} x {FEE_FRACTION} x {gap_factor(args.gap):.2f}"
-          f" x {CRAFTSMAN_MULT[args.craftsman]} {args.craftsman} x {TIER_MULT.get(args.quality, 1.0)} tier)")
-    raw = raw_fee(value, args.gap, args.craftsman, args.quality)
+          f" x {CRAFTSMAN_MULT[args.craftsman]} {args.craftsman} x {TIER_MULT.get(quality, 1.0)} tier, {quality_note})")
+    raw = raw_fee(value, args.gap, args.craftsman, quality)
     if FEE_SOFT_CAP > 0 and raw > FEE_SOFT_CAP:
         print(f"            softened above {FEE_SOFT_CAP}: sqrt({raw:.0f} x {FEE_SOFT_CAP})")
 
@@ -248,12 +292,13 @@ def cmd_table(items, args):
     rows.sort(key=lambda r: (r[1]["price"], r[0]))
     print(f"# category {args.table}, gap {args.gap} (factor {gap_factor(args.gap):.2f}), "
           f"craftsman {args.craftsman}; fee from BASE price (in-game values are higher)")
-    print("| Item | Base price | Fee | Recipe (before salvage) |")
-    print("| --- | ---: | ---: | --- |")
+    print("| Item | Quality | Base price | Fee | Recipe (before salvage) |")
+    print("| --- | ---: | ---: | ---: | --- |")
     for name, it in rows:
         recipe, from_data = recipe_for(it, args.gap, args.craftsman)
-        fee = fee_for(it["price"], args.gap, args.craftsman, args.quality)
-        print(f"| {name} | {it['price']:g} | {fee} | {fmt(recipe)}{'' if from_data else ' (fallback)'} |")
+        quality = args.quality if args.quality is not None else it["quality"][0]
+        fee = fee_for(it["price"], args.gap, args.craftsman, quality)
+        print(f"| {name} | {quality_text(it['quality'])} | {it['price']:g} | {fee} | {fmt(recipe)}{'' if from_data else ' (fallback)'} |")
 
 
 def main():
@@ -265,7 +310,7 @@ def main():
     ap.add_argument("--value", type=float, help="target's in-game crown value (tooltip); default: XML base price")
     ap.add_argument("--sacrifice-value", type=float, help="sacrifice's in-game crown value (tooltip); default: XML base price")
     ap.add_argument("--craftsman", choices=sorted(CRAFTSMAN_MULT), default="journeyman")
-    ap.add_argument("--quality", type=int, default=1, help="target quality 1-5 (tier multiplier: 4 relic x1.5, 5 Witcher gear x2.0)")
+    ap.add_argument("--quality", type=int, default=None, help="override the target quality read from the XML, 1-5 (tier multiplier: 4 relic x1.5, 5 Witcher gear x2.0)")
     ap.add_argument("--have", help='inventory counts, e.g. "Thread=112,Leather squares=5"')
     ap.add_argument("--table", metavar="CATEGORY", help="cost table for a category (armor, boots, pants, gloves, steelsword, silversword)")
     ap.add_argument("--find", metavar="TEXT", help="list item names containing TEXT")
@@ -283,7 +328,7 @@ def main():
     if args.find:
         for n in sorted(n for n in items if args.find.lower() in n.lower()):
             it = items[n]
-            print(f"{n}  [{it['category']}]  price {it['price']:g}  parts: {fmt(it['parts'])}")
+            print(f"{n}  [{it['category']}]  quality {quality_text(it['quality'])}  price {it['price']:g}  parts: {fmt(it['parts'])}")
     elif args.table:
         cmd_table(items, args)
     elif args.target and args.sacrifice:
