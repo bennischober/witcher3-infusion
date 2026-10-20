@@ -98,10 +98,41 @@ Changes (approved 2026-10-20):
    4,800 at a grandmaster.
 3. The report now covers L60/100/150 and a big jump L60 → L150 for every item.
 
-The new numbers still need a second run in game.
+### Second run (2026-10-20, new formula)
+
+Same setup (player level 61). `infuseScenarioAll` passed 30/30 in the same session, so
+`fee_formula` agrees with the new fee base. Fees journeyman / master / grandmaster; Bear Armor
+starts at its L78 minimum, so its columns are L78 +5, L78 +20 and L78 → L168:
+
+| Item | L60 +5 | L60 +20 | L100 +5 | L100 +20 | L150 +5 | L150 +20 | L60 → L150 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Ordinary armor | 50 / 150 / 200 | 400 / 600 / 800 | 100 / 150 / 300 | 400 / 900 / 1,200 | 150 / 300 / 400 | 800 / 1,200 / 2,000 | 900 / 1,800 / 2,400 |
+| Ordinary sword | 150 / 300 / 400 | 1,000 / 1,500 / 2,400 | 350 / 600 / 1,000 | 1,800 / 3,300 / 4,800 | 750 / 1,275 / 2,000 | 3,600 / 6,300 / 9,200 | 4,200 / 7,200 / 10,800 |
+| Relic | – / 563 / 900 | – / 3,150 / 4,200 | – / 1,125 / 1,650 | – / 5,400 / 8,400 | – / 2,138 / 3,150 | – / 9,900 / 15,000 | – / 12,150 / 18,000 |
+| Witcher armor | – / – / 600 | – / – / 3,200 | – / – / 800 | – / – / 3,200 | – / – / 1,200 | – / – / 4,800 | – / – / 7,200 |
+
+Findings:
+
+- **Both expected values hit exactly:** L60 sword → L150 costs 4,200 at a journeyman (was ~900),
+  Bear Armor at L150 +20 costs 4,800 at a grandmaster (was 2,400).
+- **Big jumps:** now a bit more than a 20-level step at the destination level (sword: 4,200 vs
+  3,600 at a journeyman), because the gap factor stops at 3 sets. The same 90 levels in 5-level
+  steps would cost roughly 7,500 in fees, but take 18 sacrifices instead of one.
+- **Rarity:** relics and Witcher gear now cost the most for their kind. Measured against what
+  the sacrifice sells for, a 20-level step at a grandmaster at L150 costs about 1.3× (ordinary
+  sword), 1.4× (ordinary armor), 1.9× (relic) and 2.5× (Witcher armor). Witcher armor sells
+  cheaply, so it is still cheaper in crowns than an ordinary sword.
+- **Small steps:** almost unchanged at a journeyman. At some craftsmen they doubled (ordinary
+  armor L60 +5 at the master: 75 → 150), because the repair price per point is rounded up to
+  whole crowns and the sacrifice's price lands one step higher.
+- **Highest fee seen:** 18,000 crowns (relic L60 → L150 at a grandmaster), well below the
+  10,000,000 cap.
 
 ## Open balancing questions (need playtesting)
 
 - Should the recipe use fewer materials for ordinary gear (e.g. drop the smallest components)?
-- 3-set cap for very large NG+ jumps — enough?
+- 3-set cap for very large NG+ jumps — enough? A 90-level jump costs about half of what the
+  same levels cost in 5-level steps (second run above).
+- Relic and Witcher fees at a grandmaster (up to 15,000–18,000 crowns at L150): affordable
+  with real NG+ income? Needs a long playthrough, the report can't tell.
 - Price of rare materials vs. crowns: is buying them at merchants a viable path?
