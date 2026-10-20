@@ -189,20 +189,12 @@ function InfusionPriceProbeTemplates()
 	theGame.GetEntitiesByTag( 'InfusionPriceProbe', existing );
 	if ( existing.Size() == 0 )
 	{
-		paths.PushBack( "gameplay\community\shops_and_craftsmen
-o_mans_landarons_keeparons_keep_armorer_01.w2ent" );
-		paths.PushBack( "gameplay\community\shops_and_craftsmen
-o_mans_land\mouth\mouth_armorer_01.w2ent" );
-		paths.PushBack( "gameplay\community\shops_and_craftsmen
-o_mans_land\snots\snots_blacksmith_01.w2ent" );
-		paths.PushBack( "gameplay\community\shops_and_craftsmen
-ovigradich_district
-ovigrad_rich_district_armorer_01.w2ent" );
-		paths.PushBack( "gameplay\community\shops_and_craftsmen
-ovigrad\whitebridge\whitebridge_redanian_armorer_01.w2ent" );
-		paths.PushBack( "gameplay\community\shops_and_craftsmen
-ovigrad\market
-ovigrad_market_smith_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen\no_mans_land\barons_keep\barons_keep_armorer_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen\no_mans_land\mouth\mouth_armorer_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen\no_mans_land\snots\snots_blacksmith_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen\novigrad\rich_district\novigrad_rich_district_armorer_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen\novigrad\whitebridge\whitebridge_redanian_armorer_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen\novigrad\market\novigrad_market_smith_01.w2ent" );
 		paths.PushBack( "gameplay\community\shops_and_craftsmen\skellige\kaer_trolde\kaer_trolde_castle_armorer_01.w2ent" );
 		paths.PushBack( "gameplay\community\shops_and_craftsmen\skellige\larvik\larvik_armorer_01.w2ent" );
 		paths.PushBack( "gameplay\community\shops_and_craftsmen\skellige\kaer_trolde\kaer_trolde_castle_blacksmith_01.w2ent" );
