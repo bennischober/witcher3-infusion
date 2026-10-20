@@ -15,6 +15,7 @@ playtested in long New Game+ runs or alongside other mods.
   master 60 % of the recipe. Configurable (`MAT_EFF_*`).
 - A sacrifice's tooltip shows how much of the recipe it covers ("Covered by sacrifice: 7/18"),
   in white rather than the warning red.
+- `ENABLE_INFUSION = false` removes the Infusion tab instead of leaving it empty.
 
 ## 0.9.0 — first public release
 

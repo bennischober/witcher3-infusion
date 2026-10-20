@@ -26,12 +26,19 @@
 
 // Inserts the Infuse tab after the blacksmith's Repair tab. The Repair tab
 // only exists where vanilla defines it (crafting available), so the
-// Infuse tab appears exactly where the blacksmith service does.
+// Infuse tab appears exactly where the blacksmith service does. With
+// ENABLE_INFUSION = false there is no tab at all.
 @addMethod( CR4CommonMenu ) function InfusionAddBlacksmithTab() : void
 {
+	var cfg : W3InfusionConfig;
 	var tab : SMenuTab;
 	var i : int;
 
+	cfg = new W3InfusionConfig in this;
+	if ( !cfg.EnableInfusion() )
+	{
+		return;
+	}
 	for ( i = 0; i < m_menuData.Size(); i += 1 )
 	{
 		if ( m_menuData[i].MenuName == 'BlacksmithMenu' && m_menuData[i].MenuState == 'Repair' )

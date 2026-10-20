@@ -32,7 +32,7 @@ at startup — fix the line or reinstall.
 
 | Setting | Default | Effect |
 | --- | --- | --- |
-| `ENABLE_INFUSION` | `true` | Master switch. `false`: the Infusion tab stays empty. |
+| `ENABLE_INFUSION` | `true` | Master switch. `false`: blacksmiths and armorers have no Infusion tab. |
 | `ENABLE_STEEL_SWORD` | `true` | Steel swords (and axes, which the game files as steel swords). |
 | `ENABLE_SILVER_SWORD` | `true` | Silver swords. |
 | `ENABLE_ARMOR` | `true` | Chest armor, trousers, boots, gloves. |
