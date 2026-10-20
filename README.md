@@ -148,5 +148,9 @@ Test commands: [tests/modInfusion/README.md](tests/modInfusion/README.md). Manua
 
 ## License and assets
 
+MIT License, see [LICENSE](LICENSE). Exception: the body of `HaxGetPanelStateName` in
+`InfusionMenuTab.ws` is the game's own function with one added case; that code belongs to
+CD PROJEKT RED and isn't covered by the license.
+
 This repository contains original code and documentation only — no game assets, no third-party
 mod files. The Witcher 3 and REDkit are property of CD PROJEKT RED.
