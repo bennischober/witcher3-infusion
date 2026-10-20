@@ -72,7 +72,7 @@ and development milestones.
   remaining gaps: docs/SPEC_COVERAGE.md
 - 🟡 **Milestone 7** — release preparation: install guide, configuration doc, known issues,
   changelog, release package with automated release check (`tools/package-release.ps1`,
-  version in `VERSION`). Open: release-build test in game, NG+ playtest, compatibility tests
+  version in `VERSION`), release build tested in game. Open: NG+ balance check, compatibility tests
 - 🔜 **Milestone 8** — optional bonus-merging extension (separate module)
 
 ## Repository structure

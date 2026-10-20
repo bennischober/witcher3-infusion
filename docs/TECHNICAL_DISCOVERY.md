@@ -171,11 +171,18 @@ tests/modInfusion/README.md) for the service, the manual checklist in [UI.md](UI
 1. §6.2/§10: craftsman tiers are Journeyman / Master / Grand Master / Arch Master (no Amateur).
 2. §5.2: salvage uses native `recycling_parts`; the per-category table is only a fallback for
    items without data.
-3. §6.3: the labor fee's base is the **target's market value** (`GetItemPriceModified`), not a
-   fixed base fee — it auto-balances with the game's economy.
+3. §6.3: the labor fee's base is **this craftsman's full-repair price of the target**
+   (`GetItemPriceRepair` × max durability; target value × 0.25 as fallback), not a fixed base
+   fee — it follows level, rarity, patch prices and the craftsman's regional economy (§6). The
+   spec allows refining the formula during testing.
 4. §5.4/§7.1: the level gap scales both the fee (labor) and the recipe (physical work) —
    deliberate double scaling. Details: [BALANCING.md](BALANCING.md).
 5. §3.3: compatibility is by item **category** (chest↔chest, boots↔boots, steel↔steel,
    silver↔silver), stricter than "armor↔armor", matching the per-slot level formulas.
 6. §9: UI via a new tab using the existing Disassemble page; SWF editing out of scope.
 7. §13.2: no engine-level atomic transactions (see §6).
+8. §10: settings are script constants in `InfusionConfig.ws` (clamped when read), not a settings
+   menu — mod menus are broken on 5.01 (§1); this is the spec's own fallback. Player doc:
+   [CONFIGURATION.md](CONFIGURATION.md).
+
+Reviewed with the project owner on 2026-10-20: 3, 4, 5 and 8 stay as they are for 1.0.
