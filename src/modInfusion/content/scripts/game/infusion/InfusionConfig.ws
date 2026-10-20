@@ -6,7 +6,8 @@
 /** 	price of the target or the sacrifice, whichever is higher (the game's
 /** 	own level-scaled, regional price), so official economy updates
 /** 	rebalance infusion fees automatically. Multipliers (§6.2) shape it; a labor floor keeps
-/** 	cheap targets meaningful. Model: docs/BALANCING.md.
+/** 	cheap targets meaningful, a soft ceiling keeps expensive ones affordable.
+/** 	Model: docs/BALANCING.md.
 /**
 /** 	Settings menu: NOT used (the Remastered settings UI is broken for mod
 /** 	groups; docs/TECHNICAL_DISCOVERY.md §1). Values ship as curated script
@@ -76,6 +77,16 @@ class W3InfusionConfig extends IScriptable
 	// Ceiling for any fee (overflow guard, not a balance knob).
 	private const var MAX_LABOR_FEE : int;
 	default MAX_LABOR_FEE = 10000000;
+
+	// Soft ceiling in crowns. Up to it the fee is unchanged; above it the
+	// fee grows with the square root: fee = sqrt(fee x FEE_SOFT_CAP), so
+	// 8,000 -> 4,000 and 18,000 -> 6,000. Costlier jobs still cost more,
+	// but stay payable: the balance report (2026-10-20) reached 18,000 at
+	// L150, while a finished playthrough leaves about 10,000 crowns - NG+
+	// sell prices don't become income, traders carry limited money.
+	// 0 = off.
+	private const var FEE_SOFT_CAP : int;
+	default FEE_SOFT_CAP = 2000;
 
 	// Craftsman tier multipliers (spec §6.2; real game tiers).
 	private const var MULT_JOURNEYMAN : float;
@@ -157,6 +168,7 @@ class W3InfusionConfig extends IScriptable
 	// a nonzero value overrides the corresponding default. Player-invisible.
 	//   InfCfg_BaseFee  - overrides FEE_REPAIR_MULT (value = multiplier x 1000)
 	//   InfCfg_MinFee   - overrides MIN_LABOR_FEE
+	//   InfCfg_SoftCap  - overrides FEE_SOFT_CAP (a huge value switches it off)
 	//   InfCfg_Salvage  - nonzero disables salvage (no discount: full recipe)
 	//   InfCfg_NoMaterials - nonzero disables material requirements
 	//   InfCfg_Debug    - nonzero enables the per-item grid logging
@@ -165,6 +177,9 @@ class W3InfusionConfig extends IScriptable
 
 	private const var FACT_MIN_FEE : string;
 	default FACT_MIN_FEE = "InfCfg_MinFee";
+
+	private const var FACT_SOFT_CAP : string;
+	default FACT_SOFT_CAP = "InfCfg_SoftCap";
 
 	private const var FACT_SALVAGE_OFF : string;
 	default FACT_SALVAGE_OFF = "InfCfg_Salvage";
@@ -308,6 +323,19 @@ class W3InfusionConfig extends IScriptable
 			return Min( factVal, MAX_LABOR_FEE );
 		}
 		return Clamp( MIN_LABOR_FEE, 0, MAX_LABOR_FEE );
+	}
+
+	// Soft-ceiling threshold in crowns (0 = off).
+	public function GetFeeSoftCap() : int
+	{
+		var factVal : int;
+
+		factVal = FactsQuerySum( FACT_SOFT_CAP );
+		if ( factVal > 0 )
+		{
+			return Min( factVal, MAX_LABOR_FEE );
+		}
+		return Clamp( FEE_SOFT_CAP, 0, MAX_LABOR_FEE );
 	}
 
 	// Upper bound for any fee (spec §8.3/§15.4: no overflow at NG+ levels).

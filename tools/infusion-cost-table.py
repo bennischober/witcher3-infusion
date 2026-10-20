@@ -9,7 +9,8 @@ r4data) and applies the same balancing formulas as the mod
   gapFactor = min(gap / LEVELS_PER_FULL_SET, MAX_SETS)
   covered   = min(sacrifice salvage, recipe) per recipe material
   remaining = recipe - covered
-  fee       = max(MIN_FEE, round(max(targetValue, sacrificeValue) x FEE_FRACTION x gapFactor x craftsman x tier))
+  raw       = max(targetValue, sacrificeValue) x FEE_FRACTION x gapFactor x craftsman x tier
+  fee       = max(MIN_FEE, round(raw if raw <= FEE_SOFT_CAP else sqrt(raw x FEE_SOFT_CAP)))
 
 The mod anchors the fee to the craftsman's full-repair price of the target
 or the sacrifice, whichever is higher, instead
@@ -43,6 +44,7 @@ import sys
 # ---- balancing constants (mirror InfusionConfig.ws) ----------------------
 FEE_FRACTION = 0.25
 MIN_FEE = 10
+FEE_SOFT_CAP = 2000  # 0 = off
 LEVELS_PER_FULL_SET = 10.0
 MAX_SETS = 3.0
 SALVAGE_YIELD_MULT = 1.0
@@ -170,8 +172,19 @@ def apply_salvage(recipe, salvage):
     return covered, remaining
 
 
+def raw_fee(value, gap, craftsman, quality):
+    return value * FEE_FRACTION * gap_factor(gap) * CRAFTSMAN_MULT[craftsman] * TIER_MULT.get(quality, 1.0)
+
+
+def soften(fee):
+    # Soft ceiling (InfusionService.SoftenFee): square-root growth above FEE_SOFT_CAP.
+    if FEE_SOFT_CAP > 0 and fee > FEE_SOFT_CAP:
+        return math.sqrt(fee * FEE_SOFT_CAP)
+    return fee
+
+
 def fee_for(value, gap, craftsman, quality):
-    fee = value * FEE_FRACTION * gap_factor(gap) * CRAFTSMAN_MULT[craftsman] * TIER_MULT.get(quality, 1.0)
+    fee = soften(raw_fee(value, gap, craftsman, quality))
     return max(MIN_FEE, int(math.floor(fee + 0.5)))
 
 
@@ -220,6 +233,9 @@ def cmd_pair(items, args):
     basis = "higher in-game value" if in_game else "higher value, BASE price from XML where not passed (rough lower bound)"
     print(f"Fee       : {fee} crowns  ({basis} {value:g} x {FEE_FRACTION} x {gap_factor(args.gap):.2f}"
           f" x {CRAFTSMAN_MULT[args.craftsman]} {args.craftsman} x {TIER_MULT.get(args.quality, 1.0)} tier)")
+    raw = raw_fee(value, args.gap, args.craftsman, args.quality)
+    if FEE_SOFT_CAP > 0 and raw > FEE_SOFT_CAP:
+        print(f"            softened above {FEE_SOFT_CAP}: sqrt({raw:.0f} x {FEE_SOFT_CAP})")
 
 
 def cmd_table(items, args):

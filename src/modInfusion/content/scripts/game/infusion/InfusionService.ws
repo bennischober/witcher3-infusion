@@ -977,7 +977,8 @@ class W3InfusionService extends IScriptable
 	// ---------------------------------------------------------------------
 	// Labor fee (auto-balanced: the craftsman's full-repair price of the
 	// target or the sacrifice, whichever is higher, scaled by craftsman
-	// tier, target tier, and level gap — spec §6.2/§6.3)
+	// tier, target tier, and level gap, softened above a ceiling — spec
+	// §6.2/§6.3)
 	// ---------------------------------------------------------------------
 
 	// The fee anchor of one item: what this craftsman charges for repairing
@@ -1030,6 +1031,7 @@ class W3InfusionService extends IScriptable
 			* GetConfig().GetLevelGapMultiplier( gap );
 
 		fee = GetFeeBase( inv, targetId, sacrificeId, craftsman ) * GetConfig().GetFeeMultiplier() * mult;
+		fee = SoftenFee( fee, GetConfig().GetFeeSoftCap() );
 
 		// Labor floor: small upgrades of cheap items still cost labor.
 		minFee = GetConfig().GetMinLaborFee();
@@ -1043,6 +1045,18 @@ class W3InfusionService extends IScriptable
 			fee = GetConfig().GetMaxLaborFee();
 		}
 		return RoundMath( fee );
+	}
+
+	// Soft ceiling: above softCap the fee grows with the square root,
+	// sqrt(fee x softCap) - continuous at the threshold, and a costlier job
+	// still costs more. softCap 0 = off.
+	private function SoftenFee( fee : float, softCap : int ) : float
+	{
+		if ( softCap > 0 && fee > softCap )
+		{
+			return SqrtF( fee * softCap );
+		}
+		return fee;
 	}
 
 	// ---------------------------------------------------------------------
