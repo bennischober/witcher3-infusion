@@ -44,19 +44,21 @@ class W3InfusionService extends IScriptable
 	// target's OWN components - its vanilla dismantle data (recycling_parts),
 	// i.e. what the item is made of - scaled by the level gap: 10 levels = one
 	// full set (rounded up per material, at least 1 each), capped at
-	// MAX_SETS. Ordinary gear needs ordinary materials, Witcher gear needs
-	// its rare ones (chitin, infused dust, dwimeryte, glowing ore, ...), all
-	// from game data. Items without dismantle data fall back to the old
-	// per-category table.
-	private function GetRecipeForTarget( inv : CInventoryComponent, targetId : SItemUniqueId, category : name, gap : int, out recipe : array<SItemParts> ) : bool
+	// MAX_SETS, and by the craftsman's material efficiency (spec §7.2: a
+	// master needs fewer). Ordinary gear needs ordinary materials, Witcher
+	// gear needs its rare ones (chitin, infused dust, dwimeryte, glowing
+	// ore, ...), all from game data. Items without dismantle data fall back
+	// to the old per-category table (unscaled).
+	private function GetRecipeForTarget( inv : CInventoryComponent, targetId : SItemUniqueId, category : name, gap : int, craftsmanLevel : int, out recipe : array<SItemParts> ) : bool
 	{
 		var parts : array<SItemParts>;
 		var part : SItemParts;
-		var sets : float;
+		var sets, efficiency : float;
 		var i : int;
 
 		parts = inv.GetItemRecyclingParts( targetId );
 		sets = GetConfig().GetLevelGapMultiplier( gap );
+		efficiency = GetConfig().GetMaterialEfficiency( craftsmanLevel );
 		for ( i = 0; i < parts.Size(); i += 1 )
 		{
 			// Only real materials: dismantle data also lists junk (faction
@@ -68,6 +70,10 @@ class W3InfusionService extends IScriptable
 			}
 			part.itemName = parts[i].itemName;
 			part.quantity = CeilF( parts[i].quantity * sets );
+			// Efficiency rounds to the nearest amount, not up - rounding up
+			// would erase it on small recipes (2 x 0.85 = 1.7 -> 2). Half
+			// rounds up; the offset absorbs float noise (0.85f < 0.85).
+			part.quantity = FloorF( part.quantity * efficiency + 0.5001f );
 			if ( part.quantity < 1 )
 			{
 				part.quantity = 1;
@@ -765,12 +771,13 @@ class W3InfusionService extends IScriptable
 		// deviation from "recipes are not gap-dependent": both the fee
 		// (labor) and the materials (physical work per level) grow with the
 		// gap - a 1-level touch-up must not cost the same as a 30-level jump.
+		// A higher-ranked craftsman needs fewer materials (spec §7.2).
 		// With salvage disabled (spec §10 EnableSalvage) nothing is recovered
 		// and the player supplies the full recipe. Without material
 		// requirements (RequireCraftingMaterials) all three lists stay empty.
 		if ( GetConfig().RequireCraftingMaterials() )
 		{
-			GetRecipeForTarget( inv, targetId, targetData.category, gap, preview.materials );
+			GetRecipeForTarget( inv, targetId, targetData.category, gap, craftsmanLevel, preview.materials );
 			if ( GetConfig().SalvageEnabled() )
 			{
 				GetSalvageYield( inv, sacrificeId, preview.salvaged );

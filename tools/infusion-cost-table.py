@@ -5,7 +5,8 @@ Reads the item definitions shipped with REDkit (uncooked XML under
 r4data) and applies the same balancing formulas as the mod
 (src/modInfusion/.../InfusionService.ws + InfusionConfig.ws):
 
-  recipe    = target's recycling_parts (crafting/alchemy ingredients only) x gapFactor (ceil, >= 1 each)
+  recipe    = target's recycling_parts (crafting/alchemy ingredients only) x gapFactor (ceil)
+              x craftsman material efficiency (nearest, half up; >= 1 each)
   gapFactor = min(gap / LEVELS_PER_FULL_SET, MAX_SETS)
   covered   = min(sacrifice salvage, recipe) per recipe material
   remaining = recipe - covered
@@ -50,6 +51,7 @@ MAX_SETS = 3.0
 SALVAGE_YIELD_MULT = 1.0
 CRAFTSMAN_MULT = {"journeyman": 1.0, "master": 1.5, "grandmaster": 2.0, "archmaster": 2.5}
 TIER_MULT = {1: 1.0, 2: 1.0, 3: 1.0, 4: 1.5, 5: 2.0}
+MATERIAL_EFF = {"journeyman": 1.0, "master": 0.85, "grandmaster": 0.7, "archmaster": 0.6}
 
 # Fallback recipes for targets without dismantle data (InfusionService.ws
 # GetRecipeForCategory).
@@ -144,10 +146,12 @@ RECIPE_CATEGORIES = {"crafting_ingredient", "alchemy_ingredient"}
 ITEMS = {}  # filled by main(); used for the material category filter
 
 
-def recipe_for(item, gap):
+def recipe_for(item, gap, craftsman):
     """(recipe, from_dismantle_data)"""
     sets = gap_factor(gap)
-    recipe = [(n, max(1, math.ceil(q * sets))) for n, q in item["parts"]
+    eff = MATERIAL_EFF[craftsman]
+    # Like the mod: gap scaling rounds up, efficiency to the nearest (half up).
+    recipe = [(n, max(1, math.floor(math.ceil(q * sets) * eff + 0.5001))) for n, q in item["parts"]
               if q > 0 and ITEMS.get(n, {}).get("category") in RECIPE_CATEGORIES]
     if recipe:
         return recipe, True
@@ -211,7 +215,7 @@ def cmd_pair(items, args):
             print(f"WARNING: {key} carries an excluded tag (hidden/body/quest item) - the mod rejects it")
     if target["category"] != sacrifice["category"]:
         print(f"WARNING: categories differ ({target['category']} vs {sacrifice['category']}) - the mod rejects this pair")
-    recipe, from_data = recipe_for(target, args.gap)
+    recipe, from_data = recipe_for(target, args.gap, args.craftsman)
     covered, remaining = apply_salvage(recipe, salvage_of(sacrifice))
     target_value = args.value if args.value is not None else target["price"]
     sacrifice_value = args.sacrifice_value if args.sacrifice_value is not None else sacrifice["price"]
@@ -221,7 +225,8 @@ def cmd_pair(items, args):
     print(f"Target    : {args.target} [{target['category']}] ({target['source']})")
     print(f"Sacrifice : {args.sacrifice} ({sacrifice['source']})")
     print(f"Gap       : {args.gap} levels -> factor {gap_factor(args.gap):.2f} sets")
-    print(f"Recipe    : {fmt(recipe)}" + ("" if from_data else "   (fallback table: target has no dismantle data)"))
+    print(f"Recipe    : {fmt(recipe)}" + ("" if from_data else "   (fallback table: target has no dismantle data)")
+          + (f"   ({args.craftsman}: x{MATERIAL_EFF[args.craftsman]} materials)" if from_data and MATERIAL_EFF[args.craftsman] != 1.0 else ""))
     print(f"Salvage   : {fmt(salvage_of(sacrifice))}")
     print(f"Covered   : {fmt(covered)}")
     print(f"You pay   : {fmt(remaining)}")
@@ -246,7 +251,7 @@ def cmd_table(items, args):
     print("| Item | Base price | Fee | Recipe (before salvage) |")
     print("| --- | ---: | ---: | --- |")
     for name, it in rows:
-        recipe, from_data = recipe_for(it, args.gap)
+        recipe, from_data = recipe_for(it, args.gap, args.craftsman)
         fee = fee_for(it["price"], args.gap, args.craftsman, args.quality)
         print(f"| {name} | {it['price']:g} | {fee} | {fmt(recipe)}{'' if from_data else ' (fallback)'} |")
 

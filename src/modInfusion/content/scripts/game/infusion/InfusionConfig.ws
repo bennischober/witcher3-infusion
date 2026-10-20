@@ -139,6 +139,24 @@ class W3InfusionConfig extends IScriptable
 	private const var REQUIRE_MATERIALS : bool;
 	default REQUIRE_MATERIALS = true;
 
+	// Craftsman material efficiency (spec §7.2): a higher-ranked craftsman
+	// works more economically and needs fewer materials - a reason to visit
+	// a specialist besides eligibility, which offsets his higher fee instead
+	// of stacking another penalty. Multiplies the gap-scaled recipe per
+	// material, rounded to the nearest whole amount (half up), at least 1
+	// each; 1.0 = the full recipe.
+	private const var MAT_EFF_JOURNEYMAN : float;
+	default MAT_EFF_JOURNEYMAN = 1.0f;
+
+	private const var MAT_EFF_MASTER : float;
+	default MAT_EFF_MASTER = 0.85f;
+
+	private const var MAT_EFF_GRAND_MASTER : float;
+	default MAT_EFF_GRAND_MASTER = 0.7f;
+
+	private const var MAT_EFF_ARCH_MASTER : float;
+	default MAT_EFF_ARCH_MASTER = 0.6f;
+
 	// ============================== salvage ================================
 
 	private const var ENABLE_SALVAGE : bool;
@@ -233,6 +251,25 @@ class W3InfusionConfig extends IScriptable
 			return SafeMultiplier( MULT_GRAND_MASTER );
 		}
 		return SafeMultiplier( MULT_ARCH_MASTER );
+	}
+
+	// Craftsman material efficiency by tier enum ordinal (1 = Journeyman ...
+	// 4 = Arch Master), clamped to [0, 10].
+	public function GetMaterialEfficiency( craftsmanLevel : int ) : float
+	{
+		if ( craftsmanLevel <= 1 )
+		{
+			return ClampF( MAT_EFF_JOURNEYMAN, 0.0f, 10.0f );
+		}
+		if ( craftsmanLevel == 2 )
+		{
+			return ClampF( MAT_EFF_MASTER, 0.0f, 10.0f );
+		}
+		if ( craftsmanLevel == 3 )
+		{
+			return ClampF( MAT_EFF_GRAND_MASTER, 0.0f, 10.0f );
+		}
+		return ClampF( MAT_EFF_ARCH_MASTER, 0.0f, 10.0f );
 	}
 
 	// Target tier multiplier by item quality (1..5).
