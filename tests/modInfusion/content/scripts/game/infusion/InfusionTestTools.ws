@@ -129,6 +129,105 @@ function InfusionCraftsmanReport()
 	}
 }
 
+// Price experiment (spec §6.3): does the craftsman's region or shop change
+// prices? The fee is anchored to the player-side market value
+// (GetItemPriceModified on the player's inventory). For the equipped steel
+// sword and chest armor this logs that anchor next to what the nearest
+// craftsman would charge for a fresh copy of the same item (copies are added
+// to both inventories, priced and removed again), vanilla's script-side shop
+// modifier (GetMerchantPriceModifier) and the craftsman's repair price per
+// durability point. Run it at craftsmen in different regions and compare.
+function InfusionPriceProbe()
+{
+	var entities : array<CGameplayEntity>;
+	var npc, nearest : CNewNPC;
+	var dist, bestDist : float;
+	var i : int;
+
+	FindGameplayEntitiesInSphere( entities, thePlayer.GetWorldPosition(), 40, 30, '', FLAG_OnlyAliveActors );
+	bestDist = 1000000.0f;
+	for ( i = 0; i < entities.Size(); i += 1 )
+	{
+		if ( !entities[i].GetComponentByClassName( 'W3CraftsmanComponent' ) )
+		{
+			continue;
+		}
+		npc = (CNewNPC)entities[i];
+		dist = VecDistance( npc.GetWorldPosition(), thePlayer.GetWorldPosition() );
+		if ( npc && dist < bestDist )
+		{
+			nearest = npc;
+			bestDist = dist;
+		}
+	}
+	if ( !nearest )
+	{
+		theGame.GetGuiManager().ShowNotification( "price probe: no craftsman within 40 m" );
+		return;
+	}
+
+	LogChannel( 'Infusion', "price probe at " + nearest.GetDisplayName() + " (zone " + (int)theGame.GetCurrentZone() + ")" );
+	InfusionPriceProbeSlot( nearest, EES_SteelSword );
+	InfusionPriceProbeSlot( nearest, EES_Armor );
+	theGame.GetGuiManager().ShowNotification( "price probe written to the log (" + nearest.GetDisplayName() + ")" );
+}
+
+function InfusionPriceProbeSlot( craftsman : CNewNPC, slot : EEquipmentSlots )
+{
+	var inv, shopInv : CInventoryComponent;
+	var svc : W3InfusionService;
+	var item : SItemUniqueId;
+	var itemName : name;
+	var playerCopies, shopCopies : array<SItemUniqueId>;
+	var playerCopyPrice, shopCopyPrice : int;
+	var repairPoint, repairTotal : int;
+	var shopMod : float;
+	var msg : string;
+
+	inv = thePlayer.inv;
+	shopInv = craftsman.GetInventory();
+	svc = InfusionGetService();
+	if ( !GetWitcherPlayer().GetItemEquippedOnSlot( slot, item ) || !inv.IsIdValid( item ) || !shopInv )
+	{
+		LogChannel( 'Infusion', "price probe: nothing equipped in slot " + (int)slot );
+		return;
+	}
+	itemName = inv.GetItemName( item );
+
+	msg = "price probe: " + itemName + " L" + svc.ComputeItemLevel( inv, item )
+		+ " | fee anchor (player value) " + inv.GetItemPriceModified( item, false )
+		+ " | base " + inv.GetItemPrice( item )
+		+ " | player sells for " + inv.GetItemPriceModified( item, true );
+
+	shopInv.GetItemPriceRepair( inv.GetItem( item ), repairPoint, repairTotal );
+	msg += " | repair per point " + repairPoint + " (now " + repairTotal + ")";
+
+	playerCopies = inv.AddAnItem( itemName, 1, true, true );
+	shopCopies = shopInv.AddAnItem( itemName, 1, true, true );
+	if ( playerCopies.Size() > 0 && shopCopies.Size() > 0 )
+	{
+		playerCopyPrice = inv.GetItemPriceModified( playerCopies[0], false );
+		shopCopyPrice = shopInv.GetItemPriceModified( shopCopies[0], false );
+		shopMod = shopInv.GetMerchantPriceModifier( craftsman, shopCopies[0] );
+		msg += " | copy in player inv L" + svc.ComputeItemLevel( inv, playerCopies[0] ) + ": " + playerCopyPrice
+			+ " | copy in shop inv L" + svc.ComputeItemLevel( shopInv, shopCopies[0] ) + ": " + shopCopyPrice
+			+ " | shop modifier (script) " + shopMod;
+	}
+	else
+	{
+		msg += " | could not add copies";
+	}
+	if ( playerCopies.Size() > 0 )
+	{
+		inv.RemoveItem( playerCopies[0], 1 );
+	}
+	if ( shopCopies.Size() > 0 )
+	{
+		shopInv.RemoveItem( shopCopies[0], 1 );
+	}
+	LogChannel( 'Infusion', msg );
+}
+
 // Spawns a craftsman NPC from a template 3m in front of the player, tagged
 // 'InfusionTestSmith', self-despawning after lifetime seconds. Returns NULL
 // (with a notification) on failure. WitcherScript strings do not process

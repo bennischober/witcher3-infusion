@@ -110,7 +110,15 @@ on items).
 - `StartInvUpdateTransaction` / `FinishInvUpdateTransaction` defer inventory updates during
   multi-step changes. There are no atomic inventory transactions — safety comes from the order
   validate → apply level → verify → charge → consume (spec §13.2).
-- `GetItemPriceModified` is native and scales with level and NG+ (the fee anchor).
+- `GetItemPriceModified` is native and scales with level and NG+ (the fee anchor). The fee asks
+  the **player's** inventory, so shop/region factors presumably don't apply — to be measured
+  with `infusePriceProbe` (spec §6.3). Vanilla's price levers (script view, `inventoryComponent.ws`):
+  - per-merchant `priceMult` (`SetPriceMultiplier`, set by quests, e.g. `quest_function.ws`);
+  - `GetMerchantPriceModifier(shopNPC, item)`: zone × the NPC's item-type multiplier
+    (`armor_price_mult`, `weapon_price_mult`, …) × import origin × `priceMult`. No script caller
+    — if used, the engine calls it. Its zone `switch` has no `break`s;
+  - repairs: `merchantInv.GetItemPriceRepair(invItem, perPoint, total)` on the **craftsman's**
+    inventory (vanilla repair grid), i.e. repair prices can differ per craftsman.
 
 ## 7. Exclusions
 

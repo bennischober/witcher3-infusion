@@ -19,6 +19,7 @@ excluded from release builds.
 | `infuseCleanTestItems` | Remove spawned test items (keeps the highest-level one — typically the infused target) |
 | `infuseDespawnTestSmith` | Remove spawned test craftsmen |
 | `infuseCraftsmanReport` | Log type/tier of every craftsman within 40 m |
+| `infusePriceProbe` | Price experiment (spec §6.3): for the equipped steel sword and chest armor, log the fee anchor (player-side market value) next to the nearest craftsman's price for a copy of the same item, vanilla's shop modifier and his repair price per point. Compare runs at craftsmen in different regions. |
 | `infuseSetConfig(key, n)` | Dev config override via facts: `fee` (fraction ×1000, 0 = default), `minfee`, `salvage` (1 = off), `materials` (1 = no material requirements), `debug` (1 = per-item grid log) |
 | `infuseDumpConfig` | Log the effective configuration |
 | `infuseTestStrings` | Check that the mod's `.w3strings` load |

@@ -14,6 +14,7 @@
 /** 	  infuseCleanTestItems       - remove spawned test items (keeps one)
 /** 	  infuseDespawnTestSmith     - remove spawned test craftsmen
 /** 	  infuseCraftsmanReport      - report nearby craftsmen (type/tier)
+/** 	  infusePriceProbe           - fee anchor vs. the nearest craftsman's prices
 /** 	  infuseSetConfig(key, n)    - dev config override (fee/minfee/salvage/materials/debug)
 /** 	  infuseDumpConfig           - log the effective configuration
 /** 	  infuseTestStrings          - check that the mod's strings load
@@ -36,6 +37,12 @@ exec function infuseCleanTestItems()
 exec function infuseCraftsmanReport()
 {
 	InfusionCraftsmanReport();
+}
+
+// Price experiment: fee anchor vs. the nearest craftsman's prices (log).
+exec function infusePriceProbe()
+{
+	InfusionPriceProbe();
 }
 
 exec function infuseDespawnTestSmith()
