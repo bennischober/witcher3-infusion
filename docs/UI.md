@@ -36,7 +36,8 @@ sacrifice and pressing E opens the confirmation; selecting the target again, or 
 returns to step 1. A sacrifice whose remaining materials are missing is **disabled** (greyed
 panel, no E button, denied sound, warning "Fehlende Materialien"). A sacrifice's tooltip shows
 how much of the recipe it covers in its warning line ("Durch Opfer gedeckt: 7/18", material
-units: covered / recipe total); without material requirements the line is left out.
+units: covered / recipe total) in white instead of the warning red; without material
+requirements the line is left out.
 
 **Confirmation popup** (vanilla price popup): "Ziel: … (61 -> 68)", the projected primary stat
 with the tooltip's label ("Rüstung: 129 -> 164"; spec §9.2), "Opfer: … (68)", materials
@@ -76,7 +77,9 @@ Key mechanics:
   vanilla and sets its `WarningMessage` line (vanilla uses it for "not for sale"; rendered by
   `TooltipInventory.as`). The tooltip follows the hovered item, which is the item the reason
   belongs to. In step 2 the same line carries a sacrifice's recipe coverage
-  (`GetSacrificeCoverText`); a block reason takes precedence. The page's disabled warning line
+  (`GetSacrificeCoverText`); a block reason takes precedence. The coverage text is wrapped in
+  `<font color="#FFFFFF">` (the line takes HTML) so it doesn't read as a warning; the red bar
+  behind it is a fixed frame of the tooltip SWF and stays. The page's disabled warning line
   is one text per page: "Hier nicht infundierbar"
   in step 1, "Fehlende Materialien" in step 2.
 - **Space hint off:** after the Repair tab, the vanilla "repair equipped items" Space hint
@@ -119,7 +122,8 @@ launch: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, Infusion tab.
    Reparieren.
 3. Step 2: headers "Ziel (E: abbrechen)" / "Opfer wählen"; per-sacrifice fee and row; a sacrifice
    with missing materials is disabled with "Fehlende Materialien". Hovering a sacrifice shows
-   "Durch Opfer gedeckt: n/m" on one line in its tooltip; the target's tooltip has no such line.
+   "Durch Opfer gedeckt: n/m" on one line in white text in its tooltip; the target's tooltip has
+   no such line.
 4. Selecting the target again cancels; switching tabs cancels; Space does nothing.
 5. Popup: names, levels, projected stat (matches the tooltip after infusing), covered/additional
    materials with icons, note, price — everything inside the frame; accept infuses

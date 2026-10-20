@@ -13,7 +13,8 @@ playtested in long New Game+ runs or alongside other mods.
   (`FEE_SOFT_CAP`, 0 = off).
 - Higher-ranked craftsmen need fewer materials: a master 85 %, a grandmaster 70 %, an arch
   master 60 % of the recipe. Configurable (`MAT_EFF_*`).
-- A sacrifice's tooltip shows how much of the recipe it covers ("Covered by sacrifice: 7/18").
+- A sacrifice's tooltip shows how much of the recipe it covers ("Covered by sacrifice: 7/18"),
+  in white rather than the warning red.
 
 ## 0.9.0 — first public release
 

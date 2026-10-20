@@ -262,7 +262,11 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		{
 			return "";
 		}
-		return GetLocStringByKeyExt( "panel_infusion_recovered" ) + ": " + covered + "/" + total;
+		// The warning line is red; this is information, not a warning, so it
+		// overrides the colour (the field takes HTML). The red bar behind it
+		// is a fixed frame of the tooltip SWF.
+		return "<font color=\"#FFFFFF\">" + GetLocStringByKeyExt( "panel_infusion_recovered" )
+			+ ": " + covered + "/" + total + "</font>";
 	}
 
 	// Phase 1: infusion targets plus blocked targets (disabled); phase 2:
