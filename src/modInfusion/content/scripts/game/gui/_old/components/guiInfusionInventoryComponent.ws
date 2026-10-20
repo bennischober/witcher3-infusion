@@ -234,6 +234,37 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 		return InfusionErrorToLocString( reason );
 	}
 
+	// Sacrifice phase: how much of the recipe this sacrifice covers, for its
+	// tooltip's warning line ("Covered by sacrifice: 7/18", in material
+	// units). The info panel lists only what is left to pay; the popup has
+	// the full list. Empty for the target and without a recipe.
+	public function GetSacrificeCoverText( item : SItemUniqueId ) : string
+	{
+		var p : SInfusionPreview;
+		var covered, total, i : int;
+
+		if ( !_sacrificePhase || item == _phaseTarget || !GetSacrificeInfo( item, p ) )
+		{
+			return "";
+		}
+		covered = 0;
+		for ( i = 0; i < p.covered.Size(); i += 1 )
+		{
+			covered += p.covered[i].quantity;
+		}
+		// recipe = covered + still to pay, per material
+		total = covered;
+		for ( i = 0; i < p.materials.Size(); i += 1 )
+		{
+			total += p.materials[i].quantity;
+		}
+		if ( total <= 0 )
+		{
+			return "";
+		}
+		return GetLocStringByKeyExt( "panel_infusion_recovered" ) + ": " + covered + "/" + total;
+	}
+
 	// Phase 1: infusion targets plus blocked targets (disabled); phase 2:
 	// the target plus its valid sacrifices. No repair entries. Access
 	// modifier matches the ancestor (protected) - the compiler rejects

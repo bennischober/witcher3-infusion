@@ -136,25 +136,30 @@
 
 // A disabled target's tooltip names why it can't be infused here (spec
 // §9.3) in the tooltip's warning line - vanilla uses it for "not for sale"
-// (TooltipInventory.as tfWarningMessage). The tooltip follows the hovered
-// item, which is the item the reason belongs to. Same two calls as vanilla,
-// with the line added before the data goes to Flash.
+// (TooltipInventory.as tfWarningMessage); a sacrifice's tooltip says how
+// much of the recipe it covers. The tooltip follows the hovered item, which
+// is the item the line belongs to. Same two calls as vanilla, with the
+// line added before the data goes to Flash.
 @wrapMethod( CR4BlacksmithMenu ) function ShowItemTooltip( item : SItemUniqueId, compareItemType : int )
 {
 	var tooltipData : CScriptedFlashObject;
-	var reasonText : string;
+	var warningText : string;
 
-	reasonText = "";
+	warningText = "";
 	if ( m_menuState == 'Infuse' && _infusionInv )
 	{
-		reasonText = _infusionInv.GetBlockReasonText( item );
+		warningText = _infusionInv.GetBlockReasonText( item );
+		if ( warningText == "" )
+		{
+			warningText = _infusionInv.GetSacrificeCoverText( item );
+		}
 	}
-	if ( reasonText != "" )
+	if ( warningText != "" )
 	{
 		tooltipData = _tooltipDataProvider.GetTooltipData( item, true, true );
 		if ( tooltipData )
 		{
-			tooltipData.SetMemberFlashString( "WarningMessage", reasonText );
+			tooltipData.SetMemberFlashString( "WarningMessage", warningText );
 		}
 		m_flashValueStorage.SetFlashObject( "context.tooltip.data", tooltipData );
 	}
