@@ -33,7 +33,7 @@ started.
 | §5.5 | Exploit protection | ✅ | Scenario (`reject_same`, `reject_materials`, `reject_crowns`: nothing consumed); `Execute` re-validates. |
 | §6.1/6.2 | Labor fee separate from materials; craftsman multipliers | ✅ | Scenario (`fee_by_tier`: master > journeyman). |
 | §6.3 | Fee formula | ✅ dev. | Base = this craftsman's vanilla full-repair price of the target instead of a fixed base fee: follows level, rarity, NG+, patch prices and the craftsman's **regional economy** (measured 2026-10-20: Novigrad +17 %, Skellige +8 % over Velen; TECHNICAL_DISCOVERY.md §6). Scenario `fee_formula` checks it against the craftsman's repair price. |
-| §6.4 | Costs meaningful in long NG+ runs | ❌ | Needs a playtest with real high-level gear (BALANCING.md open questions). |
+| §6.4 | Costs meaningful in long NG+ runs | ⚠️ | Tool ready: `infuseBalanceReport` logs fees (per craftsman tier), materials and salvage for real items at L30/60/100/150. Not run in game yet; the numbers still need judging (BALANCING.md open questions). |
 | §7.1 | Level gap drives cost | ✅ dev. | The gap scales fee **and** materials: a 1-level touch-up shouldn't cost the materials of a 30-level jump (BALANCING.md). Scenario (`fee_by_gap`). |
 | §7.2 | Craftsman efficiency discount | — | Optional; only if playtesting asks for it. |
 | §7.3 | No random failure, safe abort | ✅ | |
@@ -49,12 +49,12 @@ started.
 | §12 | Modular architecture | ✅ | Config / service / grid / menu hooks separated; the service is driven directly by the tests. |
 | §13 | Transaction safety | ✅ | Level verified after applying, rollback on mismatch; charge → materials → sacrifice. |
 | §13.4 | Save/load integrity | ✅ | Scenario (`persist` + `infuseScenarioPersistCheck`) and manual rounds. |
-| §14 | Compatibility | ⚠️ | No vanilla script override (annotations, UI.md). Remaining surface: the global `HaxGetPanelStateName` replacement. Not tested alongside scaling, crafting or UI overhaul mods. |
+| §14 | Compatibility | ⚠️ | No vanilla script override (annotations, UI.md). Remaining surface: the global `HaxGetPanelStateName` replacement. `tools/check-mod-conflicts.ps1` scans a mods folder against our hooks (read from `src/`). Installed during the in-game tests: HQ Faces, Real Weather, More Money For Traders (scan: no conflicts). Compatibility table in KNOWN_ISSUES.md. Not tested alongside scaling, crafting or UI overhaul mods. |
 | §14.2 | Exclusion list with explanation | ✅ | Quest, hidden/body, Aerondight, merchant-range items. Excluded gear of the craftsman's specialization is listed disabled with "Kann nicht sicher infundiert werden" (scenario `block_excluded`); hidden/body items stay hidden. |
 | §15.1–15.3, 15.5 | Core, rejection, salvage, persistence tests | ✅ | Scenario suite. |
 | §15.4 | Pricing tests | ✅ | Master > journeyman (`fee_by_tier`), formula incl. target-tier multiplier (`fee_formula`), larger gap → higher fee (`fee_by_gap`), config change → price change (`fee_config`), no negative/overflow at NG+ levels (`ngplus_uncapped`), salvage doesn't touch the fee. "Journeymen > lower tier" doesn't apply (no lower tier in the game). |
 | §15.6 | Regression | ✅ | Repair, repair all, dismantle, sockets; crafting/alchemy/inventory menus; removing the mod from a save (infused items keep their levels). `EnableInfusion = false` (empty tab, clicks refused) untested in game. |
-| §16 M7 | Release preparation | ⚠️ | ✅ install guide (INSTALL.md), configuration doc (CONFIGURATION.md), known issues (KNOWN_ISSUES.md), changelog, packaging with an automated release check (`tools/package-release.ps1`: no test files or console commands, BOMs, strings for all 18 languages), release build tested in game (`package-release.ps1 -Deploy`, 2026-10-20). ❌ compatibility documentation beyond the known conflict (needs §14 tests). |
+| §16 M7 | Release preparation | ⚠️ | ✅ install guide (INSTALL.md), configuration doc (CONFIGURATION.md), known issues (KNOWN_ISSUES.md), changelog, packaging with an automated release check (`tools/package-release.ps1`: no test files or console commands, BOMs, strings for all 18 languages), release build tested in game (`package-release.ps1 -Deploy`, 2026-10-20). compatibility table and conflict scanner (KNOWN_ISSUES.md, `tools/check-mod-conflicts.ps1`). ❌ tests next to scaling, crafting and UI overhaul mods (§14). |
 
 ## Open items, top to bottom
 
@@ -66,8 +66,8 @@ started.
 | 4 | §14.2 | ~~List excluded gear disabled with a reason~~ — done | code | S |
 | 5 | §15.4 | ~~Pricing scenarios~~ — done | tests | S |
 | 5a | §6.3 | ~~Regional fee (craftsman's repair price as anchor)~~ — done | code | S |
-| 6 | §6.4 | NG+ balance playtest with real high-level gear | playtest | M |
-| 7 | §14 | Test next to popular mods (scaling, crafting, UI overhauls) | playtest | M |
+| 6 | §6.4 | NG+ balance check: run `infuseBalanceReport` and judge the numbers | playtest | S |
+| 7 | §14 | Test next to popular mods (scaling, crafting, UI overhauls); scan them with `check-mod-conflicts.ps1` first | playtest | M |
 | 8 | §16 M7 | ~~Install guide, configuration doc, known issues, packaging, release build in game~~ — done | docs | M |
 | — | §10 | `AllowSpecialItems`: nothing special is allowed today; add a switch only for a category that gets tested | — | — |
 | — | §11 / M8 | Bonus merging (optional, separate module) | — | L |

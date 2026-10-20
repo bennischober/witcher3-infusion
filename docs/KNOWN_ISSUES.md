@@ -40,9 +40,25 @@
 
 ## Compatibility
 
-- **No other mod has been tested alongside this one.** The mod overrides no game script (it
-  hooks in via REDkit script annotations), so it doesn't need a script merger and usually
-  coexists with other mods.
+The mod overrides no game script (it hooks in via REDkit script annotations), so it doesn't need
+a script merger and usually coexists with other mods. Only a few mods have been tried alongside
+it so far:
+
+| Mod or kind of mod | Status |
+| --- | --- |
+| HQ Faces (`modHQFacesV3`), Real Weather (`modRealWeather`) | ✅ Installed during the in-game tests. Assets only, no scripts. |
+| More Money For Traders (`modMoreMoneyForTraders`) | ✅ Installed during the in-game tests. Replaces the game's inventory menu script, which Infusion doesn't touch. |
+| Any mod that replaces `HaxGetPanelStateName` | ❌ Can't be installed together (see below). |
+| Scaling mods (e.g. Leveling Gear), stat or damage overhauls | ❓ Untested — see below. |
+| Blacksmith or inventory UI overhauls | ❓ Untested — see below. |
+| Crafting, dismantling or durability overhauls | ❓ Untested. Infusion reads the game's dismantling yield and repair prices, so changes there change what an infusion costs. |
+| Mods that change Witcher gear or rarity | ❓ Untested. The craftsman rank needed is read from the item's game data. |
+
+**Check your own mod list** with `tools\check-mod-conflicts.ps1` from the source repository: it
+compares every mod in your `mods` folder with Infusion's script hooks and reports hard conflicts
+(won't compile together) and mods worth a play-test in the blacksmith menu. It finds script
+conflicts only; it can't tell whether a mod changes item levels or prices.
+
 - **One hard conflict:** the mod replaces the game function `HaxGetPanelStateName` (it lists
   the blacksmith menu's tabs). Another mod replacing the same function causes a "duplicate
   found" compilation error — only one of them can be installed.
