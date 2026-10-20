@@ -5,7 +5,7 @@ INFUSION_SPEC.md compared section by section with the implementation. Updated 20
 Legend: ✅ implemented and verified in game · ⚠️ partial, or a deliberate deviation
 (TECHNICAL_DISCOVERY.md §9) · ❌ missing · — optional, not planned yet
 
-"Scenario" = verified by the one-command scenario suite (`infuseScenarioAll`, 30 scenarios;
+"Scenario" = verified by the one-command scenario suite (`infuseScenarioAll`: 30/30 PASS on 2026-10-20;
 tests/modInfusion/README.md). Re-audited against every spec section on 2026-10-19.
 
 ## Summary
@@ -40,7 +40,7 @@ started.
 | §8.2 | Tier + specialization from game data | ✅ | Scenario (`reject_craftsman_type`, `reject_tier_witcher`, `reject_tier_relic`, `master_relic_ok`). Relic → master, Witcher gear → grandmaster (config). |
 | §8.3 | No level cap, overflow-safe | ✅ | Scenario (`ngplus_uncapped`); gap factor capped at 3 sets. |
 | §9.1 | Select target and sacrifice | ✅ | Two-step flow (UI.md). |
-| §9.2 | Preview contents | ⚠️ | ✅ names, icons, levels, fee, covered/remaining materials, consumption + repair note, eligibility (blocked targets with reason). projected primary stat in the popup (current stat + steps × the step ability's fixed value; every infusion scenario checks it against the result). In-game popup layout check pending. |
+| §9.2 | Preview contents | ✅ | Names, icons, levels, fee, covered/remaining materials, consumption + repair note, eligibility (blocked targets with reason), projected primary stat in the popup (current stat + steps × the step ability's fixed value; every infusion scenario checks it against the result; popup checked in game). |
 | §9.3 | Clear rejection messages | ✅ | Blocked targets are listed disabled with the reason in the tooltip (tier with the game's rank name, no/only-lower/only-equipped sacrifices); popup-time rejections as localized notifications (en/de). Scenario (`block_tier`, `block_no_higher`, `block_ok`); UI checked in game (one-line reasons, no Space hint). |
 | §9.5 | Confirmation with fresh data | ✅ | Fresh `Preview` before the popup; `Execute` re-validates. |
 | §10 | Configuration | ⚠️ | Script constants in `InfusionConfig.ws` (no settings menu — broken on 5.01); dev overrides via `infuseSetConfig`. Salvage toggle (scenario `salvage_off`), `RequireCraftingMaterials` (`REQUIRE_MATERIALS`, scenario `materials_off`). Values are clamped when read (BALANCING.md), fees capped at 10,000,000. Not added: `AllowEqualLevelInfusion` (§3.2), `AllowSpecialItems` (nothing special is tested), `EnableBonusMerging` (no extension). ❌ player-facing configuration doc (M7). |
@@ -59,12 +59,12 @@ started.
 
 | # | Spec | Item | Who | Size |
 | --- | --- | --- | --- | --- |
-| 1 | §9.2 | ~~Projected primary stat in the popup~~ — done, popup layout check pending | code | S |
+| 1 | §9.2 | ~~Projected primary stat in the popup~~ — done | code | S |
 | 2 | §10 | ~~Validate config values~~ — done | code | S |
 | 3 | §10 | ~~`RequireCraftingMaterials` switch~~ — done | code | S |
-| 4 | §14.2 | ~~List excluded gear disabled with a reason~~ — done, UI check pending | code | S |
+| 4 | §14.2 | ~~List excluded gear disabled with a reason~~ — done | code | S |
 | 5 | §15.4 | ~~Pricing scenarios~~ — done | tests | S |
-| 5a | §6.3 | ~~Regional fee (craftsman's repair price as anchor)~~ — done, in-game check pending | code | S |
+| 5a | §6.3 | ~~Regional fee (craftsman's repair price as anchor)~~ — done | code | S |
 | 6 | §6.4 | NG+ balance playtest with real high-level gear | playtest | M |
 | 7 | §14 | Test next to popular mods (scaling, crafting, UI overhauls) | playtest | M |
 | 8 | §16 M7 | Install guide, configuration doc, known issues, release build without the test scripts, packaging | docs | M |
