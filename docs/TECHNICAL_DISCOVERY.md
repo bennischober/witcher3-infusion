@@ -141,6 +141,15 @@ on items).
     also 4,801.
   - Vanilla's full repair (repair per point × 100) is exactly 25 % of the item value in Velen
     (1,200 = 4,801 × 0.25, our fee fraction) and follows the region elsewhere (1,400 / 1,300).
+- **Second run** (same templates; fresh copies at 0 durability, 2026-10-20):
+  - Full repair = per point × max durability (100) exactly — no finer price behind it.
+  - Per point is whole crowns, **rounded up**: Light armor 01 (value ~290) 1/pt everywhere,
+    Novigraadan sword 1 (~900) and Bear Armor 1 (863) 3/pt everywhere. Regional differences only
+    show from a few crowns per point upwards (valuable gear).
+  - `GetRepairPriceModifier` is 1.0 at every craftsman and the funds type (Poor/Avg/Rich)
+    doesn't match the price differences — neither is the regional knob, and the native factor
+    isn't readable from script.
+  - → The fee anchor is the craftsman's full-repair price (`W3InfusionService.GetFeeAnchor`).
 
 ## 7. Exclusions
 

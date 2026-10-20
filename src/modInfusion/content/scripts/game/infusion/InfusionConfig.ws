@@ -51,12 +51,21 @@ class W3InfusionConfig extends IScriptable
 
 	// ============================= labor fees ==============================
 
-	// The fee is anchored to the TARGET's market value (the item being
-	// upgraded), not the sacrifice's - sacrifices are usually cheap loot.
-	// fee = targetValue * fraction * gapFactor * craftsman * tier.
-	// At a 10-level gap the fee is 25% of the target's current value.
-	private const var FEE_FRACTION_OF_TARGET_VALUE : float;
-	default FEE_FRACTION_OF_TARGET_VALUE = 0.25f;
+	// The fee is anchored to what THIS craftsman charges for a full repair of
+	// the TARGET (vanilla repair service: price per durability point x max
+	// durability). That price follows the item's level, rarity and NG+ value
+	// and the craftsman's regional economy (measured: Novigrad +17 %,
+	// Skellige +8 % over Velen; TECHNICAL_DISCOVERY.md §6). The sacrifice
+	// doesn't matter - sacrifices are usually cheap loot.
+	// fee = fullRepair * FEE_REPAIR_MULT * gapFactor * craftsman * tier.
+	// At a 10-level gap the fee is one full repair at this craftsman.
+	private const var FEE_REPAIR_MULT : float;
+	default FEE_REPAIR_MULT = 1.0f;
+
+	// Without a craftsman (scenario tests) the anchor is this fraction of the
+	// target's market value - about what vanilla charges for a full repair.
+	private const var FALLBACK_VALUE_FRACTION : float;
+	default FALLBACK_VALUE_FRACTION = 0.25f;
 
 	// Floor so tiny/zero-value sacrifices still cost something (labor!).
 	private const var MIN_LABOR_FEE : int;
@@ -142,7 +151,7 @@ class W3InfusionConfig extends IScriptable
 
 	// Console overrides (dev harness; tests/infuseSetConfig). A fact set to
 	// a nonzero value overrides the corresponding default. Player-invisible.
-	//   InfCfg_BaseFee  - overrides the fee fraction (value = fraction x 1000)
+	//   InfCfg_BaseFee  - overrides FEE_REPAIR_MULT (value = multiplier x 1000)
 	//   InfCfg_MinFee   - overrides MIN_LABOR_FEE
 	//   InfCfg_Salvage  - nonzero disables salvage (no discount: full recipe)
 	//   InfCfg_NoMaterials - nonzero disables material requirements
@@ -260,24 +269,29 @@ class W3InfusionConfig extends IScriptable
 
 	// --------------------------- fee anchors -----------------------------
 
-	// The auto-balance anchor: the target's market value as priced by the
-	// game itself (scales with level and tier; official economy updates flow
-	// through).
+	// The target's market value as priced by the game itself (player side:
+	// level, rarity, NG+; no regional factor). Fallback anchor only.
 	public function GetTargetValue( inv : CInventoryComponent, targetId : SItemUniqueId ) : int
 	{
 		return inv.GetItemPriceModified( targetId );
 	}
 
-	public function GetFeeFraction() : float
+	// Multiplier on the craftsman's full-repair price (spec §6.3 BaseFee).
+	public function GetFeeMultiplier() : float
 	{
 		var factVal : int;
 
 		factVal = FactsQuerySum( FACT_BASE_FEE );
 		if ( factVal > 0 )
 		{
-			return SafeMultiplier( factVal / 1000.0f );   // fact stores fraction x 1000
+			return SafeMultiplier( factVal / 1000.0f );   // fact stores multiplier x 1000
 		}
-		return SafeMultiplier( FEE_FRACTION_OF_TARGET_VALUE );
+		return SafeMultiplier( FEE_REPAIR_MULT );
+	}
+
+	public function GetFallbackValueFraction() : float
+	{
+		return SafeMultiplier( FALLBACK_VALUE_FRACTION );
 	}
 
 	public function GetMinLaborFee() : int

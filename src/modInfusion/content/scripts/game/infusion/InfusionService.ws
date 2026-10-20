@@ -783,7 +783,7 @@ class W3InfusionService extends IScriptable
 
 		preview.stepsToAdd = gap;
 		preview.newLevel = targetLevel + gap;
-		preview.laborFee = GetLaborFee( inv, targetId, gap, quality, craftsmanLevel );
+		preview.laborFee = GetLaborFee( inv, targetId, gap, quality, craftsmanLevel, craftsman );
 		ProjectPrimaryStat( inv, targetId, targetData, preview );
 		preview.errorCode = IFE_Ok;
 		return preview.errorCode;
@@ -975,27 +975,51 @@ class W3InfusionService extends IScriptable
 	}
 
 	// ---------------------------------------------------------------------
-	// Labor fee (auto-balanced: fraction of the target's market value,
-	// scaled by craftsman tier, target tier, and level gap — spec §6.2/§6.3)
+	// Labor fee (auto-balanced: the craftsman's full-repair price of the
+	// target, scaled by craftsman tier, target tier, and level gap — spec
+	// §6.2/§6.3)
 	// ---------------------------------------------------------------------
 
-	private function GetLaborFee( inv : CInventoryComponent, targetId : SItemUniqueId, gap : int, quality : int, craftsmanLevel : int ) : int
+	// The fee anchor: what this craftsman charges for repairing the target
+	// from 0 to full durability. GetItemPriceRepair prices per durability
+	// point on the craftsman's own inventory (the call the vanilla repair
+	// tab makes), so the item's value and the craftsman's regional economy
+	// flow through; the per-point price is whole crowns, rounded up (cheap
+	// items: 1 crown per point). Without a craftsman (scenario tests) or
+	// repair price: a fraction of the target's market value.
+	public function GetFeeAnchor( inv : CInventoryComponent, targetId : SItemUniqueId, optional craftsman : CGameplayEntity ) : float
+	{
+		var shopInv : CInventoryComponent;
+		var perPoint, total : int;
+		var maxDurability : float;
+
+		if ( craftsman )
+		{
+			shopInv = craftsman.GetInventory();
+		}
+		if ( shopInv )
+		{
+			shopInv.GetItemPriceRepair( inv.GetItem( targetId ), perPoint, total );
+			maxDurability = inv.GetItemMaxDurability( targetId );
+			if ( perPoint > 0 && maxDurability > 0 )
+			{
+				return perPoint * maxDurability;
+			}
+		}
+		return GetConfig().GetTargetValue( inv, targetId ) * GetConfig().GetFallbackValueFraction();
+	}
+
+	private function GetLaborFee( inv : CInventoryComponent, targetId : SItemUniqueId, gap : int, quality : int, craftsmanLevel : int, craftsman : CGameplayEntity ) : int
 	{
 		var fee : float;
 		var mult : float;
-		var targetValue : int;
 		var minFee : int;
-
-		// Anchor: the TARGET's market value - upgrading valuable gear costs
-		// more; auto-balances with the game's economy (official updates to
-		// item prices flow through).
-		targetValue = GetConfig().GetTargetValue( inv, targetId );
 
 		mult = GetConfig().GetCraftsmanMultiplier( craftsmanLevel )
 			* GetConfig().GetTargetTierMultiplier( quality )
 			* GetConfig().GetLevelGapMultiplier( gap );
 
-		fee = targetValue * GetConfig().GetFeeFraction() * mult;
+		fee = GetFeeAnchor( inv, targetId, craftsman ) * GetConfig().GetFeeMultiplier() * mult;
 
 		// Labor floor: small upgrades of cheap items still cost labor.
 		minFee = GetConfig().GetMinLaborFee();

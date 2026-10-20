@@ -294,7 +294,8 @@ function InfusionPriceProbeSlot( craftsman : CNewNPC, slot : EEquipmentSlots )
 	itemName = inv.GetItemName( item );
 
 	msg = "price probe: " + itemName + " L" + svc.ComputeItemLevel( inv, item )
-		+ " | fee anchor (player value) " + inv.GetItemPriceModified( item, false )
+		+ " | fee anchor " + RoundMath( svc.GetFeeAnchor( inv, item, craftsman ) )
+		+ " | player value " + inv.GetItemPriceModified( item, false )
 		+ " | base " + inv.GetItemPrice( item )
 		+ " | player sells for " + inv.GetItemPriceModified( item, true );
 

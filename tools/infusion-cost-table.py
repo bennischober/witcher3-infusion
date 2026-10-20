@@ -11,6 +11,12 @@ r4data) and applies the same balancing formulas as the mod
   remaining = recipe - covered
   fee       = max(MIN_FEE, round(targetValue x FEE_FRACTION x gapFactor x craftsman x tier))
 
+The mod anchors the fee to the craftsman's full-repair price instead
+(GetItemPriceRepair per point x max durability: regional, whole crowns per
+point rounded up). In Velen that is about targetValue x 0.25, which this
+tool uses; Novigrad is ~17 % and Skellige ~8 % higher, and cheap items pay
+vanilla's rounding (1 crown per point minimum).
+
 KEEP THE CONSTANTS BELOW IN SYNC WITH InfusionConfig.ws.
 
 Recipes are exact (game data). The fee needs the target's in-game value

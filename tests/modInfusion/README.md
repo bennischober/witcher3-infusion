@@ -21,7 +21,7 @@ excluded from release builds.
 | `infuseCraftsmanReport` | Log type/tier of every craftsman within 40 m |
 | `infusePriceProbe` | Price experiment (spec §6.3): for the equipped steel sword and chest armor, log the fee anchor (player-side market value) next to the nearest craftsman's price for a copy of the same item, vanilla's shop modifier and his repair price per point. Compare runs at craftsmen in different regions. |
 | `infusePriceProbeAll` | Same probe without travelling: spawns 10 real community craftsman templates (Velen, Novigrad, Skellige — their merchant data comes with the template), probes each, despawns them after 2 min. The zone factor still follows where you stand. If a line says "could not add copies", run it again (re-probes the spawned ones). |
-| `infuseSetConfig(key, n)` | Dev config override via facts: `fee` (fraction ×1000, 0 = default), `minfee`, `salvage` (1 = off), `materials` (1 = no material requirements), `debug` (1 = per-item grid log) |
+| `infuseSetConfig(key, n)` | Dev config override via facts: `fee` (multiplier on the craftsman's full-repair price ×1000, 0 = default 1.0), `minfee`, `salvage` (1 = off), `materials` (1 = no material requirements), `debug` (1 = per-item grid log) |
 | `infuseDumpConfig` | Log the effective configuration |
 | `infuseTestStrings` | Check that the mod's `.w3strings` load |
 
@@ -63,9 +63,9 @@ enchantment and all previous abilities intact, crowns charged = fee, materials u
 | 25 | `block_ok` | a valid pair has no block reason (consistent with the infusable check) |
 | 26 | `block_excluded` | a quest-tagged sword is an explained exclusion (listed disabled, §14.2); untagged it isn't |
 | 27 | `materials_off` | material requirements off: labor fee only, no material consumed (§10) |
-| 28 | `fee_formula` | the fee matches the configured formula for an ordinary and a Witcher target, incl. the target-tier multiplier (§6.3, §15.4) |
+| 28 | `fee_formula` | the fee matches the configured formula: value fallback for an ordinary and a Witcher target (incl. the target-tier multiplier), and the craftsman's full-repair price at a journeyman armorer (§6.3, §15.4) |
 | 29 | `fee_by_gap` | a 20-level gap costs more than a 5-level gap (§7.1, §15.4) |
-| 30 | `fee_config` | doubling the fee fraction doubles the fee (§15.4) |
+| 30 | `fee_config` | doubling the fee multiplier doubles the fee (§15.4) |
 
 Every successful infusion scenario also checks that the popup's projected primary stat equals
 the result (§9.2).

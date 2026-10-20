@@ -104,7 +104,7 @@ exec function infuseTestStrings()
 }
 
 // Sets a dev config override via persistent facts (player-invisible):
-//   infuseSetConfig('fee', 150)      -> fee fraction = 0.150 (x1000 stored)
+//   infuseSetConfig('fee', 1500)     -> fee = 1.5 x the craftsman's full repair (x1000 stored)
 //   infuseSetConfig('fee', 0)        -> clear override
 //   infuseSetConfig('minfee', 25)    -> minimum labor fee
 //   infuseSetConfig('salvage', 1)    -> disable salvage (full recipe, no discount)
@@ -122,12 +122,12 @@ exec function infuseSetConfig( key : string, value : int )
 		if ( value > 0 )
 		{
 			FactsSet( "InfCfg_BaseFee", value );
-			LogChannel( 'Infusion', "config override: fee fraction = " + value / 1000.0f );
+			LogChannel( 'Infusion', "config override: fee multiplier = " + value / 1000.0f );
 		}
 		else
 		{
 			FactsRemove( "InfCfg_BaseFee" );
-			LogChannel( 'Infusion', "config override: fee fraction cleared (default 0.25)" );
+			LogChannel( 'Infusion', "config override: fee multiplier cleared (default 1.0)" );
 		}
 	}
 	else if ( keyNorm == "minfee" )
@@ -201,7 +201,8 @@ exec function infuseDumpConfig()
 		+ " steel=" + c.IsCategoryEnabled( 'steelsword' )
 		+ " silver=" + c.IsCategoryEnabled( 'silversword' )
 		+ " armor=" + c.IsCategoryEnabled( 'armor' ) );
-	LogChannel( 'Infusion', "config dump: feeFraction=" + c.GetFeeFraction()
+	LogChannel( 'Infusion', "config dump: feeMultiplier=" + c.GetFeeMultiplier()
+		+ " fallbackValueFraction=" + c.GetFallbackValueFraction()
 		+ " minFee=" + c.GetMinLaborFee()
 		+ " materials=" + c.RequireCraftingMaterials()
 		+ " salvage=" + c.SalvageEnabled()

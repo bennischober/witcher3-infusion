@@ -14,11 +14,11 @@ regardless of tier (user feedback 2026-10-18).
 | Fallback recipe | old per-category table, only for targets without usable dismantle data | `GetRecipeForCategory` |
 | Salvage | the sacrifice's dismantle data × `SALVAGE_YIELD_MULT` (1.0) | `GetSalvageYield`, `ApplySalvageMultiplier` |
 | Covered / you pay | per recipe material: covered = `min(salvage, recipe)`, pay = `recipe − salvage`; salvage of non-recipe materials is discarded (spec §5.4) | `ComputeRemainingMaterials` (`preview.covered`, `preview.materials`) |
-| Fee | `max(10, round(targetValue × 0.25 × gapFactor × craftsman × tier))`, at most 10,000,000 (overflow guard); `targetValue` = `GetItemPriceModified(target)` (native, level/NG+-scaled) | `GetLaborFee`, `GetTargetValue` |
+| Fee | `max(10, round(fullRepair × 1.0 × gapFactor × craftsman × tier))`, at most 10,000,000 (overflow guard). `fullRepair` = this craftsman's vanilla repair price for the target from 0 to full durability (`GetItemPriceRepair` per point × max durability): follows level, rarity, NG+ and his **regional economy** (Novigrad +17 %, Skellige +8 % over Velen). Per point is whole crowns, rounded up — cheap items cost 1 crown per point. Without a craftsman (tests): `targetValue × 0.25` | `GetLaborFee`, `GetFeeAnchor` |
 | Craftsman | journeyman 1.0, master 1.5, grandmaster 2.0, arch master 2.5 | `MULT_*` |
 | Tier | 1.0 for all qualities (the target's value already scales with its tier) | `TIER_MULT_*` |
 
-Config values are clamped when read (`InfusionConfig.ws`): multipliers and the fee fraction to
+Config values are clamped when read (`InfusionConfig.ws`): multipliers (incl. `FEE_REPAIR_MULT`) to
 0–100, `LEVELS_PER_FULL_SET` to 1–1000, `MAX_SETS` to 0.1–100, the yield multiplier to 0–10,
 tier requirements to 1–4, the minimum fee to 0–10,000,000. `REQUIRE_MATERIALS = false` makes
 infusion cost the labor fee only.

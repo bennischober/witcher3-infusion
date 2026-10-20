@@ -950,40 +950,57 @@ class W3InfusionScenarioRunner extends IScriptable
 		return status;
 	}
 
-	// The fee follows the configured formula for an ordinary and a Witcher
-	// target: value x fraction x craftsman x target tier x gap, floored and
-	// capped (spec §6.3; the target-tier multiplier is part of it).
+	// The fee follows the configured formula: anchor x multiplier x
+	// craftsman x target tier x gap, floored and capped (spec §6.3; the
+	// target-tier multiplier is part of it). Without a craftsman the anchor
+	// is the value fallback (ordinary and Witcher target); at a journeyman
+	// armorer it is his full-repair price, read here independently from his
+	// inventory (GetItemPriceRepair per point x max durability).
 	private function ScenarioFeeFormula() : EInfScnStatus
 	{
-		var detailOrdinary : string;
+		var details : string;
+		var armorer : CGameplayEntity;
 
-		if ( !CheckFeeFormula( 'Light armor 01', 'Light armor 06' ) )
+		if ( !CheckFeeFormula( 'Light armor 01', 'Light armor 06', NULL ) )
 		{
 			return ISS_Fail;
 		}
-		detailOrdinary = detail;
-		if ( !CheckFeeFormula( 'Bear Armor 1', 'Light armor 06' ) )
+		details = detail;
+		if ( !CheckFeeFormula( 'Bear Armor 1', 'Light armor 06', NULL ) )
 		{
 			return ISS_Fail;
 		}
-		detail = detailOrdinary + "; " + detail;
+		details += "; " + detail;
+		armorer = GetCraftsman( true, false );
+		if ( !armorer )
+		{
+			detail = details + "; no journeyman armorer for the repair anchor";
+			return ISS_Skip;
+		}
+		if ( !CheckFeeFormula( 'Light armor 01', 'Light armor 06', armorer ) )
+		{
+			return ISS_Fail;
+		}
+		detail = details + "; " + detail;
 		return ISS_Pass;
 	}
 
-	private function CheckFeeFormula( targetName, sacrificeName : name ) : bool
+	private function CheckFeeFormula( targetName, sacrificeName : name, craftsman : CGameplayEntity ) : bool
 	{
 		var cfg : W3InfusionConfig;
 		var t, s : SItemUniqueId;
 		var p : SInfusionPreview;
 		var err : EInfusionError;
-		var quality : int;
-		var expected : float;
+		var quality, craftsmanLevel, perPoint, total : int;
+		var anchor, expected : float;
+		var comp : W3CraftsmanComponent;
+		var label : string;
 
 		if ( !Spawn( targetName, t ) || !Spawn( sacrificeName, s ) || !BoostTo( s, Level( t ) + 10 ) )
 		{
 			return false;
 		}
-		err = svc.Preview( t, s, p, NULL );
+		err = svc.Preview( t, s, p, craftsman );
 		if ( err != IFE_Ok )
 		{
 			detail = "preview refused " + targetName + ": " + InfusionErrorToString( err );
@@ -991,12 +1008,25 @@ class W3InfusionScenarioRunner extends IScriptable
 		}
 		cfg = svc.GetPublicConfig();
 		quality = inv.GetItemQuality( t );
-		// No craftsman (test bypass) = tier 0, priced like a journeyman.
-		expected = cfg.GetTargetValue( inv, t ) * cfg.GetFeeFraction()
-			* cfg.GetCraftsmanMultiplier( 0 ) * cfg.GetTargetTierMultiplier( quality )
+		craftsmanLevel = 0;   // no craftsman (test bypass): priced like a journeyman
+		if ( craftsman )
+		{
+			craftsman.GetInventory().GetItemPriceRepair( inv.GetItem( t ), perPoint, total );
+			anchor = perPoint * inv.GetItemMaxDurability( t );
+			comp = (W3CraftsmanComponent)craftsman.GetComponentByClassName( 'W3CraftsmanComponent' );
+			craftsmanLevel = comp.GetCraftsmanLevel( ECT_Armorer );
+			label = "repair " + perPoint + "/pt";
+		}
+		else
+		{
+			anchor = cfg.GetTargetValue( inv, t ) * cfg.GetFallbackValueFraction();
+			label = "value fallback";
+		}
+		expected = anchor * cfg.GetFeeMultiplier()
+			* cfg.GetCraftsmanMultiplier( craftsmanLevel ) * cfg.GetTargetTierMultiplier( quality )
 			* cfg.GetLevelGapMultiplier( p.levelGap );
 		expected = ClampF( expected, cfg.GetMinLaborFee(), cfg.GetMaxLaborFee() );
-		detail = targetName + " (quality " + quality + ", tier x" + cfg.GetTargetTierMultiplier( quality )
+		detail = targetName + " (" + label + ", quality " + quality + ", tier x" + cfg.GetTargetTierMultiplier( quality )
 			+ "): fee " + p.laborFee + ", formula " + RoundMath( expected );
 		return Abs( p.laborFee - RoundMath( expected ) ) <= 1;
 	}
@@ -1035,14 +1065,14 @@ class W3InfusionScenarioRunner extends IScriptable
 	}
 
 	// A config change changes the price (spec §15.4): doubling the fee
-	// fraction doubles the fee (within rounding).
+	// multiplier doubles the fee (within rounding).
 	private function ScenarioFeeConfig() : EInfScnStatus
 	{
 		var t, s : SItemUniqueId;
 		var pa, pb : SInfusionPreview;
 		var errA, errB : EInfusionError;
 		var prevFee, prevMin : int;
-		var fraction : float;
+		var multiplier : float;
 
 		if ( !Spawn( 'Novigraadan sword 1', t ) || !Spawn( 'Novigraadan sword 3', s ) || !BoostTo( s, Level( t ) + 10 ) )
 		{
@@ -1051,8 +1081,8 @@ class W3InfusionScenarioRunner extends IScriptable
 		prevMin = SetFactTemp( "InfCfg_MinFee", 1 );
 		prevFee = SetFactTemp( "InfCfg_BaseFee", 0 );
 		errA = svc.Preview( t, s, pa, NULL );
-		fraction = svc.GetPublicConfig().GetFeeFraction();
-		FactsSet( "InfCfg_BaseFee", RoundMath( fraction * 2000 ) );
+		multiplier = svc.GetPublicConfig().GetFeeMultiplier();
+		FactsSet( "InfCfg_BaseFee", RoundMath( multiplier * 2000 ) );
 		errB = svc.Preview( t, s, pb, NULL );
 		RestoreFact( "InfCfg_BaseFee", prevFee );
 		RestoreFact( "InfCfg_MinFee", prevMin );
@@ -1061,7 +1091,7 @@ class W3InfusionScenarioRunner extends IScriptable
 			detail = "preview refused: " + InfusionErrorToString( errA ) + " / " + InfusionErrorToString( errB );
 			return ISS_Fail;
 		}
-		detail = "fraction " + fraction + ": " + pa.laborFee + ", fraction " + ( fraction * 2 ) + ": " + pb.laborFee + " crowns";
+		detail = "multiplier " + multiplier + ": " + pa.laborFee + ", multiplier " + ( multiplier * 2 ) + ": " + pb.laborFee + " crowns";
 		if ( pa.laborFee <= 1 || Abs( pb.laborFee - 2 * pa.laborFee ) > 2 )
 		{
 			return ISS_Fail;

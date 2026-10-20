@@ -31,7 +31,7 @@ started.
 | §5.1–5.4 | Salvage from native dismantle data, excess discarded | ✅ | `GetItemRecyclingParts`; recipe from the target's own components (BALANCING.md). |
 | §5.5 | Exploit protection | ✅ | Scenario (`reject_same`, `reject_materials`, `reject_crowns`: nothing consumed); `Execute` re-validates. |
 | §6.1/6.2 | Labor fee separate from materials; craftsman multipliers | ✅ | Scenario (`fee_by_tier`: master > journeyman). |
-| §6.3 | Fee formula | ⚠️ | Base = 25 % of the target's market value instead of a fixed base fee (follows level, rarity, NG+ and patch prices). Measured 2026-10-20 (TECHNICAL_DISCOVERY.md §6): vanilla prices are regional per craftsman (Novigrad +17–22 %, Skellige +8–17 % over Velen, for shops and repairs); the fee ignores that. Option: anchor the fee to the craftsman's own repair price — identical to today's fee in Velen, regional elsewhere. Decision pending. |
+| §6.3 | Fee formula | ✅ ⚠️ | Base = this craftsman's vanilla full-repair price of the target instead of a fixed base fee: follows level, rarity, NG+, patch prices and the craftsman's **regional economy** (measured 2026-10-20: Novigrad +17 %, Skellige +8 % over Velen; TECHNICAL_DISCOVERY.md §6). Scenario `fee_formula` checks it against the craftsman's repair price. |
 | §6.4 | Costs meaningful in long NG+ runs | ❌ | Needs a playtest with real high-level gear (BALANCING.md open questions). |
 | §7.1 | Level gap drives cost | ⚠️ | The gap scales fee **and** materials (deliberate). |
 | §7.2 | Craftsman efficiency discount | — | Optional; only if playtesting asks for it. |
@@ -64,7 +64,7 @@ started.
 | 3 | §10 | ~~`RequireCraftingMaterials` switch~~ — done | code | S |
 | 4 | §14.2 | ~~List excluded gear disabled with a reason~~ — done, UI check pending | code | S |
 | 5 | §15.4 | ~~Pricing scenarios~~ — done | tests | S |
-| 5a | §6.3 | Regional fee: anchor to the craftsman's repair price (`GetItemPriceRepair` per point × 100) instead of the player-side value — decision pending | code | S |
+| 5a | §6.3 | ~~Regional fee (craftsman's repair price as anchor)~~ — done, in-game check pending | code | S |
 | 6 | §6.4 | NG+ balance playtest with real high-level gear | playtest | M |
 | 7 | §14 | Test next to popular mods (scaling, crafting, UI overhauls) | playtest | M |
 | 8 | §16 M7 | Install guide, configuration doc, known issues, release build without the test scripts, packaging | docs | M |
