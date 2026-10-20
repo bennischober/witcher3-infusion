@@ -35,8 +35,9 @@
   Velen), because they're based on his own repair price. On cheap items the difference
   disappears: the game prices repairs in whole crowns per durability point, rounded up, so cheap
   gear costs at least 1 crown per point everywhere.
-- **Long New Game+ runs aren't playtested yet.** Fees and materials stay valid at any level
-  (tested above the level cap), but whether they feel right after many NG+ cycles is open.
+- **Long New Game+ runs aren't fully playtested yet.** Fees and materials stay valid at any
+  level (tested above the level cap) and were checked with real gear up to L150, but whether
+  they feel right after many NG+ cycles is open.
 
 ## Compatibility
 

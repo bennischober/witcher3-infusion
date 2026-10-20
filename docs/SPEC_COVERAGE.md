@@ -32,8 +32,8 @@ started.
 | §5.1–5.4 | Salvage from native dismantle data, excess discarded | ✅ | `GetItemRecyclingParts`; recipe from the target's own components (BALANCING.md). |
 | §5.5 | Exploit protection | ✅ | Scenario (`reject_same`, `reject_materials`, `reject_crowns`: nothing consumed); `Execute` re-validates. |
 | §6.1/6.2 | Labor fee separate from materials; craftsman multipliers | ✅ | Scenario (`fee_by_tier`: master > journeyman). |
-| §6.3 | Fee formula | ✅ dev. | Base = this craftsman's vanilla full-repair price of the target instead of a fixed base fee: follows level, rarity, NG+, patch prices and the craftsman's **regional economy** (measured 2026-10-20: Novigrad +17 %, Skellige +8 % over Velen; TECHNICAL_DISCOVERY.md §6). Scenario `fee_formula` checks it against the craftsman's repair price. |
-| §6.4 | Costs meaningful in long NG+ runs | ⚠️ | Tool ready: `infuseBalanceReport` logs fees (per craftsman tier), materials and salvage for real items at L30/60/100/150. Not run in game yet; the numbers still need judging (BALANCING.md open questions). |
+| §6.3 | Fee formula | ✅ dev. | Base = this craftsman's vanilla full-repair price of the target or the sacrifice (whichever is higher) instead of a fixed base fee: follows level, rarity, NG+, patch prices and the craftsman's **regional economy** (measured 2026-10-20: Novigrad +17 %, Skellige +8 % over Velen; TECHNICAL_DISCOVERY.md §6). Target tier multiplier: relic 1.5, Witcher gear 2.0 (balance report). Scenario `fee_formula` checks it against the craftsman's repair price. |
+| §6.4 | Costs meaningful in long NG+ runs | ⚠️ | `infuseBalanceReport` run in game 2026-10-20 (L60–150, all craftsman tiers): fees keep pace with level; big jumps and Witcher gear were too cheap → fee base and tier multipliers changed (BALANCING.md). Second run with the new formula pending. |
 | §7.1 | Level gap drives cost | ✅ dev. | The gap scales fee **and** materials: a 1-level touch-up shouldn't cost the materials of a 30-level jump (BALANCING.md). Scenario (`fee_by_gap`). |
 | §7.2 | Craftsman efficiency discount | — | Optional; only if playtesting asks for it. |
 | §7.3 | No random failure, safe abort | ✅ | |
@@ -66,7 +66,7 @@ started.
 | 4 | §14.2 | ~~List excluded gear disabled with a reason~~ — done | code | S |
 | 5 | §15.4 | ~~Pricing scenarios~~ — done | tests | S |
 | 5a | §6.3 | ~~Regional fee (craftsman's repair price as anchor)~~ — done | code | S |
-| 6 | §6.4 | NG+ balance check: run `infuseBalanceReport` and judge the numbers | playtest | S |
+| 6 | §6.4 | NG+ balance check: re-run `infuseBalanceReport` with the new fee base and tier multipliers | playtest | S |
 | 7 | §14 | Test next to popular mods (scaling, crafting, UI overhauls); scan them with `check-mod-conflicts.ps1` first | playtest | M |
 | 8 | §16 M7 | ~~Install guide, configuration doc, known issues, packaging, release build in game~~ — done | docs | M |
 | — | §10 | `AllowSpecialItems`: nothing special is allowed today; add a switch only for a category that gets tested | — | — |
