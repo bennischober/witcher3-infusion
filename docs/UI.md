@@ -31,7 +31,9 @@ over the item name, so keep reasons short.
 Items of the other specialization (swords at an armorer) and hidden/body items stay hidden.
 
 **Step 2 — sacrifice.** The grid is rebuilt with two sections: **Ziel (E: abbrechen)** (the picked
-item) and **Opfer wählen** (every valid sacrifice), each priced for that exact pair. Selecting a
+item; the key follows the input device: E on keyboard and mouse, A on an Xbox/Steam pad, X on a
+PlayStation pad, B / O with the game's "swap accept/cancel" option) and **Opfer wählen** (every
+valid sacrifice), each priced for that exact pair. Selecting a
 sacrifice and pressing E opens the confirmation; selecting the target again, or switching tabs,
 returns to step 1. A sacrifice whose remaining materials are missing is **disabled** (greyed
 panel, no E button, denied sound, warning "Fehlende Materialien"). A sacrifice's tooltip shows
@@ -101,6 +103,7 @@ Sources: `r4data\gameplay\gui_new\actionscript\red\game\witcher3\menus\blacksmit
 | Space / X | Sent (`OnRepairAllItems`) only while `_xActionLabel` is non-empty; the Disassemble page clears it. | The vanilla handler can't fire in the Infuse tab. |
 | Price popup | `tfMessage.htmlText = TextContent`; price shown only when `ItempPrice > 0`; ~481×130 px of text. | `<br>` line breaks (WitcherScript has no `\n` escapes); details at font size 16; inline `<img src='img://…'>` icons render. |
 | Selection | The grid reports selection changes (`OnInventoryItemSelected`), but Flash calls reach **script events only**, and annotations can't add events. `OnGetItemData` follows the mouse hover. | The script never knows the *selected* item → constant E label; the section header names the cancel action. |
+| Section headers | `ModuleBlacksmithGrid.as` sets the header's `.text` (plain text, no `img://` icons). `BlacksmithMenu.as` `setSectionsList` redraws the headers without rebuilding the grid. | The step-2 header names the key as a letter (`%KEY%` in `panel_infusion_target_cancel`, `InfusionAcceptKeyName`: `theInput.LastUsedGamepad`, `GetLastUsedGamepadType`, `Controls/SwapAcceptCancel`). On a device switch vanilla calls `CR4MenuBase.UpdateInputDeviceType` on the open menu; the wrapper re-sends `blacksmith.grid.section` alone. |
 
 ## Known limitations
 
@@ -131,3 +134,7 @@ launch: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, Infusion tab.
 6. Close and reopen the menu on the Infusion tab: it reopens there with the grid.
 7. Reparieren / Zerlegen (vanilla warning text) / Sockel behave like vanilla.
 8. Save, reload: the infused item keeps its level.
+9. Controller: steps 2–5 with a gamepad — header "Ziel (A: abbrechen)" (X on PlayStation; B / O
+   with "swap accept/cancel"), switching to the mouse mid-step-2 turns it into E and back without
+   moving the selection; bottom-bar hints show pad buttons; greyed items do nothing on A;
+   bumpers switch tabs and cancel step 2.

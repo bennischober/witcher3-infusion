@@ -25,7 +25,7 @@
 2112345035||panel_infusion_err_no_craftsman|이용 가능한 장인이 없습니다.
 2112345036||panel_infusion_err_craftsman_type|이 장인은 이 장비를 융합할 수 없습니다.
 2112345037||panel_infusion_err_craftsman_level|더 숙련된 장인이 필요합니다.
-2112345038||panel_infusion_target_cancel|대상 (E: 취소)
+2112345038||panel_infusion_target_cancel|대상 (%KEY%: 취소)
 2112345039||panel_infusion_block_no_candidates|같은 유형의 다른 물품 없음
 2112345040||panel_infusion_block_no_higher|레벨이 더 높은 물품 없음
 2112345041||panel_infusion_block_equipped|레벨이 더 높은 물품 착용 중

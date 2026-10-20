@@ -25,7 +25,7 @@
 2112345035||panel_infusion_err_no_craftsman|沒有可用的工匠。
 2112345036||panel_infusion_err_craftsman_type|此工匠無法灌注此裝備。
 2112345037||panel_infusion_err_craftsman_level|需要更有經驗的工匠。
-2112345038||panel_infusion_target_cancel|目標（E：取消）
+2112345038||panel_infusion_target_cancel|目標（%KEY%：取消）
 2112345039||panel_infusion_block_no_candidates|沒有其他同類物品
 2112345040||panel_infusion_block_no_higher|沒有更高等級的物品
 2112345041||panel_infusion_block_equipped|已裝備更高等級的物品

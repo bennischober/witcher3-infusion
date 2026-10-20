@@ -25,7 +25,7 @@
 2112345035||panel_infusion_err_no_craftsman|Uygun zanaatkâr yok.
 2112345036||panel_infusion_err_craftsman_type|Bu zanaatkâr bu teçhizatı kaynaştıramaz.
 2112345037||panel_infusion_err_craftsman_level|Daha deneyimli bir zanaatkâr gerekli.
-2112345038||panel_infusion_target_cancel|Hedef (E: iptal)
+2112345038||panel_infusion_target_cancel|Hedef (%KEY%: iptal)
 2112345039||panel_infusion_block_no_candidates|Bu türde başka eşya yok
 2112345040||panel_infusion_block_no_higher|Daha yüksek seviyeli eşya yok
 2112345041||panel_infusion_block_equipped|Daha yüksek seviyeli eşya kuşanılmış

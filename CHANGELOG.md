@@ -3,6 +3,11 @@
 Versions follow [semantic versioning](https://semver.org). 0.x: feature-complete, not yet
 playtested in long New Game+ runs or alongside other mods.
 
+## Unreleased
+
+- The step-2 header names the gamepad's button (A, or X on PlayStation; B / O with "swap
+  accept/cancel") instead of always E, and follows a switch between pad and keyboard.
+
 ## 0.9.0 — first public release (2026-10-20)
 
 - Infusion tab in every blacksmith and armorer menu, right after Repair: pick a target, then a

@@ -25,7 +25,7 @@
 2112345035||panel_infusion_err_no_craftsman|Nessun artigiano disponibile.
 2112345036||panel_infusion_err_craftsman_type|Questo artigiano non può infondere questo equipaggiamento.
 2112345037||panel_infusion_err_craftsman_level|Serve un artigiano più esperto.
-2112345038||panel_infusion_target_cancel|Obiettivo (E: annulla)
+2112345038||panel_infusion_target_cancel|Obiettivo (%KEY%: annulla)
 2112345039||panel_infusion_block_no_candidates|Nessun altro oggetto di questo tipo
 2112345040||panel_infusion_block_no_higher|Nessun oggetto di livello superiore
 2112345041||panel_infusion_block_equipped|Oggetto di livello superiore equipaggiato

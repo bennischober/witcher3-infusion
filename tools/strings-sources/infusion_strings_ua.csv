@@ -25,7 +25,7 @@
 2112345035||panel_infusion_err_no_craftsman|Немає доступного ремісника.
 2112345036||panel_infusion_err_craftsman_type|Цей ремісник не може наситити це спорядження.
 2112345037||panel_infusion_err_craftsman_level|Потрібен досвідченіший ремісник.
-2112345038||panel_infusion_target_cancel|Ціль (E: скасувати)
+2112345038||panel_infusion_target_cancel|Ціль (%KEY%: скасувати)
 2112345039||panel_infusion_block_no_candidates|Немає інших речей цього типу
 2112345040||panel_infusion_block_no_higher|Немає речей вищого рівня
 2112345041||panel_infusion_block_equipped|Вдягнено річ вищого рівня

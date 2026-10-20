@@ -25,7 +25,7 @@
 2112345035||panel_infusion_err_no_craftsman|Nenhum artesão disponível.
 2112345036||panel_infusion_err_craftsman_type|Este artesão não pode infundir este equipamento.
 2112345037||panel_infusion_err_craftsman_level|É necessário um artesão mais experiente.
-2112345038||panel_infusion_target_cancel|Alvo (E: cancelar)
+2112345038||panel_infusion_target_cancel|Alvo (%KEY%: cancelar)
 2112345039||panel_infusion_block_no_candidates|Nenhum outro item deste tipo
 2112345040||panel_infusion_block_no_higher|Nenhum item de nível maior
 2112345041||panel_infusion_block_equipped|Item de nível maior equipado

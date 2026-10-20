@@ -25,7 +25,7 @@
 2112345035||panel_infusion_err_no_craftsman|Žádný řemeslník není k dispozici.
 2112345036||panel_infusion_err_craftsman_type|Tento řemeslník nemůže provést infuzi tohoto vybavení.
 2112345037||panel_infusion_err_craftsman_level|Je potřeba zkušenější řemeslník.
-2112345038||panel_infusion_target_cancel|Cíl (E: zrušit)
+2112345038||panel_infusion_target_cancel|Cíl (%KEY%: zrušit)
 2112345039||panel_infusion_block_no_candidates|Žádný další předmět tohoto typu
 2112345040||panel_infusion_block_no_higher|Žádný předmět vyšší úrovně
 2112345041||panel_infusion_block_equipped|Předmět vyšší úrovně máš na sobě

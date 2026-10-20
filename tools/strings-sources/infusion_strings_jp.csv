@@ -25,7 +25,7 @@
 2112345035||panel_infusion_err_no_craftsman|職人がいない。
 2112345036||panel_infusion_err_craftsman_type|この職人はこの装備品を融合できない。
 2112345037||panel_infusion_err_craftsman_level|より熟練した職人が必要だ。
-2112345038||panel_infusion_target_cancel|対象 (E: キャンセル)
+2112345038||panel_infusion_target_cancel|対象 (%KEY%: キャンセル)
 2112345039||panel_infusion_block_no_candidates|同じ種類の他のアイテムがない
 2112345040||panel_infusion_block_no_higher|より高レベルのアイテムがない
 2112345041||panel_infusion_block_equipped|高レベルのアイテムを装備中

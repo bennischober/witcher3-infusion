@@ -25,7 +25,7 @@
 2112345035||panel_infusion_err_no_craftsman|No hay ningún artesano disponible.
 2112345036||panel_infusion_err_craftsman_type|Este artesano no puede infundir este equipo.
 2112345037||panel_infusion_err_craftsman_level|Se requiere un artesano con más experiencia.
-2112345038||panel_infusion_target_cancel|Objetivo (E: cancelar)
+2112345038||panel_infusion_target_cancel|Objetivo (%KEY%: cancelar)
 2112345039||panel_infusion_block_no_candidates|No hay otro objeto de este tipo
 2112345040||panel_infusion_block_no_higher|No hay objetos de nivel superior
 2112345041||panel_infusion_block_equipped|Hay un objeto de nivel superior equipado

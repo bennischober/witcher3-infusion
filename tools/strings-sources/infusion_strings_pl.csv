@@ -25,7 +25,7 @@
 2112345035||panel_infusion_err_no_craftsman|Brak dostępnego rzemieślnika.
 2112345036||panel_infusion_err_craftsman_type|Ten rzemieślnik nie może poddać infuzji tego ekwipunku.
 2112345037||panel_infusion_err_craftsman_level|Potrzebny jest bardziej doświadczony rzemieślnik.
-2112345038||panel_infusion_target_cancel|Cel (E: anuluj)
+2112345038||panel_infusion_target_cancel|Cel (%KEY%: anuluj)
 2112345039||panel_infusion_block_no_candidates|Brak innego przedmiotu tego rodzaju
 2112345040||panel_infusion_block_no_higher|Brak przedmiotu o wyższym poziomie
 2112345041||panel_infusion_block_equipped|Założony przedmiot o wyższym poziomie

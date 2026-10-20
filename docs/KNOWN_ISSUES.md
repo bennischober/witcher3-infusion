@@ -4,7 +4,8 @@
 
 - **The button always says "Infuse".** The game's menu doesn't tell mods which item is
   selected, so the label can't change between "pick target" and "cancel". In step 2 the section
-  header says how to cancel: select the target again (or switch tabs).
+  header says how to cancel: select the target again (or switch tabs). The header names the
+  key as a letter (E, or the gamepad's A / X); it can't show button icons.
 - **The Infusion tab borrows the Dismantle page's layout**: the pliers icon in the middle
   column, and no item picture or condition bar in the right panel. Item details are in the
   tooltip.

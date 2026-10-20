@@ -12,6 +12,9 @@
 /** 	  ApplyMenuState          Infuse grid; setup on first use (replaces the
 /** 	                          OnConfigUI event code - events can't be annotated)
 /** 	  SetSectionsDataList     Target / sacrifice section headers
+/** 	  CR4MenuBase.UpdateInputDeviceType  re-sends the headers when the
+/** 	                          input device changes (the step-2 header
+/** 	                          names the cancel key)
 /** 	  ProcessRequestConfirmation  click routing (vanilla OnRequestConfirmation
 /** 	                          calls it for every non-standalone click)
 /** 	  ShowItemTooltip         adds the block reason to a disabled target's
@@ -90,6 +93,21 @@
 
 // Vanilla's switch has no 'Infuse' case and leaves _curInv alone, so the
 // grid is picked before the vanilla body runs (sections, key label, data).
+// Vanilla calls this on the open menus when the input device changes
+// (CR4CommonMenu.UpdateInputDevice -> child menu). Inherited, so wrapped in
+// its declaring class.
+@wrapMethod( CR4MenuBase ) function UpdateInputDeviceType() : void
+{
+	var blacksmith : CR4BlacksmithMenu;
+
+	wrappedMethod();
+	blacksmith = (CR4BlacksmithMenu)this;
+	if ( blacksmith )
+	{
+		blacksmith.InfusionOnInputDeviceChanged();
+	}
+}
+
 @wrapMethod( CR4BlacksmithMenu ) function ApplyMenuState( newState : name ) : void
 {
 	if ( !m_standaloneMode )
@@ -266,7 +284,8 @@
 	m_sectionsList = m_flashValueStorage.CreateTempFlashArray();
 	if ( _infusionInv && _infusionInv.IsInSacrificePhase() )
 	{
-		curDataObject = CreateSectionsData( 0, 0, 3, GetLocStringByKeyExt( "panel_infusion_target_cancel" ) );
+		curDataObject = CreateSectionsData( 0, 0, 3, StrReplace(
+			GetLocStringByKeyExt( "panel_infusion_target_cancel" ), "%KEY%", InfusionAcceptKeyName() ) );
 		m_sectionsList.PushBackFlashObject( curDataObject );
 		curDataObject = CreateSectionsData( 1, 4, 8, GetLocStringByKeyExt( "panel_infusion_choose_sacrifice" ) );
 		m_sectionsList.PushBackFlashObject( curDataObject );
@@ -278,6 +297,53 @@
 		curDataObject = CreateSectionsData( 1, 4, 8, GetLocStringByKeyExt( "item_category_misc" ) );
 		m_sectionsList.PushBackFlashObject( curDataObject );
 	}
+}
+
+// The key that selects - and so cancels on the picked target - for the
+// step-2 header. The header is plain text (ModuleBlacksmithGrid.as sets
+// .text), so no button icons: E on keyboard and mouse (the button's own
+// key code, InfusionSetButtonLabel), the pad's letter otherwise. With the
+// game's "swap accept/cancel" option the pad accepts with B / circle
+// (vanilla GetIconForKey). PlayStation buttons are named X and O, as
+// players call them.
+@addMethod( CR4BlacksmithMenu ) function InfusionAcceptKeyName() : string
+{
+	var config : CInGameConfigWrapper;
+	var swapped : bool;
+	var padType : EInputDeviceType;
+
+	if ( !theInput.LastUsedGamepad() )
+	{
+		return "E";
+	}
+	config = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();
+	swapped = config.GetVarValue( 'Controls', 'SwapAcceptCancel' );
+	padType = theInput.GetLastUsedGamepadType();
+	if ( padType == IDT_PS4 || padType == IDT_PS5 )
+	{
+		if ( swapped )
+		{
+			return "O";
+		}
+		return "X";
+	}
+	if ( swapped )
+	{
+		return "B";
+	}
+	return "A";
+}
+
+// Step 2 shows the cancel key in its header: re-send the headers alone
+// (BlacksmithMenu.as setSectionsList redraws the titles; the grid stays).
+@addMethod( CR4BlacksmithMenu ) function InfusionOnInputDeviceChanged() : void
+{
+	if ( m_menuState != 'Infuse' || !_infusionInv || !_infusionInv.IsInSacrificePhase() )
+	{
+		return;
+	}
+	SetSectionsDataList( m_menuState );
+	m_flashValueStorage.SetFlashArray( "blacksmith.grid.section", m_sectionsList );
 }
 
 // The Disassemble page's warning line (warningDisassemble.container.

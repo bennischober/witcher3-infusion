@@ -25,7 +25,7 @@
 2112345035||panel_infusion_err_no_craftsman|Нет доступного ремесленника.
 2112345036||panel_infusion_err_craftsman_type|Этот ремесленник не может насытить это снаряжение.
 2112345037||panel_infusion_err_craftsman_level|Нужен более опытный ремесленник.
-2112345038||panel_infusion_target_cancel|Цель (E: отмена)
+2112345038||panel_infusion_target_cancel|Цель (%KEY%: отмена)
 2112345039||panel_infusion_block_no_candidates|Нет других предметов этого типа
 2112345040||panel_infusion_block_no_higher|Нет предметов более высокого уровня
 2112345041||panel_infusion_block_equipped|Надет предмет более высокого уровня
