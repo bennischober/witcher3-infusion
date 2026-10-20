@@ -39,7 +39,7 @@ messages in `witcher3.exe`, verified in game 2026-10-19:
 | Available | `@wrapMethod(Class)`, `@replaceMethod(Class)`, `@addMethod(Class)`, `@addField(Class)`, in any new `.ws` file. **Loose mod scripts support them** — no cooking needed. |
 | Syntax | **No access modifier after the annotation**: `@wrapMethod(C) private function F()` fails ("unexpected TOKEN_PRIVATE, expecting TOKEN_FUNCTION"). Write `@wrapMethod(C) function F()`; the wrapper keeps the original's access. |
 | Wrappers | Must contain `wrappedMethod`; calling it only on some paths works. Chain with other mods' wrappers. Can read the class's private fields. |
-| Wrapping the mod's own classes | Used by the dev overlay: `tests/.../InfusionFaultInjection.ws` wraps the private `W3InfusionService.ApplyLevelSteps`. **Unverified** until scenario `rollback_mismatch` runs in game (a compile error or a "did not run" FAIL means it doesn't work). If it holds, test-only behavior can live in `tests/` without hooks in the shipped scripts. |
+| Wrapping the mod's own classes | Works, private methods included (verified 2026-10-20: the dev overlay's `tests/.../InfusionFaultInjection.ws` wraps the private `W3InfusionService.ApplyLevelSteps`, scenario `rollback_mismatch`). Test-only behavior can live in `tests/` without hooks in the shipped scripts. |
 | Inherited methods | Can be neither wrapped nor replaced in a subclass — target the declaring class (e.g. `@wrapMethod(CR4MenuBase) RefreshMenuState`, then check `(CR4BlacksmithMenu)this`). |
 | Global functions | Replaceable (`@replaceMethod function F` — no class). No global `@wrapMethod` is documented or referenced by the compiler. A second replacement of the same function in another mod is a compile error ("duplicate found"). |
 | Natives | Can't be wrapped outside mod.io (precompiled) mods — e.g. `RequestSubMenu`. |
@@ -70,6 +70,10 @@ Item levels are **not stored per instance** — they are derived from the item's
 - **Infusion = add N step abilities** (`AddItemCraftedAbility`), N = level gap. The item keeps
   its definition, sockets, enchantment and abilities; stats are recalculated by the game. Crafted
   abilities are saved with the item and survive removing the mod (verified 2026-10-19).
+- Duplicates (verified 2026-10-20, scenario `rollback_mismatch`): `GetItemAbilities` lists every
+  copy of a crafted ability (a spawned L59 sword listed `autogen_fixed_steel_dmg` ×59), and each
+  `RemoveItemCraftedAbility` call removes exactly one copy — Execute's rollback (one call per
+  added step) restores the level, stat and copy count exactly.
 - The mod reads levels through `InfusionService.ComputeItemLevel`: `inv.GetItemLevel` below the
   cap; near/above it, the uncapped `baseItemLevel` plus the same adjustments (spec §8.3: no cap).
   No formula is duplicated, so official changes flow through.
