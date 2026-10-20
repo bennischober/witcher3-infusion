@@ -49,7 +49,7 @@ Rules in short:
 - Blacksmiths infuse swords, armorers infuse armor. Relics need a **master**, Witcher gear a
   **grandmaster** or better.
 - The fee depends on the craftsman's rank and region, the size of the jump and the item:
-  relics and Witcher gear cost more.
+  relics and Witcher gear cost more. Above 2,000 crowns fees rise more slowly.
 
 ## Update
 

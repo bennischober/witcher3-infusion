@@ -14,7 +14,7 @@ regardless of tier (user feedback 2026-10-18).
 | Fallback recipe | old per-category table, only for targets without usable dismantle data | `GetRecipeForCategory` |
 | Salvage | the sacrifice's dismantle data × `SALVAGE_YIELD_MULT` (1.0) | `GetSalvageYield`, `ApplySalvageMultiplier` |
 | Covered / you pay | per recipe material: covered = `min(salvage, recipe)`, pay = `recipe − salvage`; salvage of non-recipe materials is discarded (spec §5.4) | `ComputeRemainingMaterials` (`preview.covered`, `preview.materials`) |
-| Fee | `max(10, round(fullRepair × 1.0 × gapFactor × craftsman × tier))`, at most 10,000,000 (overflow guard). `fullRepair` = this craftsman's vanilla repair price from 0 to full durability (`GetItemPriceRepair` per point × max durability) of the **target or the sacrifice, whichever is higher** — the sacrifice's price stands in for the level the target is raised to (see the balance report below). Follows level, rarity, NG+ and his **regional economy** (Novigrad +17 %, Skellige +8 % over Velen). Per point is whole crowns, rounded up — cheap items cost 1 crown per point. Without a craftsman (tests): the higher item value × 0.25 | `GetLaborFee`, `GetFeeBase`, `GetFeeAnchor` |
+| Fee | `raw = fullRepair × 1.0 × gapFactor × craftsman × tier`; above the soft ceiling of 2,000 crowns `sqrt(raw × 2,000)` (`FEE_SOFT_CAP`, `SoftenFee`); then `max(10, round(…))`, at most 10,000,000 (overflow guard). `fullRepair` = this craftsman's vanilla repair price from 0 to full durability (`GetItemPriceRepair` per point × max durability) of the **target or the sacrifice, whichever is higher** — the sacrifice's price stands in for the level the target is raised to (see the balance report below). Follows level, rarity, NG+ and his **regional economy** (Novigrad +17 %, Skellige +8 % over Velen). Per point is whole crowns, rounded up — cheap items cost 1 crown per point. Without a craftsman (tests): the higher item value × 0.25 | `GetLaborFee`, `GetFeeBase`, `GetFeeAnchor` |
 | Craftsman | journeyman 1.0, master 1.5, grandmaster 2.0, arch master 2.5 | `MULT_*` |
 | Tier | by the target's quality: relic (4) 1.5, Witcher gear (5) 2.0, everything else 1.0 — the repair price barely follows rarity at high levels (balance report below) | `TIER_MULT_*` |
 
@@ -33,8 +33,8 @@ TECHNICAL_DISCOVERY §9.
 | Target ← sacrifice, gap 9 | Recipe | Covered by sacrifice | You pay | Fee |
 | --- | --- | --- | --- | --- |
 | Light armor 01 ← Light armor 06 (journeyman, value 288) | Linen 2, Leather squares 4, Leather straps 2, Thread 4, Cotton 6 | Linen 2, Leather straps 2, Thread 3 | Leather squares 4, Thread 1, **Cotton 6** | 65 |
-| NGP Bear Armor 4 ← Light armor 06 (grandmaster) | Hardened leather 2, Chitin scale 3, Infused dust 3, Dwimeryte enriched ore 2, Glowing ore 4 | — | all of it | 4,091 (base price, Witcher ×2; in-game value higher) |
-| NGP Bear Armor 4 ← NGP Wolf Armor 4 (grandmaster) | same | everything | — | 4,091 (base price) |
+| NGP Bear Armor 4 ← Light armor 06 (grandmaster) | Hardened leather 2, Chitin scale 3, Infused dust 3, Dwimeryte enriched ore 2, Glowing ore 4 | — | all of it | 2,861 (raw 4,091 softened; base price, Witcher ×2; in-game value higher) |
+| NGP Bear Armor 4 ← NGP Wolf Armor 4 (grandmaster) | same | everything | — | 2,861 (raw 4,091 softened; base price) |
 | Novigraadan sword 1 ← Novigraadan sword 3 (journeyman) | Leather squares 1, Iron ingot 3 | — | Leather squares 1, Iron ingot 3 | 10 |
 
 Consequences: Witcher gear needs its rare materials unless the sacrifice is comparable gear;
@@ -128,11 +128,30 @@ Findings:
 - **Highest fee seen:** 18,000 crowns (relic L60 → L150 at a grandmaster), well below the
   10,000,000 cap.
 
+### Soft ceiling (2026-10-20)
+
+The top fees of the second run were too high for real income: about 10,000 crowns are left
+after finishing the game (user feedback), and merchants run out of money, so NG+ loot doesn't
+turn into crowns one to one. Fees above `FEE_SOFT_CAP` (2,000) now grow with the square root:
+`fee = sqrt(raw × 2,000)`. A costlier job still costs more, but four times the raw fee only
+doubles the price. Fees up to 2,000 are unchanged. Second-run fees above 2,000, computed
+(not yet seen in game):
+
+| Raw | 2,138 | 2,400 | 3,150 | 3,600 | 4,200 | 4,800 | 6,300 | 7,200 | 8,400 | 9,200 | 10,800 | 12,150 | 15,000 | 18,000 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Softened | 2,068 | 2,191 | 2,510 | 2,683 | 2,898 | 3,098 | 3,550 | 3,795 | 4,099 | 4,290 | 4,648 | 4,930 | 5,477 | 6,000 |
+
+So the relic L60 → L150 at a grandmaster costs 6,000 instead of 18,000, and the sword L60 →
+L150 at a journeyman 2,898 instead of 4,200. Big jumps get relatively cheaper than many small
+steps, since each small step stays below the ceiling longer; the sacrifices they need still
+make small steps the slower path. `infuseSetConfig('softcap', 10000000)` switches the ceiling
+off in a dev build.
+
 ## Open balancing questions (need playtesting)
 
 - Should the recipe use fewer materials for ordinary gear (e.g. drop the smallest components)?
 - 3-set cap for very large NG+ jumps — enough? A 90-level jump costs about half of what the
   same levels cost in 5-level steps (second run above).
-- Relic and Witcher fees at a grandmaster (up to 15,000–18,000 crowns at L150): affordable
-  with real NG+ income? Needs a long playthrough, the report can't tell.
+- Top fees with the soft ceiling (up to about 6,000 crowns at L150, relic at a grandmaster):
+  right for real NG+ income? Needs a long playthrough, the report can't tell.
 - Price of rare materials vs. crowns: is buying them at merchants a viable path?

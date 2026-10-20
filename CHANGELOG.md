@@ -8,6 +8,9 @@ playtested in long New Game+ runs or alongside other mods.
 - Big level jumps cost what the new level is worth: the labor fee is based on the craftsman's
   repair price of the target or the sacrifice, whichever is higher.
 - Relics cost 1.5× and Witcher gear 2× the labor fee of ordinary gear.
+- Soft fee ceiling: above 2,000 crowns the labor fee grows with the square root, so the most
+  expensive New Game+ jobs cost about 6,000 instead of 18,000 crowns. Configurable
+  (`FEE_SOFT_CAP`, 0 = off).
 
 ## 0.9.0 — first public release
 

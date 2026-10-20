@@ -55,6 +55,7 @@ The minimum craftsman rank per item tier: `1` journeyman, `2` master, `3` grandm
 
 ```
 fee = full repair price × FEE_REPAIR_MULT × level-gap factor × craftsman multiplier × item tier multiplier
+above FEE_SOFT_CAP: fee = √(fee × FEE_SOFT_CAP)
 ```
 
 The **full repair price** is what this craftsman charges to repair an item from 0 to 100 %
@@ -62,12 +63,14 @@ durability — the game's own repair price, so it follows the item's value, NG+ 
 (Novigrad and Skellige are more expensive than Velen). The fee uses the target's or the
 sacrifice's, whichever is higher, so a big jump costs what the new level is worth. The **level-gap factor** is
 `gap ÷ LEVELS_PER_FULL_SET`, at most `MAX_SETS` — a 10-level jump costs one full repair at a
-journeyman.
+journeyman. Above the **soft ceiling** the fee grows with the square root: with the default
+2,000, a raw fee of 8,000 costs 4,000 and 18,000 costs 6,000.
 
 | Setting | Default | Range | Effect |
 | --- | --- | --- | --- |
 | `FEE_REPAIR_MULT` | `1.0` | 0–100 | Overall fee level. `0.5` halves every fee, `0` leaves only the minimum fee. |
 | `MIN_LABOR_FEE` | `10` | 0–10,000,000 | Minimum fee in crowns. |
+| `FEE_SOFT_CAP` | `2000` | 0–10,000,000 | Soft ceiling in crowns: above it the fee grows with the square root. `0` switches it off (fees grow linearly). |
 | `MULT_JOURNEYMAN` | `1.0` | 0–100 | Fee multiplier of a journeyman. |
 | `MULT_MASTER` | `1.5` | 0–100 | … master. |
 | `MULT_GRAND_MASTER` | `2.0` | 0–100 | … grandmaster. |

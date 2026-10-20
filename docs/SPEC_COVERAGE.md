@@ -6,7 +6,7 @@ Legend: ✅ implemented and verified in game · ✅ dev. approved deviation, imp
 verified (TECHNICAL_DISCOVERY.md §9, reviewed 2026-10-20) · ⚠️ partial · ❌ missing ·
 — optional, not planned yet
 
-"Scenario" = verified by the one-command scenario suite (`infuseScenarioAll`: 30/30 PASS on 2026-10-20;
+"Scenario" = verified by the one-command scenario suite (`infuseScenarioAll`: 30/30 PASS on 2026-10-20, 31 scenarios since the soft fee ceiling;
 tests/modInfusion/README.md). Re-audited against every spec section on 2026-10-19.
 
 ## Summary
@@ -32,8 +32,8 @@ started.
 | §5.1–5.4 | Salvage from native dismantle data, excess discarded | ✅ | `GetItemRecyclingParts`; recipe from the target's own components (BALANCING.md). |
 | §5.5 | Exploit protection | ✅ | Scenario (`reject_same`, `reject_materials`, `reject_crowns`: nothing consumed); `Execute` re-validates. |
 | §6.1/6.2 | Labor fee separate from materials; craftsman multipliers | ✅ | Scenario (`fee_by_tier`: master > journeyman). |
-| §6.3 | Fee formula | ✅ dev. | Base = this craftsman's vanilla full-repair price of the target or the sacrifice (whichever is higher) instead of a fixed base fee: follows level, rarity, NG+, patch prices and the craftsman's **regional economy** (measured 2026-10-20: Novigrad +17 %, Skellige +8 % over Velen; TECHNICAL_DISCOVERY.md §6). Target tier multiplier: relic 1.5, Witcher gear 2.0 (balance report). Scenario `fee_formula` checks it against the craftsman's repair price. |
-| §6.4 | Costs meaningful in long NG+ runs | ✅ | `infuseBalanceReport` run in game 2026-10-20 (L60–150, all craftsman tiers): fees keep pace with level; big jumps and Witcher gear were too cheap → fee base and tier multipliers changed; second run the same day confirmed the new fees (BALANCING.md). Whether they feel right over many NG+ cycles needs a long playthrough (KNOWN_ISSUES.md). |
+| §6.3 | Fee formula | ✅ dev. | Base = this craftsman's vanilla full-repair price of the target or the sacrifice (whichever is higher) instead of a fixed base fee: follows level, rarity, NG+, patch prices and the craftsman's **regional economy** (measured 2026-10-20: Novigrad +17 %, Skellige +8 % over Velen; TECHNICAL_DISCOVERY.md §6). Target tier multiplier: relic 1.5, Witcher gear 2.0 (balance report). Soft ceiling: above 2,000 crowns the fee grows with the square root (`FEE_SOFT_CAP`). Scenario `fee_formula` checks it against the craftsman's repair price, `fee_soft_cap` the ceiling. |
+| §6.4 | Costs meaningful in long NG+ runs | ✅ | `infuseBalanceReport` run in game 2026-10-20 (L60–150, all craftsman tiers): fees keep pace with level; big jumps and Witcher gear were too cheap → fee base and tier multipliers changed; second run the same day confirmed the new fees; the top fees (up to 18,000) were then softened above 2,000 crowns, not yet re-run (BALANCING.md). Whether they feel right over many NG+ cycles needs a long playthrough (KNOWN_ISSUES.md). |
 | §7.1 | Level gap drives cost | ✅ dev. | The gap scales fee **and** materials: a 1-level touch-up shouldn't cost the materials of a 30-level jump (BALANCING.md). Scenario (`fee_by_gap`). |
 | §7.2 | Craftsman efficiency discount | — | Optional; only if playtesting asks for it. |
 | §7.3 | No random failure, safe abort | ✅ | |
@@ -52,7 +52,7 @@ started.
 | §14 | Compatibility | ⚠️ | No vanilla script override (annotations, UI.md). Remaining surface: the global `HaxGetPanelStateName` replacement. `tools/check-mod-conflicts.ps1` scans a mods folder against our hooks (read from `src/`). Installed during the in-game tests: HQ Faces, Real Weather, More Money For Traders (scan: no conflicts). Compatibility table in KNOWN_ISSUES.md. Not tested alongside scaling, crafting or UI overhaul mods. |
 | §14.2 | Exclusion list with explanation | ✅ | Quest, hidden/body, Aerondight, merchant-range items. Excluded gear of the craftsman's specialization is listed disabled with "Kann nicht sicher infundiert werden" (scenario `block_excluded`); hidden/body items stay hidden. |
 | §15.1–15.3, 15.5 | Core, rejection, salvage, persistence tests | ✅ | Scenario suite. |
-| §15.4 | Pricing tests | ✅ | Master > journeyman (`fee_by_tier`), formula incl. target-tier multiplier (`fee_formula`), larger gap → higher fee (`fee_by_gap`), config change → price change (`fee_config`), no negative/overflow at NG+ levels (`ngplus_uncapped`), salvage doesn't touch the fee. "Journeymen > lower tier" doesn't apply (no lower tier in the game). |
+| §15.4 | Pricing tests | ✅ | Master > journeyman (`fee_by_tier`), formula incl. target-tier multiplier (`fee_formula`), larger gap → higher fee (`fee_by_gap`), config change → price change (`fee_config`), soft ceiling (`fee_soft_cap`), no negative/overflow at NG+ levels (`ngplus_uncapped`), salvage doesn't touch the fee. "Journeymen > lower tier" doesn't apply (no lower tier in the game). |
 | §15.6 | Regression | ✅ | Repair, repair all, dismantle, sockets; crafting/alchemy/inventory menus; removing the mod from a save (infused items keep their levels). `EnableInfusion = false` (empty tab, clicks refused) untested in game. |
 | §16 M7 | Release preparation | ⚠️ | ✅ install guide (INSTALL.md), configuration doc (CONFIGURATION.md), known issues (KNOWN_ISSUES.md), changelog, packaging with an automated release check (`tools/package-release.ps1`: no test files or console commands, BOMs, strings for all 18 languages), release build tested in game (`package-release.ps1 -Deploy`, 2026-10-20). compatibility table and conflict scanner (KNOWN_ISSUES.md, `tools/check-mod-conflicts.ps1`). ❌ tests next to scaling, crafting and UI overhaul mods (§14). |
 
