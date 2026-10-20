@@ -6,6 +6,7 @@
 #   mods\modInfusion\CONFIGURATION.md  configuration      (docs\CONFIGURATION.md)
 #   mods\modInfusion\KNOWN_ISSUES.md   known issues       (docs\KNOWN_ISSUES.md)
 #   mods\modInfusion\CHANGELOG.md      release notes      (CHANGELOG.md)
+#   mods\modInfusion\LICENSE           license            (LICENSE)
 #
 # Players extract the zip into the game folder. The release check fails the
 # build if any dev tooling (tests\ files, console commands) would ship.
@@ -50,6 +51,7 @@ Copy-Item (Join-Path $RepoRoot "docs\INSTALL.md") (Join-Path $modDst "README.md"
 Copy-Item (Join-Path $RepoRoot "docs\CONFIGURATION.md") (Join-Path $modDst "CONFIGURATION.md")
 Copy-Item (Join-Path $RepoRoot "docs\KNOWN_ISSUES.md") (Join-Path $modDst "KNOWN_ISSUES.md")
 Copy-Item (Join-Path $RepoRoot "CHANGELOG.md") (Join-Path $modDst "CHANGELOG.md")
+Copy-Item (Join-Path $RepoRoot "LICENSE") (Join-Path $modDst "LICENSE")
 
 # ---- release check ---------------------------------------------------------
 $problems = @()
