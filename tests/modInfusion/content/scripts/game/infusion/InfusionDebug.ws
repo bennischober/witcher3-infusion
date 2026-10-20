@@ -15,6 +15,7 @@
 /** 	  infuseDespawnTestSmith     - remove spawned test craftsmen
 /** 	  infuseCraftsmanReport      - report nearby craftsmen (type/tier)
 /** 	  infusePriceProbe           - fee anchor vs. the nearest craftsman's prices
+/** 	  infusePriceProbeAll        - same for spawned regional craftsman templates
 /** 	  infuseSetConfig(key, n)    - dev config override (fee/minfee/salvage/materials/debug)
 /** 	  infuseDumpConfig           - log the effective configuration
 /** 	  infuseTestStrings          - check that the mod's strings load
@@ -43,6 +44,13 @@ exec function infuseCraftsmanReport()
 exec function infusePriceProbe()
 {
 	InfusionPriceProbe();
+}
+
+// Same for regional craftsman templates spawned here (Velen, Novigrad,
+// Skellige) - no travelling needed.
+exec function infusePriceProbeAll()
+{
+	InfusionPriceProbeTemplates();
 }
 
 exec function infuseDespawnTestSmith()

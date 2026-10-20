@@ -172,6 +172,67 @@ function InfusionPriceProbe()
 	theGame.GetGuiManager().ShowNotification( "price probe written to the log (" + nearest.GetDisplayName() + ")" );
 }
 
+// Same probe for regional craftsmen without travelling: spawns the real
+// community templates (Velen, Novigrad, Skellige; their merchant data -
+// funds, store, area tag - comes with the template) and probes each. The
+// zone factor still follows where the player stands. The spawned NPCs
+// stay for 2 minutes; if a fresh one wasn't ready ("could not add
+// copies"), run the command again - it re-probes the spawned ones.
+function InfusionPriceProbeTemplates()
+{
+	var paths : array<string>;
+	var existing : array<CEntity>;
+	var ent : CEntity;
+	var npc : CNewNPC;
+	var i : int;
+
+	theGame.GetEntitiesByTag( 'InfusionPriceProbe', existing );
+	if ( existing.Size() == 0 )
+	{
+		paths.PushBack( "gameplay\community\shops_and_craftsmen
+o_mans_landarons_keeparons_keep_armorer_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen
+o_mans_land\mouth\mouth_armorer_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen
+o_mans_land\snots\snots_blacksmith_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen
+ovigradich_district
+ovigrad_rich_district_armorer_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen
+ovigrad\whitebridge\whitebridge_redanian_armorer_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen
+ovigrad\market
+ovigrad_market_smith_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen\skellige\kaer_trolde\kaer_trolde_castle_armorer_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen\skellige\larvik\larvik_armorer_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen\skellige\kaer_trolde\kaer_trolde_castle_blacksmith_01.w2ent" );
+		paths.PushBack( "gameplay\community\shops_and_craftsmen\skellige\larvik\larvik_smith_01.w2ent" );
+		for ( i = 0; i < paths.Size(); i += 1 )
+		{
+			ent = InfusionCreateTestCraftsman( paths[i], 120.0f );
+			if ( ent )
+			{
+				ent.AddTag( 'InfusionPriceProbe' );
+				existing.PushBack( ent );
+			}
+		}
+	}
+
+	LogChannel( 'Infusion', "price probe (templates): " + existing.Size() + " craftsmen, zone " + (int)theGame.GetCurrentZone() );
+	for ( i = 0; i < existing.Size(); i += 1 )
+	{
+		npc = (CNewNPC)existing[i];
+		if ( !npc )
+		{
+			continue;
+		}
+		LogChannel( 'Infusion', "price probe at " + npc.GetDisplayName() + " [" + npc.GetReadableName() + "]" );
+		InfusionPriceProbeSlot( npc, EES_SteelSword );
+		InfusionPriceProbeSlot( npc, EES_Armor );
+	}
+	theGame.GetGuiManager().ShowNotification( "price probe: " + existing.Size() + " template craftsmen probed (log)" );
+}
+
 function InfusionPriceProbeSlot( craftsman : CNewNPC, slot : EEquipmentSlots )
 {
 	var inv, shopInv : CInventoryComponent;

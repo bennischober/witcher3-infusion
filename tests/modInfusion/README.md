@@ -20,6 +20,7 @@ excluded from release builds.
 | `infuseDespawnTestSmith` | Remove spawned test craftsmen |
 | `infuseCraftsmanReport` | Log type/tier of every craftsman within 40 m |
 | `infusePriceProbe` | Price experiment (spec §6.3): for the equipped steel sword and chest armor, log the fee anchor (player-side market value) next to the nearest craftsman's price for a copy of the same item, vanilla's shop modifier and his repair price per point. Compare runs at craftsmen in different regions. |
+| `infusePriceProbeAll` | Same probe without travelling: spawns 10 real community craftsman templates (Velen, Novigrad, Skellige — their merchant data comes with the template), probes each, despawns them after 2 min. The zone factor still follows where you stand. If a line says "could not add copies", run it again (re-probes the spawned ones). |
 | `infuseSetConfig(key, n)` | Dev config override via facts: `fee` (fraction ×1000, 0 = default), `minfee`, `salvage` (1 = off), `materials` (1 = no material requirements), `debug` (1 = per-item grid log) |
 | `infuseDumpConfig` | Log the effective configuration |
 | `infuseTestStrings` | Check that the mod's `.w3strings` load |
