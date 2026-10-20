@@ -16,4 +16,6 @@ Spec gaps and their priority: [SPEC_COVERAGE.md](SPEC_COVERAGE.md).
 ## 2. Optional extension (spec §11, M8)
 
 Bonus merging as a separate module: needs an extension point in the core transaction first
-(§11.3: proposed changes validated by the core before commit).
+(§11.3: proposed changes validated by the core before commit). Since wrapping the mod's own
+classes works, the extension point can be an empty seam method the module wraps
+(SPEC_COVERAGE §11).
