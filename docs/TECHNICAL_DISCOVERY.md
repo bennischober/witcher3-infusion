@@ -39,6 +39,7 @@ messages in `witcher3.exe`, verified in game 2026-10-19:
 | Available | `@wrapMethod(Class)`, `@replaceMethod(Class)`, `@addMethod(Class)`, `@addField(Class)`, in any new `.ws` file. **Loose mod scripts support them** — no cooking needed. |
 | Syntax | **No access modifier after the annotation**: `@wrapMethod(C) private function F()` fails ("unexpected TOKEN_PRIVATE, expecting TOKEN_FUNCTION"). Write `@wrapMethod(C) function F()`; the wrapper keeps the original's access. |
 | Wrappers | Must contain `wrappedMethod`; calling it only on some paths works. Chain with other mods' wrappers. Can read the class's private fields. |
+| Wrapping the mod's own classes | Used by the dev overlay: `tests/.../InfusionFaultInjection.ws` wraps the private `W3InfusionService.ApplyLevelSteps`. **Unverified** until scenario `rollback_mismatch` runs in game (a compile error or a "did not run" FAIL means it doesn't work). If it holds, test-only behavior can live in `tests/` without hooks in the shipped scripts. |
 | Inherited methods | Can be neither wrapped nor replaced in a subclass — target the declaring class (e.g. `@wrapMethod(CR4MenuBase) RefreshMenuState`, then check `(CR4BlacksmithMenu)this`). |
 | Global functions | Replaceable (`@replaceMethod function F` — no class). No global `@wrapMethod` is documented or referenced by the compiler. A second replacement of the same function in another mod is a compile error ("duplicate found"). |
 | Natives | Can't be wrapped outside mod.io (precompiled) mods — e.g. `RequestSubMenu`. |
@@ -167,6 +168,8 @@ autogen items (`AutogenUseLevelRange`).
 No out-of-game test bench is practical ([SCRIPT_TEST_BENCH_RESEARCH.md](SCRIPT_TEST_BENCH_RESEARCH.md)).
 Verification runs in game: one-command scenario tests (`infuseScenarioAll`,
 tests/modInfusion/README.md) for the service, the manual checklist in [UI.md](UI.md) for the menu.
+Fault injection stays in the dev overlay (`@wrapMethod` on the service, §2); the shipped scripts
+contain no test hooks.
 
 ## 9. Spec deviations (approved)
 
