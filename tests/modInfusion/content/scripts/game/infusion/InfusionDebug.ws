@@ -120,6 +120,8 @@ exec function infuseTestStrings()
 //   infuseSetConfig('salvage', 0)    -> re-enable salvage
 //   infuseSetConfig('materials', 1)  -> no material requirements (labor fee only)
 //   infuseSetConfig('debug', 1)      -> per-item grid logging on (0 = off)
+//   infuseSetConfig('disabled', 1)   -> infusion off, no tab (0 = on again;
+//                                       takes effect on the next menu open)
 exec function infuseSetConfig( key : string, value : int )
 {
 	var keyNorm : string;
@@ -204,9 +206,22 @@ exec function infuseSetConfig( key : string, value : int )
 			LogChannel( 'Infusion', "config override: grid debug logging off" );
 		}
 	}
+	else if ( keyNorm == "disabled" )
+	{
+		if ( value > 0 )
+		{
+			FactsSet( "InfCfg_Disabled", 1 );
+			LogChannel( 'Infusion', "config override: infusion DISABLED (reopen the menu)" );
+		}
+		else
+		{
+			FactsRemove( "InfCfg_Disabled" );
+			LogChannel( 'Infusion', "config override: infusion re-enabled (reopen the menu)" );
+		}
+	}
 	else
 	{
-		LogChannel( 'Infusion', "infuseSetConfig: unknown key '" + key + "' (fee | minfee | softcap | salvage | materials | debug)" );
+		LogChannel( 'Infusion', "infuseSetConfig: unknown key '" + key + "' (fee | minfee | softcap | salvage | materials | debug | disabled)" );
 	}
 
 	theGame.GetGuiManager().ShowNotification( "config override applied - see log", 6.0 );

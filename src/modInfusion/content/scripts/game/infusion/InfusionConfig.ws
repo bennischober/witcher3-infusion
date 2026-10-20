@@ -190,6 +190,8 @@ class W3InfusionConfig extends IScriptable
 	//   InfCfg_Salvage  - nonzero disables salvage (no discount: full recipe)
 	//   InfCfg_NoMaterials - nonzero disables material requirements
 	//   InfCfg_Debug    - nonzero enables the per-item grid logging
+	//   InfCfg_Disabled - nonzero switches infusion off like ENABLE_INFUSION
+	//                     = false (the tab goes on the next menu open)
 	private const var FACT_BASE_FEE : string;
 	default FACT_BASE_FEE = "InfCfg_BaseFee";
 
@@ -208,13 +210,16 @@ class W3InfusionConfig extends IScriptable
 	private const var FACT_NO_MATERIALS : string;
 	default FACT_NO_MATERIALS = "InfCfg_NoMaterials";
 
+	private const var FACT_DISABLED : string;
+	default FACT_DISABLED = "InfCfg_Disabled";
+
 	// ---------------------------------------------------------------------
 	// Accessors (the service's only interface)
 	// ---------------------------------------------------------------------
 
 	public function EnableInfusion() : bool
 	{
-		return ENABLE_INFUSION;
+		return ENABLE_INFUSION && FactsQuerySum( FACT_DISABLED ) <= 0;
 	}
 
 	// Category feature gate.
