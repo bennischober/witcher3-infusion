@@ -80,6 +80,7 @@ function InfusionScenarioNames( out names : array<name> )
 	names.PushBack( 'fee_by_gap' );
 	names.PushBack( 'fee_config' );
 	names.PushBack( 'fee_soft_cap' );
+	names.PushBack( 'materials_by_tier' );
 }
 
 class W3InfusionScenarioRunner extends IScriptable
@@ -228,6 +229,8 @@ class W3InfusionScenarioRunner extends IScriptable
 				return ScenarioFeeConfig();
 			case 'fee_soft_cap':
 				return ScenarioFeeSoftCap();
+			case 'materials_by_tier':
+				return ScenarioMaterialsByTier();
 		}
 		detail = "unknown scenario - run infuseScenarioList";
 		return ISS_Skip;
@@ -1162,6 +1165,111 @@ class W3InfusionScenarioRunner extends IScriptable
 			return ISS_Fail;
 		}
 		return ISS_Pass;
+	}
+
+	// Spec §7.2: a master armorer needs fewer materials than a journeyman for
+	// the same pair - each recipe material is the journeyman's amount x the
+	// master's efficiency, rounded to the nearest (half up), at least 1. A
+	// 10-level gap is one set, so the journeyman's amounts are the unscaled
+	// recipe.
+	private function ScenarioMaterialsByTier() : EInfScnStatus
+	{
+		var journeyman, master : CGameplayEntity;
+		var t, s : SItemUniqueId;
+		var pj, pm : SInfusionPreview;
+		var errJ, errM : EInfusionError;
+		var cfg : W3InfusionConfig;
+		var comp : W3CraftsmanComponent;
+		var names : array<name>;
+		var masterLevel, i, qJ, qM, expected, totalJ, totalM : int;
+		var efficiency : float;
+
+		journeyman = GetCraftsman( true, false );
+		master = GetCraftsman( true, true );
+		if ( !journeyman || !master )
+		{
+			return ISS_Skip;
+		}
+		cfg = svc.GetPublicConfig();
+		if ( !cfg.RequireCraftingMaterials() || cfg.GetMaterialEfficiency( 1 ) != 1.0f || cfg.GetLevelGapMultiplier( 10 ) != 1.0f )
+		{
+			detail = "config differs from the defaults (materials, journeyman efficiency or levels per set)";
+			return ISS_Skip;
+		}
+		if ( !Spawn( 'Light armor 01', t ) || !Spawn( 'Light armor 06', s ) || !BoostTo( s, Level( t ) + 10 ) )
+		{
+			return ISS_Fail;
+		}
+		errJ = svc.Preview( t, s, pj, journeyman );
+		errM = svc.Preview( t, s, pm, master );
+		if ( errJ != IFE_Ok || errM != IFE_Ok )
+		{
+			detail = "preview refused: journeyman " + InfusionErrorToString( errJ ) + ", master " + InfusionErrorToString( errM );
+			return ISS_Fail;
+		}
+		comp = (W3CraftsmanComponent)master.GetComponentByClassName( 'W3CraftsmanComponent' );
+		masterLevel = comp.GetCraftsmanLevel( ECT_Armorer );
+		efficiency = cfg.GetMaterialEfficiency( masterLevel );
+
+		for ( i = 0; i < pj.covered.Size(); i += 1 )
+		{
+			if ( !names.Contains( pj.covered[i].itemName ) )
+			{
+				names.PushBack( pj.covered[i].itemName );
+			}
+		}
+		for ( i = 0; i < pj.materials.Size(); i += 1 )
+		{
+			if ( !names.Contains( pj.materials[i].itemName ) )
+			{
+				names.PushBack( pj.materials[i].itemName );
+			}
+		}
+		totalJ = 0;
+		totalM = 0;
+		for ( i = 0; i < names.Size(); i += 1 )
+		{
+			qJ = RecipeQuantity( pj, names[i] );
+			qM = RecipeQuantity( pm, names[i] );
+			expected = Max( 1, FloorF( qJ * efficiency + 0.5001f ) );
+			totalJ += qJ;
+			totalM += qM;
+			if ( qM != expected )
+			{
+				detail = names[i] + ": journeyman " + qJ + ", master " + qM + ", expected " + expected + " (x" + efficiency + ")";
+				return ISS_Fail;
+			}
+		}
+		detail = "journeyman " + totalJ + " materials, master (tier " + masterLevel + ", x" + efficiency + ") " + totalM;
+		if ( totalJ == 0 || ( efficiency < 1.0f && totalM >= totalJ ) )
+		{
+			return ISS_Fail;
+		}
+		return ISS_Pass;
+	}
+
+	// Recipe amount of one material in a preview: covered by the sacrifice
+	// plus still to pay.
+	private function RecipeQuantity( p : SInfusionPreview, itemName : name ) : int
+	{
+		var i, total : int;
+
+		total = 0;
+		for ( i = 0; i < p.covered.Size(); i += 1 )
+		{
+			if ( p.covered[i].itemName == itemName )
+			{
+				total += p.covered[i].quantity;
+			}
+		}
+		for ( i = 0; i < p.materials.Size(); i += 1 )
+		{
+			if ( p.materials[i].itemName == itemName )
+			{
+				total += p.materials[i].quantity;
+			}
+		}
+		return total;
 	}
 
 	// Sets a config fact for one scenario; returns the previous value.

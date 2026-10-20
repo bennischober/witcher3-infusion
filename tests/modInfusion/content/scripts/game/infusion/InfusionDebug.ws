@@ -233,6 +233,8 @@ exec function infuseDumpConfig()
 		+ " restoreDurability=" + c.RestoreTargetDurability()
 		+ " debugLog=" + c.DebugLogging() );
 	LogChannel( 'Infusion', "config dump: gapMult(10)=" + c.GetLevelGapMultiplier( 10 )
+		+ " materialEfficiency(1..4)=" + c.GetMaterialEfficiency( 1 ) + "/" + c.GetMaterialEfficiency( 2 )
+		+ "/" + c.GetMaterialEfficiency( 3 ) + "/" + c.GetMaterialEfficiency( 4 )
 		+ " witcherTierReq=" + c.GetRequiredCraftsmanLevel( 5 ) );
 
 	theGame.GetGuiManager().ShowNotification( "config dumped to log (Infusion channel)", 6.0 );
