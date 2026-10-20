@@ -43,7 +43,7 @@ started.
 | §9.2 | Preview contents | ✅ | Names, icons, levels, fee, covered/remaining materials, consumption + repair note, eligibility (blocked targets with reason), projected primary stat in the popup (current stat + steps × the step ability's fixed value; every infusion scenario checks it against the result; popup checked in game). |
 | §9.3 | Clear rejection messages | ✅ | Blocked targets are listed disabled with the reason in the tooltip (tier with the game's rank name, no/only-lower/only-equipped sacrifices); popup-time rejections as localized notifications (en/de). Scenario (`block_tier`, `block_no_higher`, `block_ok`); UI checked in game (one-line reasons, no Space hint). |
 | §9.5 | Confirmation with fresh data | ✅ | Fresh `Preview` before the popup; `Execute` re-validates. |
-| §10 | Configuration | ⚠️ | Script constants in `InfusionConfig.ws` (no settings menu — broken on 5.01); dev overrides via `infuseSetConfig`. Salvage toggle (scenario `salvage_off`), `RequireCraftingMaterials` (`REQUIRE_MATERIALS`, scenario `materials_off`). Values are clamped when read (BALANCING.md), fees capped at 10,000,000. Not added: `AllowEqualLevelInfusion` (§3.2), `AllowSpecialItems` (nothing special is tested), `EnableBonusMerging` (no extension). ❌ player-facing configuration doc (M7). |
+| §10 | Configuration | ✅ ⚠️ | Script constants in `InfusionConfig.ws` (no settings menu — broken on 5.01); dev overrides via `infuseSetConfig`. Salvage toggle (scenario `salvage_off`), `RequireCraftingMaterials` (`REQUIRE_MATERIALS`, scenario `materials_off`). Values are clamped when read (BALANCING.md), fees capped at 10,000,000. Not added: `AllowEqualLevelInfusion` (§3.2), `AllowSpecialItems` (nothing special is tested), `EnableBonusMerging` (no extension). Player-facing doc: CONFIGURATION.md. |
 | §11 | Bonus merging | — | M8; the core has no extension point yet (§11.3). |
 | §12 | Modular architecture | ✅ | Config / service / grid / menu hooks separated; the service is driven directly by the tests. |
 | §13 | Transaction safety | ✅ | Level verified after applying, rollback on mismatch; charge → materials → sacrifice. |
@@ -53,7 +53,7 @@ started.
 | §15.1–15.3, 15.5 | Core, rejection, salvage, persistence tests | ✅ | Scenario suite. |
 | §15.4 | Pricing tests | ✅ | Master > journeyman (`fee_by_tier`), formula incl. target-tier multiplier (`fee_formula`), larger gap → higher fee (`fee_by_gap`), config change → price change (`fee_config`), no negative/overflow at NG+ levels (`ngplus_uncapped`), salvage doesn't touch the fee. "Journeymen > lower tier" doesn't apply (no lower tier in the game). |
 | §15.6 | Regression | ✅ | Repair, repair all, dismantle, sockets; crafting/alchemy/inventory menus; removing the mod from a save (infused items keep their levels). `EnableInfusion = false` (empty tab, clicks refused) untested in game. |
-| §16 M7 | Release preparation | ❌ | Install guide, configuration doc, known issues, release-build check, packaging. |
+| §16 M7 | Release preparation | ⚠️ | ✅ install guide (INSTALL.md), configuration doc (CONFIGURATION.md), known issues (KNOWN_ISSUES.md), changelog, packaging with an automated release check (`tools/package-release.ps1`: no test files or console commands, BOMs, strings for all 18 languages). ❌ release build tested in game (`package-release.ps1 -Deploy`), compatibility documentation beyond the known conflict (needs §14 tests). |
 
 ## Open items, top to bottom
 
@@ -67,6 +67,6 @@ started.
 | 5a | §6.3 | ~~Regional fee (craftsman's repair price as anchor)~~ — done | code | S |
 | 6 | §6.4 | NG+ balance playtest with real high-level gear | playtest | M |
 | 7 | §14 | Test next to popular mods (scaling, crafting, UI overhauls) | playtest | M |
-| 8 | §16 M7 | Install guide, configuration doc, known issues, release build without the test scripts, packaging | docs | M |
+| 8 | §16 M7 | ~~Install guide, configuration doc, known issues, packaging~~ — done; release build in game pending | docs | M |
 | — | §10 | `AllowSpecialItems`: nothing special is allowed today; add a switch only for a category that gets tested | — | — |
 | — | §11 / M8 | Bonus merging (optional, separate module) | — | L |

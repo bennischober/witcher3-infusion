@@ -60,8 +60,9 @@ and development milestones.
 - ✅ **Milestone 4** — craftsman eligibility, verified in game (specialization rejection,
   tier acceptance at journeyman and master, real service delivery at spawned craftsman NPCs;
   see docs/CRAFTSMAN_MAP.md)
-- ✅ **Milestone 5** — pricing and configuration: economy-anchored fee (fraction of the
-  target's market value, model in docs/BALANCING.md — auto-balances with official economy updates), tier/tier-target/gap
+- ✅ **Milestone 5** — pricing and configuration: economy-anchored fee (the craftsman's own
+  full-repair price of the target — regional, follows official economy updates; model in
+  docs/BALANCING.md), tier/tier-target/gap
   multipliers per spec §6.2, curated defaults without a settings menu (Remastered settings UI
   is broken for mod groups; decision documented), dev-only console overrides for live tuning
 - ✅ **Milestone 6** — production UI, verified in game: a dedicated **Infusion tab** in the
@@ -69,14 +70,20 @@ and development milestones.
   material row, confirmation popup with the full cost breakdown, craftsman gating, vanilla
   Repair tab untouched, save/reload persistence (docs/UI.md). Spec coverage and the
   remaining gaps: docs/SPEC_COVERAGE.md
-- 🔜 **Milestone 7** — release packaging
+- 🟡 **Milestone 7** — release preparation: install guide, configuration doc, known issues,
+  changelog, release package with automated release check (`tools/package-release.ps1`,
+  version in `VERSION`). Open: release-build test in game, NG+ playtest, compatibility tests
 - 🔜 **Milestone 8** — optional bonus-merging extension (separate module)
 
 ## Repository structure
 
 ```
 INFUSION_SPEC.md                 Authoritative design specification (milestones, rules, acceptance criteria)
+VERSION, CHANGELOG.md            Release version and notes
 docs/
+  INSTALL.md                     Player install guide (ships as the mod's README.md)
+  CONFIGURATION.md               Player settings reference (InfusionConfig.ws)
+  KNOWN_ISSUES.md                Player-facing limitations
   TECHNICAL_DISCOVERY.md         Verified engine/toolchain facts (annotations, item levels, APIs)
   UI.md                          Infusion tab: design, Flash constraints, manual checklist
   BALANCING.md                   Cost model and offline tuning
@@ -106,6 +113,7 @@ Steam libraries (override: `W3_GAME_DIR`); see [tools/README.md](tools/README.md
 powershell -File tools\deploy-mod.ps1 -Dev    # release files + test commands
 powershell -File tools\deploy-mod.ps1         # release build (what players get)
 powershell -File tools\launch-debug.ps1       # start the game with script logging
+powershell -File tools\package-release.ps1    # player zip in dist\ (+ -Deploy: install it)
 ```
 
 In game, open the console (`~`):
