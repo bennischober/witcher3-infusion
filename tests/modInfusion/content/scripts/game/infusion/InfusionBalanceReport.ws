@@ -3,10 +3,12 @@
 /** 	Spec §6.4: are the costs still meaningful in long NG+ runs? Logs
 /** 	what an infusion costs at high levels - the fee at each craftsman
 /** 	tier, the materials to buy and what the salvage covers - for real
-/** 	items raised to L30/60/100/150, so the numbers can be judged without
-/** 	a long playthrough. Preview only: nothing is charged, the spawned
-/** 	items are removed again. The sacrifice is a copy of the target
-/** 	raised by the gap.
+/** 	items raised to L60/100/150 (+5 and +20 levels) and for a big jump
+/** 	L60 -> L150, so the numbers can be judged without a long playthrough.
+/** 	Preview only: nothing is charged, the spawned items are removed
+/** 	again. The sacrifice is a copy of the target raised by the gap.
+/** 	Lower levels can't be shown: spawned gear comes in at about the
+/** 	player's level (Witcher gear at its own minimum).
 /***********************************************************************/
 
 class W3InfusionBalanceReport extends W3InfusionScenarioRunner
@@ -24,7 +26,6 @@ class W3InfusionBalanceReport extends W3InfusionScenarioRunner
 		var gaps : array<int>;
 		var i, j : int;
 
-		levels.PushBack( 30 );
 		levels.PushBack( 60 );
 		levels.PushBack( 100 );
 		levels.PushBack( 150 );
@@ -45,6 +46,11 @@ class W3InfusionBalanceReport extends W3InfusionScenarioRunner
 				Row( 'Bear Armor 1', true, 2, levels[i], gaps[j] );         // Witcher gear: grandmaster
 			}
 		}
+		// Big jump: priced at the sacrifice's level, not the target's.
+		Row( 'Light armor 01', true, 0, 60, 90 );
+		Row( 'Novigraadan sword 1', false, 0, 60, 90 );
+		Row( 'Abarad', false, 1, 60, 90 );
+		Row( 'Bear Armor 1', true, 2, 60, 90 );
 	}
 
 	// One craftsman per type and tier for the whole report. A fresh spawn
@@ -127,10 +133,10 @@ class W3InfusionBalanceReport extends W3InfusionScenarioRunner
 			fees = fees + p.laborFee;
 			if ( !priced )
 			{
-				// Materials don't depend on the craftsman; the anchor is the
+				// Materials don't depend on the craftsman; the fee base is the
 				// lowest tier's (regional, see TECHNICAL_DISCOVERY.md §6).
 				priced = true;
-				anchor = svc.GetFeeAnchor( inv, t, craftsman );
+				anchor = svc.GetFeeBase( inv, t, s, craftsman );
 				materials = Parts( p.materials );
 				covered = Parts( p.covered );
 			}
@@ -139,7 +145,7 @@ class W3InfusionBalanceReport extends W3InfusionScenarioRunner
 		line = "balance: " + itemName + " L" + Level( t ) + " -> L" + Level( s ) + " | fee " + fees;
 		if ( priced )
 		{
-			line = line + " | anchor " + RoundMath( anchor )
+			line = line + " | fee base " + RoundMath( anchor )
 				+ " | sells for: target " + inv.GetItemPriceModified( t, true ) + ", sacrifice " + inv.GetItemPriceModified( s, true )
 				+ " | materials to buy: " + materials + " | covered by salvage: " + covered;
 		}
