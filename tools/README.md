@@ -6,6 +6,7 @@
 | `launch-debug.ps1` | Starts the game with `-debugscripts`, so `Documents\The Witcher 3\scriptslog.txt` gets compile errors and the `[Infusion]` log channel. |
 | `w3paths.ps1` | Shared helper: finds The Witcher 3 and REDkit in the Steam libraries. Override with the `W3_GAME_DIR` / `W3_REDKIT` environment variables or `-GameDir`. |
 | `infusion-cost-table.py` | Offline cost calculator (recipe, salvage, fee) from the REDkit item XML — see [docs/BALANCING.md](../docs/BALANCING.md). REDkit is auto-detected; `--redkit` or `W3_REDKIT` override it. Its constants mirror `InfusionConfig.ws` and must be kept in sync. |
+| `fla-inspect.py` | Read-only inspector for REDkit's UI sources (`gui_new\fla\*.fla`, XFL): `symbols` lists library symbols and linkage classes, `show` a symbol's layers, keyframes and elements with positions, `texts` every text field's box, font size and alignment, `find` searches all FLAs for an instance, symbol or class name. `--json` for scripts. REDkit is auto-detected like the cost calculator. |
 | `build-strings.ps1` | Builds all 18 `.w3strings` files from their sources; a language without a source gets the English texts. Checks every source against the English ids/keys. Needs `w3stringsr` (below) and Python 3 (Arabic). |
 | `shape-arabic.py` | Shapes the Arabic source into the presentation forms the game expects (called by `build-strings.ps1`; see TECHNICAL_DISCOVERY.md). |
 | `package-release.ps1` | Player release: `dist\modInfusion-<VERSION>.zip` (`mods\modInfusion\` with the `src/` content and the player docs). Release check: no `tests/` file, no `exec function`, UTF-8 BOM on every script, a strings file per language. `-Deploy` also installs the package into the game (release test); `-SkipStrings` skips the string build. |
@@ -19,6 +20,8 @@ powershell -File tools\launch-debug.ps1
 powershell -File tools\package-release.ps1 -Deploy
 powershell -File tools\check-mod-conflicts.ps1
 python tools\infusion-cost-table.py --target "Light armor 01" --sacrifice "Light armor 06" --gap 9
+python tools\fla-inspect.py find tfWarningMessage
+python tools\fla-inspect.py show panel_blacksmith ItemDisassembleInfo
 ```
 
 ## Strings

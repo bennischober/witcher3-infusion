@@ -9,8 +9,6 @@ Spec gaps and their priority: [SPEC_COVERAGE.md](SPEC_COVERAGE.md).
   tool with W3Strings, bundle and Scaleform support. Remastered 5.x support not stated — verify
   before relying on it. Useful for extracting cooked assets (e.g. confirming a shipped SWF matches
   the REDkit sources). Use externally; don't vendor (GPL).
-- **FLA inspection:** a small `tools/fla-inspect.py` (list symbols, dump text-field geometry and
-  font sizes from the XFL `LIBRARY/*.xml`) would make layout questions repeatable.
 - **Separate tooling repo / submodule:** not worth it while one mod uses the tools.
 
 ## 2. Optional extension (spec §11, M8)
