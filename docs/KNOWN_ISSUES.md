@@ -34,7 +34,7 @@ hence the limits below.
 - **Equal levels can't be infused** — the sacrifice must be strictly higher; an equal-level
   infusion would consume an item for nothing.
 - **Only the level transfers.** The sacrifice's bonuses and set effects are never moved to the
-  target (an optional bonus-merging module is a possible future extension). Its socketed runes
+  target. Its socketed runes
   and glyphs return to the inventory, not into the target. An enchanted sacrifice loses its
   runeword or glyphword and their upgrades, as when dismantling; the popup warns about it.
 

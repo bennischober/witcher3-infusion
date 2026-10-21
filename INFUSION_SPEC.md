@@ -670,26 +670,12 @@ Suggested settings:
 | `RestoreTargetDurability`     | Controls full durability restoration                       |
 | `AllowEqualLevelInfusion`     | Normally false                                             |
 | `AllowSpecialItems`           | Controls explicitly tested special-item categories         |
-| `EnableBonusMerging`          | Enables the optional bonus-merging extension, if installed |
 
 Configuration changes must be validated. Invalid values must not cause negative costs, unlimited resource generation, or script errors.
 
-If bonus merging is not installed, its setting should be absent or clearly marked as unavailable rather than pretending to enable a nonexistent feature.
+## 11. What Transfers from the Sacrifice
 
-## 11. Optional Extension: Bonus Merging
-
-Bonus merging is not part of the mandatory core infusion system.
-
-It is a separate feature that could be implemented as either:
-
-- An optional module integrated with the infusion mod.
-- A separate mod that uses a documented integration interface.
-
-Both the core infusion system and the bonus-merging extension must remain usable independently.
-
-### 11.1 Core behavior remains unchanged
-
-Without bonus merging, infusion only transfers progression:
+Infusion only transfers progression:
 
 - Sacrifice level determines the target's new level.
 - Salvage materials reduce crafting costs.
@@ -697,55 +683,7 @@ Without bonus merging, infusion only transfers progression:
 - The target retains its own bonuses and identity.
 - The target's stats are recalculated for its new level.
 
-The sacrifice item's bonuses are never transferred in the default configuration.
-
-### 11.2 Optional bonus-merging behavior
-
-If implemented, bonus merging may allow explicitly supported properties from the sacrifice item to be transferred to the target.
-
-Potential future candidates include:
-
-- Selected numerical bonuses.
-- Selected resistances.
-- Carefully defined special effects.
-- Other properties proven safe to transfer.
-
-Do not assume every property can be transferred generically.
-
-Set bonuses, unique abilities, quest-related properties, sockets, enchantments, and item-specific effects may have hidden dependencies or unintended interactions.
-
-Each supported property needs explicit rules and tests.
-
-### 11.3 Recommended extension architecture
-
-Keep bonus merging separate from the core infusion transaction.
-
-The core system should expose a well-defined extension point that accepts:
-
-- Target item data.
-- Sacrifice item data.
-- Proposed new level.
-- Validated transaction context.
-
-The extension may propose additional changes, but the core system must validate the result before committing.
-
-If bonus merging is unavailable, fails validation, or is disabled, normal infusion must continue to work.
-
-Do not allow the extension to bypass eligibility, costs, item-consumption rules, or transaction safety.
-
-### 11.4 Balance safeguards
-
-If bonus merging is implemented:
-
-- Define which properties can be transferred.
-- Limit stacking where appropriate.
-- Prevent duplicated or conflicting unique effects.
-- Preserve the target's identity.
-- Document compatibility limitations.
-- Make the feature opt-in.
-- Test with major equipment and gameplay overhauls.
-
-Bonus merging should not delay the first working infusion release.
+The sacrifice item's bonuses are never transferred. Its socketed runes and glyphs return to the player's inventory, as when dismantling; an enchanted sacrifice loses its enchantment and those upgrades.
 
 ## 12. Architecture and Separation of Responsibilities
 
@@ -1110,18 +1048,6 @@ Complete:
 
 Acceptance criterion: The mod can be installed and used without developer tools, with all known limitations documented.
 
-### Milestone 8 — Optional bonus-merging extension
-
-Only after the core system is stable:
-
-- Design a safe property-transfer model.
-- Implement explicitly supported transfer types.
-- Add opt-in configuration.
-- Test interactions with existing infusion rules.
-- Keep the extension independently usable or distributable.
-
-Acceptance criterion: Disabling or uninstalling the extension does not break the core infusion system.
-
 ## 17. Definition of Done
 
 The initial release is complete when all of the following are true:
@@ -1145,7 +1071,6 @@ The initial release is complete when all of the following are true:
 - No fixed global infusion level cap is imposed without a demonstrated technical requirement.
 - Existing crafting, repair, and dismantling continue to work.
 - Known compatibility limitations are documented.
-- Bonus merging is not required for the core system to function.
 
 ## 18. Instructions to Codex
 
@@ -1169,7 +1094,6 @@ Work incrementally and verify technical assumptions before building on them.
 - Prefer existing game infrastructure over custom replacements.
 - Keep gameplay logic independent of UI logic.
 - Keep the code modular and configuration-driven.
-- Do not implement bonus merging in the initial prototype.
 - Do not substitute automatic scaling for sacrifice-based infusion.
 - Do not silently omit difficult requirements; document blockers and alternatives.
 - Do not claim that a feature works until it has been tested.
@@ -1201,6 +1125,6 @@ The player keeps the item they love, sacrifices another item to determine its ne
 
 Craftsman specialization and experience determine who can perform the work. Material recovery, level-gap efficiency, and service prices create meaningful decisions about when and where to infuse.
 
-The target item remains itself. Bonus merging is a separate, optional extension rather than a requirement for the core experience.
+The target item remains itself.
 
 The central gameplay rule is simple: sacrifice loot to preserve and improve your chosen gear, but make every infusion a deliberate investment.

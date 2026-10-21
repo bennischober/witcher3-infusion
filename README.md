@@ -53,8 +53,8 @@ game script is overridden. Changes: [CHANGELOG.md](CHANGELOG.md).
 
 - Limitations and compatibility notes: [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md)
 - What the [spec](INFUSION_SPEC.md) asks for, what is done and what is open (compatibility
-  tests next to other mods; optional bonus merging): [docs/SPEC_COVERAGE.md](docs/SPEC_COVERAGE.md)
-- Why it's a beta and what 1.0 needs: [docs/ROADMAP_IDEAS.md](docs/ROADMAP_IDEAS.md#3-road-to-10)
+  tests next to other mods): [docs/SPEC_COVERAGE.md](docs/SPEC_COVERAGE.md)
+- Why it's a beta and what 1.0 needs: [docs/ROADMAP_IDEAS.md](docs/ROADMAP_IDEAS.md#2-road-to-10)
 
 ## Repository structure
 

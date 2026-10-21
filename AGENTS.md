@@ -28,7 +28,7 @@ Game and Redkit paths:
 - Craftsman eligibility depends on verified experience tier and specialization.
 - Successful infusion restores the target's durability.
 - Preserve the target's identity, bonuses, sockets, and installed upgrades wherever supported.
-- Do not transfer the sacrifice item's bonuses in the core implementation.
+- Do not transfer the sacrifice item's bonuses.
 - Do not replace infusion with automatic equipment scaling.
 - Do not introduce new NPCs or mandatory dialogue trees.
 
@@ -41,10 +41,6 @@ Game and Redkit paths:
 - Document unresolved technical limitations.
 - Test persistence and save/reload behavior wherever possible.
 - Do not claim successful in-game testing unless it was actually performed.
-
-## Optional extensions
-
-Bonus merging must remain separate from the core infusion mechanic. It may be developed as an optional module or independently distributed mod, but it must not be required for the base system.
 
 ## Git practices
 

@@ -14,8 +14,7 @@ tests/modInfusion/README.md). Re-audited against every spec section on 2026-10-1
 The **core system is complete and verified**: two-item model, level transfer, salvage and
 materials, labor fee, craftsman gating, durability, transaction safety, persistence, uninstall
 safety and the production UI with rejection reasons — with no vanilla script override.
-Open, in spec order, see [Open items](#open-items-top-to-bottom). Bonus merging (§11, M8) has not
-started.
+Open, in spec order, see [Open items](#open-items-top-to-bottom).
 
 ## Section by section
 
@@ -23,7 +22,7 @@ started.
 | --- | --- | --- | --- |
 | §1.3 | Non-goals | ✅ | No auto-scaling, no new NPC/quest, no random failure, no level cap, no new resource. |
 | §2 | Technical discovery | ✅ | TECHNICAL_DISCOVERY.md. |
-| §3.1 | Two distinct items, target kept, sacrifice consumed | ✅ | Scenario. The sacrifice's socketed runes and glyphs return to the inventory for free, an enchanted sacrifice's are lost (vanilla dismantle rule; not in the spec). Scenario (`sacrifice_runes_returned`, `sacrifice_enchanted`, `reject_keeps_upgrades`). |
+| §3.1 | Two distinct items, target kept, sacrifice consumed | ✅ | Scenario. The sacrifice's socketed runes and glyphs return to the inventory for free, an enchanted sacrifice's are lost (vanilla dismantle rule, §11). Scenario (`reject_keeps_upgrades`: a failed infusion returns none). |
 | §3.2 | New level = sacrifice level; equal/lower rejected | ✅ | Scenario (`reject_equal`, `reject_lower`). Deliberately no `AllowEqualLevelInfusion` switch: an equal-level infusion is zero-benefit, which §3.2 forbids ("never consume an item for an invalid or zero-benefit infusion"); no use case found. |
 | §3.3 | Compatibility | ✅ dev. | Same item **category** (chest↔chest, boots↔boots, steel↔steel, silver↔silver) — stricter than the spec. Scenario (`reject_category`, `reject_steel_silver`). |
 | §3.4 | Full durability restore, stated in the UI | ✅ | Scenario (damaged targets); popup note. |
@@ -44,8 +43,8 @@ started.
 | §9.2 | Preview contents | ✅ | Names, icons, levels, fee, covered/remaining materials, consumption + repair note, eligibility (blocked targets with reason), recipe coverage in the sacrifice's tooltip ("Covered by sacrifice: 7/18", one line, checked in game), projected primary stat in the popup (current stat + steps × the step ability's fixed value; every infusion scenario checks it against the result; popup checked in game). |
 | §9.3 | Clear rejection messages | ✅ | Blocked targets are listed disabled with the reason in the tooltip (tier with the game's rank name, no/only-lower/only-equipped sacrifices); popup-time rejections as localized notifications (en/de). Scenario (`block_tier`, `block_no_higher`, `block_ok`); UI checked in game (one-line reasons, no Space hint). |
 | §9.5 | Confirmation with fresh data | ✅ | Fresh `Preview` before the popup; `Execute` re-validates. |
-| §10 | Configuration | ✅ dev. | Script constants in `InfusionConfig.ws` (no settings menu — broken on 5.01); dev overrides via `infuseSetConfig`. Salvage toggle (scenario `salvage_off`), `RequireCraftingMaterials` (`REQUIRE_MATERIALS`, scenario `materials_off`). Values are clamped when read (BALANCING.md), fees capped at 10,000,000. Not added: `AllowEqualLevelInfusion` (§3.2), `AllowSpecialItems` (nothing special is tested), `EnableBonusMerging` (no extension). Player-facing doc: CONFIGURATION.md. |
-| §11 | Bonus merging | — | M8; the core has no extension point yet (§11.3). Wrapping the mod's own classes works (TECHNICAL_DISCOVERY §2), so the module can be a separate mod without a plug-in API: the core adds an empty seam inside `Execute` (target, sacrifice, new level, transaction context → proposed changes), the module wraps it, the core validates the proposal before commit. Wrapping `Execute` itself would let the module bypass §11.3's checks. Once a release ships the seam, its name and parameters are a public interface. |
+| §10 | Configuration | ✅ dev. | Script constants in `InfusionConfig.ws` (no settings menu — broken on 5.01); dev overrides via `infuseSetConfig`. Salvage toggle (scenario `salvage_off`), `RequireCraftingMaterials` (`REQUIRE_MATERIALS`, scenario `materials_off`). Values are clamped when read (BALANCING.md), fees capped at 10,000,000. Not added: `AllowEqualLevelInfusion` (§3.2), `AllowSpecialItems` (nothing special is tested). Player-facing doc: CONFIGURATION.md. |
+| §11 | What transfers from the sacrifice | ✅ | Level only, no bonuses; socketed runes and glyphs return to the inventory, an enchanted sacrifice's are lost. Scenario (`sacrifice_runes_returned`, `sacrifice_enchanted`). |
 | §12 | Modular architecture | ✅ | Config / service / grid / menu hooks separated; the service is driven directly by the tests. |
 | §13 | Transaction safety | ✅ | Level verified after applying, rollback on mismatch; charge → materials → sacrifice. Rollback: scenario `rollback_mismatch` (forced mismatch on a target already carrying the step ability: level, stat and step-ability count restored, nothing consumed). |
 | §13.4 | Save/load integrity | ✅ | Scenario (`persist` + `infuseScenarioPersistCheck`) and manual rounds. |
@@ -71,4 +70,3 @@ started.
 | 8 | §16 M7 | ~~Install guide, configuration doc, known issues, packaging, release build in game~~ — done | docs | M |
 | 9 | §7.2, §9.2 | ~~Run `materials_by_tier` and check the sacrifice tooltip in game~~ — done | playtest | S |
 | — | §10 | `AllowSpecialItems`: nothing special is allowed today; add a switch only for a category that gets tested | — | — |
-| — | §11 / M8 | Bonus merging (optional, separate module) | — | L |
