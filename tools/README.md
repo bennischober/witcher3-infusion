@@ -5,6 +5,7 @@
 | `deploy-mod.ps1` | Copies the mod into the game's `mods\modInfusion` folder. Default: release files (`src/`) only. `-Dev`: plus the test overlay (`tests/`). `-Uninstall`: removes the folder. |
 | `launch-debug.ps1` | Starts the game with `-debugscripts`, so `Documents\The Witcher 3\scriptslog.txt` gets compile errors and the `[Infusion]` log channel. |
 | `verify-scripts.ps1` | Compile gate: starts the game with `-verifyscriptsandexit` (compiles all scripts, ~20 s, no save). Exit 0 = compiled, 1 = compile errors (listed, read from the game's error window), 2 = could not verify. `-Deploy` installs the dev layout first (`-Release`: release layout). Details and pitfalls: [docs/SCRIPT_TEST_BENCH_RESEARCH.md](../docs/SCRIPT_TEST_BENCH_RESEARCH.md). |
+| `run-scenarios.ps1` | **Prototype**: unattended scenario run, nothing simulated. Installs `tests\modInfusionAutoRun` for the run; its script skips the start-up videos, loads the newest save, runs `infuseScenarioAll` and quits (the runner closes the game once it has read the result); the runner reads `SCENARIOS:` from `scriptslog.txt` (exit 0 = all pass, 1 = failure, 2 = no result). Needs `DebugScriptsForceFlush` in `dx12user.settings` (set by the runner, backup `dx12user.settings.pre-infusion`). The newest save is the test bed; leave the game window alone (~75 s). `-ShotDir` writes screenshots for diagnosing. See [docs/SCRIPT_TEST_BENCH_RESEARCH.md](../docs/SCRIPT_TEST_BENCH_RESEARCH.md). |
 | `w3paths.ps1` | Shared helper: finds The Witcher 3 and REDkit in the Steam libraries. Override with the `W3_GAME_DIR` / `W3_REDKIT` environment variables or `-GameDir`. |
 | `infusion-cost-table.py` | Offline cost calculator (recipe, salvage, fee) from the REDkit item XML — see [docs/BALANCING.md](../docs/BALANCING.md). REDkit is auto-detected; `--redkit` or `W3_REDKIT` override it. Its constants mirror `InfusionConfig.ws` and must be kept in sync. |
 | `fla-inspect.py` | Read-only inspector for REDkit's UI sources (`gui_new\fla\*.fla`, XFL): `symbols` lists library symbols and linkage classes, `show` a symbol's layers, keyframes and elements with positions, `texts` every text field's box, font size and alignment, `find` searches all FLAs for an instance, symbol or class name. `--json` for scripts. REDkit is auto-detected like the cost calculator. |
@@ -18,7 +19,8 @@
 ```powershell
 powershell -File tools\deploy-mod.ps1 -Dev
 powershell -File tools\launch-debug.ps1
-powershell -File toolserify-scripts.ps1 -Deploy
+powershell -File tools\verify-scripts.ps1 -Deploy
+powershell -File tools\run-scenarios.ps1 -Deploy
 powershell -File tools\package-release.ps1 -Deploy
 powershell -File tools\check-mod-conflicts.ps1
 python tools\infusion-cost-table.py --target "Light armor 01" --sacrifice "Light armor 06" --gap 9
