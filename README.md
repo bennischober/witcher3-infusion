@@ -71,7 +71,7 @@ docs/
   SPEC_COVERAGE.md               Spec section by section: done, verified, open
   CRAFTSMAN_MAP.md               Craftsman tiers extracted from game data
   ROADMAP_IDEAS.md               Open ideas
-  SCRIPT_TEST_BENCH_RESEARCH.md  Why there is no out-of-game test bench
+  SCRIPT_TEST_BENCH_RESEARCH.md  What can be checked without playing (compile gate) and what cannot
 src/modInfusion/                 RELEASE mod source — ships to players
 tests/modInfusion/               DEV-ONLY overlay (console commands, scenario tests) — never shipped
 tools/                           Deploy/launch scripts, cost table, string sources (tools/README.md)

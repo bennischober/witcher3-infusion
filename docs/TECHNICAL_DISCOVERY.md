@@ -172,7 +172,7 @@ autogen items (`AutogenUseLevelRange`).
 
 ## 8. Testing
 
-No out-of-game test bench is practical ([SCRIPT_TEST_BENCH_RESEARCH.md](SCRIPT_TEST_BENCH_RESEARCH.md)).
+Scripts can be compile-checked without playing (`tools/verify-scripts.ps1`, the game's `-verifyscriptsandexit`); behavior is still tested in game ([SCRIPT_TEST_BENCH_RESEARCH.md](SCRIPT_TEST_BENCH_RESEARCH.md)).
 Verification runs in game: one-command scenario tests (`infuseScenarioAll`,
 tests/modInfusion/README.md) for the service, the manual checklist in [UI.md](UI.md) for the menu.
 Fault injection stays in the dev overlay (`@wrapMethod` on the service, §2); the shipped scripts

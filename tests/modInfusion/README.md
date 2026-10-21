@@ -88,5 +88,5 @@ run again). Still manual: everything visual in the menu (docs/UI.md checklists).
 `LogChannel` text does **not** render in the debug console; it is written to `scriptslog.txt`
 (`-debugscripts` launch flag, `tools/launch-debug.ps1`) as `[Infusion]` lines. On screen, results
 appear as HUD notifications (queued; visible after closing the console) plus a sound (crafting =
-pass, denied = fail). Why there is no out-of-game test bench:
+pass, denied = fail). Compile check without the game window and why the scenarios still run in game:
 [docs/SCRIPT_TEST_BENCH_RESEARCH.md](../../docs/SCRIPT_TEST_BENCH_RESEARCH.md).
