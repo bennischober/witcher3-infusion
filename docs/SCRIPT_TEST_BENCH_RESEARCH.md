@@ -3,9 +3,9 @@
 Question: how much of the verification can run **without a person at the game**?
 
 Short answer: the game has a built-in **script-verify mode** — that is the compile gate
-(`tools/verify-scripts.ps1`, done). Running the scenarios unattended is **not solved yet**: it
-needs the game to load a save and take the console command from outside (options below). No
-test framework or headless/null-renderer mode exists, so a bench is always a real game window.
+(`tools/verify-scripts.ps1`, done). The scenarios run unattended through a dev-only script that
+loads the newest save itself (`tools/run-scenarios.ps1`, prototype, below). No test framework or
+headless/null-renderer mode exists, so a bench is always a real game window.
 
 ## Compile gate (verified 2026-10-21, Remastered 5.0.1)
 
@@ -39,29 +39,86 @@ Binary-level findings (strings in `witcher3.exe`; flags not tested unless stated
 `DebugScriptsLogDir` / `DebugScriptsForceFlush`. Scripts can end the game with
 `theGame.ExitGame()` (engine/game.ws).
 
-## Running scenarios unattended (open)
+## Running scenarios unattended (prototype works, 2026-10-21)
 
-What is known:
+`tools/run-scenarios.ps1` starts the game and reads the result; **nothing is simulated** (no
+keys, no mouse). The game window appears (there is no headless mode) and the run takes ~75 s,
+minutes, mostly the save load.
 
-- The game starts and shows its window from a script-launched process (tested
-  `-net -debugscripts -windowed -width 800 -height 450`); Space skips the intro logos.
-- With `-net` the game listens on TCP **37001** and **37010** (all interfaces, no
-  authentication — only use on a trusted network / behind the firewall). Both stay silent until a
-  client speaks first. This is the connection Script Studio (`bin\x64\scriptStudio.exe`, ships
-  with the game; debugger, breakpoints, script reload) uses; the protocol is undocumented and was
-  **not** reverse-engineered (version-dependent, so avoided on purpose).
-- Results already reach the outside: `[Infusion]` lines in `scriptslog.txt` with
-  `-debugscripts`.
+How it works (script side, dev only): `tests/modInfusionAutoRun` is copied to
+`mods\modInfusionAutoRun` for the run and removed afterwards, so a normal dev launch never
+auto-loads a save. Its script (`InfusionAutoRun.ws`) uses only vanilla script API:
 
-What is missing: loading a save and sending the console command (`infuseScenarioAll`) without
-hands. Candidate approaches, in order of preference:
+0. `@wrapMethod(CR4StartupMoviesMenu) OnConfigUI` and `@wrapMethod(CR4RecapMoviesMenu)
+   OnConfigUI`: call the original and then `CloseMenu()`. These two menus play the start-up
+   bumpers (disclaimers, legal, logo) and the "previously on" recap and wait for Space; the
+   vanilla start-up menu closes itself the same way when it has no movie.
+1. `@wrapMethod(CR4IngameMenu) OnConfigUI`: on the main menu, once per process, calls
+   `LoadLastSave(false)` - the same call the "Continue" button makes (newest save).
+2. `@wrapMethod(CR4Game) OnGameStarted`: starts a timer on the player (8 s).
+3. The timer runs `InfusionRunAllScenarios()` (what `infuseScenarioAll` runs) and, as a fallback
+   90 s later, quits (`RequestExit`).
 
-1. Keystroke automation of the game window (skip intro → menu → load → console → command), poll
-   `scriptslog.txt` for the `SCENARIOS:` line, end with `ExitGame` or a kill. Black box, uses only
-   public behavior; fragile only against UI changes.
-2. The `-net` channel (Script Studio protocol): cleanest, but needs protocol reverse-engineering.
-3. Script-side trigger (a dev-only script that runs the scenarios at start) — untested whether
-   scenarios can run before a save is loaded; they need a player and an inventory.
+The runner waits for the process and prints the `[Infusion]` lines of `scriptslog.txt`; it
+closes the game itself 10 s after the `SCENARIOS:` line shows up. Exit 0 = `SCENARIOS: n/n PASS`,
+1 = a failure/skip, 2 = no result.
+
+Verified (Remastered 5.0.1, 2026-10-21): the last run of `tools/run-scenarios.ps1` went from the
+launch straight into the newest save without any input (the start-up videos are skipped), logged
+the main menu at 18 s, ran the scenarios and ended with `SCENARIOS: 36/36 PASS`; the runner then
+closed the game (exit code 0, 73 s in total) and exited 0.
+
+Findings that matter:
+
+- **One-shot guard needed.** Without it the main menu (which comes back whenever a session ends)
+  loads the save again, in a loop. The guard is a field added to `CR4Game` (`theGame` is const:
+  its fields cannot be assigned, use a local `(CR4Game)theGame`).
+- **`theGame.ExitGame()` does not end the process:** it ends the *session* (back to the menu /
+  the credits). The main menu's quit uses `theGame.RequestExit()`. The runner also closes the
+  window itself 10 s after the result line appears, in case the quit does not work.
+- **`scriptslog.txt` needs `DebugScriptsForceFlush=true` (and `LogDebugScripts=true`) under
+  `[Scripts]` in `dx12user.settings`** (the DX12 build reads that file, not `user.settings`).
+  Without it the log stayed at its 101-byte header. The game rewrites the file on exit and drops
+  the keys, so the runner puts them back before every launch (backup once as
+  `dx12user.settings.pre-infusion`). Whether the keys alone are enough, or the run itself is what
+  changed, was not isolated.
+- `-debugscripts` is required (the runner passes it); the game folder must be the working
+  directory.
+- "Continue" loads the **newest** save (~45 s). Use a dedicated test save as the newest one. The
+  scenarios put the inventory back, but the run does not save.
+- **The long start of a launch is menus, not engine startup.** Without the skip, the game plays
+  the bumpers and the recap and waits for Space (minutes of waiting). They are `CR4StartupMoviesMenu`
+  and `CR4RecapMoviesMenu` (`mainStartupMoviesMenu.ws`, `mainRecapMoviesMenu.ws`), queued by
+  `CR4Game.PopulateMenuQueueStartupOnce` / `PopulateMenuQueueMainOnce`. Removing
+  `RecapMoviesMenu` from that queue (wrapping `PopulateMenuQueueMainOnce`) did **not** stop the
+  recap; closing the menus in their `OnConfigUI` did. The recap's story pictures with subtitles
+  still show on the load screen of the save (screenshots at 16 s and 30 s) - that part is not
+  skipped and not needed. I did not isolate which of the two wrappers does the work.
+- **Quit and log.** The script's `RequestExit()` ends the process with exit code 0 (seen with a
+  quit 8 s and 14 s after the scenarios). Two such runs left `scriptslog.txt` at its 101-byte
+  header although the scenarios must have run (the game quit at the expected time) - the
+  result was lost. The run after, with the quit moved 90 s away, had log content from 18 s on.
+  Why the two earlier logs stayed empty is **not understood**; the runner therefore waits for
+  the `SCENARIOS:` line and closes the game itself, and reports "NO RESULT" (exit 2) otherwise.
+- The compile gate (`verify-scripts.ps1`) also compiles `modInfusionAutoRun` when it is
+  installed; it is not part of the dev layout.
+
+Not verified: that the result is reproducible (one run of the final version passed, two earlier
+ones lost the log, see above), a run from a save in the open world versus one in a conversation
+(the test save stood next to an armorer), and the failure paths (a failing scenario, a missing
+save, a game that never loads).
+
+### Superseded: keystroke automation
+
+An earlier prototype of the runner drove the window with `SendInput` (skip the intro, click
+Continue, open the console, type `infuseScenarioAll`). It was dropped: it needed the foreground
+window and took over keyboard and mouse, depended on the keyboard layout (the console key is the
+tilde only on a US layout - on de-DE it is `^` and the typed letters hit game hotkeys, so the
+window had to be switched to en-US), on hidden menu highlight state, on the recap cinematic and on
+fixed waits. Everything it did the game can do itself through the script API above.
+
+Not used: the `-net` channel (TCP 37001/37010, the Script Studio protocol - undocumented, not
+reverse-engineered, and the game listens on all interfaces without authentication).
 
 ## What was ruled out
 
@@ -96,7 +153,8 @@ the local game install, so it works on any machine that has the game, but not in
 - **Behavior:** still verified in game — scenario tests (`tests/modInfusion/.../InfusionScenarios.ws`,
   `infuseScenarioAll`, dev deploys only; results in `scriptslog.txt` and on screen), and the menu
   by hand (docs/UI.md checklists).
-- **Next:** the unattended scenario runner above, as its own step.
+- **Unattended behavior run:** `tools/run-scenarios.ps1` (prototype; one complete verified run,
+  ~75 s, 36/36 PASS).
 
 ## When to revisit
 
