@@ -66,6 +66,13 @@ struct SInfusionPreview
 	var salvaged : array<SItemParts>;    // recovered from the sacrifice (excess discarded, §5.4)
 	var covered : array<SItemParts>;     // part of the salvage that actually reduces the recipe
 	                                     // (recipe materials only, capped at the recipe amount)
+
+	// The sacrifice's socketed runes/glyphs, returned to the inventory on
+	// success like vanilla dismantling does. Empty when the sacrifice is
+	// enchanted: the runeword/glyphword and its upgrades are lost, as when
+	// dismantling (blacksmithMenu.ws OnDisassembleItem).
+	var sacrificeUpgrades : array<name>;
+	var sacrificeEnchanted : bool;
 }
 
 function InfusionErrorToString( err : EInfusionError ) : string

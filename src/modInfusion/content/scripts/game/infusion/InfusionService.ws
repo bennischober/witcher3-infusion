@@ -674,6 +674,8 @@ class W3InfusionService extends IScriptable
 		preview.materials.Clear();
 		preview.salvaged.Clear();
 		preview.covered.Clear();
+		preview.sacrificeUpgrades.Clear();
+		preview.sacrificeEnchanted = false;
 
 		inv = GetWitcherPlayer().inv;
 
@@ -792,6 +794,7 @@ class W3InfusionService extends IScriptable
 		preview.newLevel = targetLevel + gap;
 		preview.laborFee = GetLaborFee( inv, targetId, sacrificeId, gap, quality, craftsmanLevel, craftsman );
 		ProjectPrimaryStat( inv, targetId, targetData, preview );
+		GetReturnedUpgrades( inv, sacrificeId, preview );
 		preview.errorCode = IFE_Ok;
 		return preview.errorCode;
 	}
@@ -816,6 +819,20 @@ class W3InfusionService extends IScriptable
 		preview.statAttribute = targetData.statAttribute;
 		preview.statBefore = current.valueBase;
 		preview.statAfter = current.valueBase + preview.stepsToAdd * stepMin.valueBase;
+	}
+
+	// The sacrifice's socketed runes/glyphs that come back on success, by
+	// the same rule as vanilla dismantling (blacksmithMenu.ws
+	// OnDisassembleItem): every upgrade returns free of charge unless the
+	// item is enchanted, in which case the runeword/glyphword and its
+	// upgrades are lost.
+	private function GetReturnedUpgrades( inv : CInventoryComponent, sacrificeId : SItemUniqueId, out preview : SInfusionPreview ) : void
+	{
+		preview.sacrificeEnchanted = inv.IsItemEnchanted( sacrificeId );
+		if ( !preview.sacrificeEnchanted && inv.GetItemEnhancementCount( sacrificeId ) > 0 )
+		{
+			inv.GetItemEnhancementItems( sacrificeId, preview.sacrificeUpgrades );
+		}
 	}
 
 	// ---------------------------------------------------------------------
@@ -1159,12 +1176,19 @@ class W3InfusionService extends IScriptable
 
 		// 5) Commit irreversible parts, in loss-minimizing order:
 		//    charge money, consume materials, then consume the sacrifice
-		//    (spec §13.2).
+		//    (spec §13.2) and hand back its socketed runes/glyphs, free like
+		//    vanilla dismantling (none when it was enchanted; see
+		//    GetReturnedUpgrades). The list comes from the Preview above,
+		//    read while the sacrifice still existed.
 		// preview.materials is already net of salvage (or the full recipe with
 		// salvage disabled); it is always charged.
 		inv.RemoveMoney( preview.laborFee );
 		RemoveMaterials( inv, preview.materials );
 		inv.RemoveItem( sacrificeId );
+		for ( i = 0; i < preview.sacrificeUpgrades.Size(); i += 1 )
+		{
+			inv.AddAnItem( preview.sacrificeUpgrades[i] );
+		}
 
 		// 6) Restore durability as part of the paid service (spec §3.4).
 		if ( GetConfig().RestoreTargetDurability() && inv.HasItemDurability( targetId ) )
@@ -1178,7 +1202,9 @@ class W3InfusionService extends IScriptable
 			+ " level " + levelBefore + " -> " + levelAfter
 			+ ", sacrifice " + sacrificeName + " consumed ("
 			+ added + " x " + preview.stepAbility + " added)"
-			+ ", fee " + preview.laborFee );
+			+ ", fee " + preview.laborFee
+			+ ", returned " + preview.sacrificeUpgrades.Size() + " upgrade(s)"
+			+ ( preview.sacrificeEnchanted ? " (sacrifice was enchanted)" : "" ) );
 
 		preview.errorCode = IFE_Ok;
 		return IFE_Ok;
