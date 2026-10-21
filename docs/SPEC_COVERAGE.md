@@ -23,7 +23,7 @@ started.
 | --- | --- | --- | --- |
 | §1.3 | Non-goals | ✅ | No auto-scaling, no new NPC/quest, no random failure, no level cap, no new resource. |
 | §2 | Technical discovery | ✅ | TECHNICAL_DISCOVERY.md. |
-| §3.1 | Two distinct items, target kept, sacrifice consumed | ✅ | Scenario. |
+| §3.1 | Two distinct items, target kept, sacrifice consumed | ✅ | Scenario. The sacrifice's socketed runes and glyphs return to the inventory for free, an enchanted sacrifice's are lost (vanilla dismantle rule; not in the spec). Scenario (`sacrifice_runes_returned`, `sacrifice_enchanted`, `reject_keeps_upgrades`). |
 | §3.2 | New level = sacrifice level; equal/lower rejected | ✅ | Scenario (`reject_equal`, `reject_lower`). Deliberately no `AllowEqualLevelInfusion` switch: an equal-level infusion is zero-benefit, which §3.2 forbids ("never consume an item for an invalid or zero-benefit infusion"); no use case found. |
 | §3.3 | Compatibility | ✅ dev. | Same item **category** (chest↔chest, boots↔boots, steel↔steel, silver↔silver) — stricter than the spec. Scenario (`reject_category`, `reject_steel_silver`). |
 | §3.4 | Full durability restore, stated in the UI | ✅ | Scenario (damaged targets); popup note. |

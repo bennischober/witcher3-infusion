@@ -39,7 +39,7 @@ piece stays Ursine — it gets stronger, but it never inherits the sacrificed it
 | | |
 | --- | --- |
 | **Target** | The item you keep and upgrade. Never consumed. Keeps identity, sockets, enchantments, set bonuses. |
-| **Sacrifice** | A compatible item of the same category (armor → armor, sword → sword). Permanently consumed. |
+| **Sacrifice** | A compatible item of the same category (armor → armor, sword → sword). Permanently consumed; its socketed runes and glyphs return to your inventory, as when dismantling (an enchanted sacrifice loses them). |
 | **New level** | Exactly the sacrifice's level. No automatic scaling, no level-down infusions. |
 | **Materials** | The sacrifice yields recoverable crafting materials; they reduce the recipe requirements. |
 | **Labor fee** | Crowns, depending on the craftsman's tier (journeyman → archmaster) and the size of the upgrade. |

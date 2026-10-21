@@ -39,14 +39,19 @@ returns to step 1. A sacrifice whose remaining materials are missing is **disabl
 panel, no E button, denied sound, warning "Fehlende Materialien"). A sacrifice's tooltip shows
 how much of the recipe it covers in its warning line ("Durch Opfer gedeckt: 7/18", material
 units: covered / recipe total) in white instead of the warning red; without material
-requirements the line is left out.
+requirements the line is left out. The panel's rune slots show the runes and glyphs the
+sacrifice returns to the inventory (none for an enchanted sacrifice, which loses them as when
+dismantling); step 1 and the target row show none.
 
 **Confirmation popup** (vanilla price popup): "Ziel: … (61 -> 68)", the projected primary stat
 with the tooltip's label ("Rüstung: 129 -> 164"; spec §9.2), "Opfer: … (68)", materials
 covered by the sacrifice and additional materials (inline icons), the permanent-consumption and
-full-repair note, and the fee. Accept executes the infusion with the NPC the player is talking
+full-repair note, a red warning if the sacrifice is enchanted (its enchantment and upgrades are
+lost), and the fee. Accept executes the infusion with the NPC the player is talking
 to; the craftsman receives the fee, as with vanilla repairs. A successful infusion returns to
-step 1, a failed one stays in step 2.
+step 1, a failed one stays in step 2. The success notification lists the returned runes and
+glyphs in vanilla's dismantle format (`panel_blacksmith_items_added`, then one "name x1" line
+each).
 
 Rejection messages are localized (`InfusionErrorToLocString`, en/de).
 
@@ -101,7 +106,7 @@ Sources: `r4data\gameplay\gui_new\actionscript\red\game\witcher3\menus\blacksmit
 | Action flow | `Selection → Confirmation → Waiting`; `OnRequestConfirmation(id, actionPrice)` then waits for `confirmAction(bool)`. `false` = back to selection, no side effects. | Infusion paths always answer `false`. |
 | Grid | Renders whatever array arrives on `repair.grid.player`; per-item gate `disableAction`. | Visibility, price and disabled state are fully script-controlled. |
 | Space / X | Sent (`OnRepairAllItems`) only while `_xActionLabel` is non-empty; the Disassemble page clears it. | The vanilla handler can't fire in the Infuse tab. |
-| Disassemble panel | `ItemDisassembleInfo` (`fla-inspect.py show panel_blacksmith ItemDisassembleInfo`): material slots `mcSlot1`–`mcSlot5` (the `.as` declares 7, the FLA has 5), three rune slots `mcRuneSlot1`–`3` below `mcSlot3` (left column, y 347–525, no caption) shown only for entries in `item.socketsData` (`name`, `iconPath`; vanilla: `guiDisassembleInventoryComponent.addSocketsListInfo`), pliers bitmap, price; no image holder or durability field (the Repair panel has both). | The Infuse grid extends the repair component and sends no `socketsData`, so the rune slots stay hidden. Free for up to three more icons (ROADMAP_IDEAS §3). |
+| Disassemble panel | `ItemDisassembleInfo` (`fla-inspect.py show panel_blacksmith ItemDisassembleInfo`): material slots `mcSlot1`–`mcSlot5` (the `.as` declares 7, the FLA has 5), three rune slots `mcRuneSlot1`–`3` below `mcSlot3` (left column, y 347–525, no caption) shown only for entries in `item.socketsData` (`name`, `iconPath`; vanilla: `guiDisassembleInventoryComponent.addSocketsListInfo`), pliers bitmap, price; no image holder or durability field (the Repair panel has both). | Step-2 sacrifice rows send the upgrades the sacrifice returns as `socketsData` (`SetReturnedUpgradesList`); step 1 and the target row send none, so the slots stay hidden there. In-game look (no caption, next to the material slots) not yet checked. |
 | Price popup | `tfMessage.htmlText = TextContent`; price shown only when `ItempPrice > 0`; ~481×130 px of text. | `<br>` line breaks (WitcherScript has no `\n` escapes); details at font size 16; inline `<img src='img://…'>` icons render. |
 | Selection | The grid reports selection changes (`OnInventoryItemSelected`), but Flash calls reach **script events only**, and annotations can't add events. `OnGetItemData` follows the mouse hover. | The script never knows the *selected* item → constant E label; the section header names the cancel action. |
 | Section headers | `ModuleBlacksmithGrid.as` sets the header's `.text` (plain text, no `img://` icons). `BlacksmithMenu.as` `setSectionsList` redraws the headers without rebuilding the grid. | The step-2 header names the key as a letter (`%KEY%` in `panel_infusion_target_cancel`, `InfusionAcceptKeyName`: `theInput.LastUsedGamepad`, `GetLastUsedGamepadType`, `Controls/SwapAcceptCancel`). On a device switch vanilla calls `CR4MenuBase.UpdateInputDeviceType` on the open menu; the wrapper re-sends `blacksmith.grid.section` alone. |
@@ -135,6 +140,9 @@ launch: `infuseSpawnTestPair(true)`, `infuseOpenMenu(true)`, Infusion tab.
 6. Close and reopen the menu on the Infusion tab: it reopens there with the grid.
 7. Reparieren / Zerlegen (vanilla warning text) / Sockel behave like vanilla.
 8. Save, reload: the infused item keeps its level.
+   Sacrifice with runes or glyphs socketed: step 2 shows them in the panel's rune slots, the
+   notification after infusing lists them, and they are in the inventory. Enchanted sacrifice:
+   no rune slots, the popup's red warning line fits inside the frame.
 9. Controller: steps 2–5 with a gamepad — header "Ziel (A: abbrechen)" (X on PlayStation; B / O
    with "swap accept/cancel"), switching to the mouse mid-step-2 turns it into E and back without
    moving the selection; bottom-bar hints show pad buttons; greyed items do nothing on A;

@@ -114,6 +114,9 @@ on items).
   repair uses.
 - Upgrades: `GetItemEnhancementItems`, `EnhanceItemScript` (also applies runewords),
   `AddSlot`, `EnchantItem(item, name, getEnchamtmentStatName(name))`, `GetEnchantment`.
+  Vanilla dismantling (`blacksmithMenu.ws`) returns the upgrades via `AddAnItem` only when
+  `!IsItemEnchanted(item)` and `GetItemEnhancementCount(item) > 0`; Infusion's sacrifice follows
+  the same rule (`W3InfusionService.GetReturnedUpgrades`).
 - `StartInvUpdateTransaction` / `FinishInvUpdateTransaction` defer inventory updates during
   multi-step changes. There are no atomic inventory transactions — safety comes from the order
   validate → apply level → verify → charge → consume (spec §13.2).

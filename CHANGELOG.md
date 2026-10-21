@@ -7,6 +7,10 @@ playtested in long New Game+ runs or alongside other mods.
 
 - The step-2 header names the gamepad's button (A, or X on PlayStation; B / O with "swap
   accept/cancel") instead of always E, and follows a switch between pad and keyboard.
+- The sacrifice's socketed runes and glyphs return to the inventory free of charge, as when
+  dismantling, instead of being lost. Step 2 shows them in the panel's rune slots and the
+  success notification lists them. An enchanted sacrifice still loses its runeword or
+  glyphword and their upgrades (vanilla dismantle rule); the popup warns in red.
 
 ## 0.9.0 — first public release (2026-10-20)
 

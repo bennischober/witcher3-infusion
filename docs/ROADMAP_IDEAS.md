@@ -41,10 +41,11 @@ classes works, the extension point can be an empty seam method the module wraps
 - **Projected stat for blunt weapons:** the popup leaves the line out for maces (their primary
   stat isn't the one the step raises, TECHNICAL_DISCOVERY §3). Option: project the damage the
   step adds instead; needs a check of what the tooltip shows for them.
-- **Target's runes and glyphs in the panel:** the Disassemble panel has three hidden rune slots
-  fed by `socketsData` (UI.md, Flash table) that the Infuse tab never fills. Listing the target's
-  installed upgrades there would show what is kept. Unverified: they have no caption, so they may
-  read as more materials; needs a look in game.
+- **Target's runes and glyphs in the panel:** the Disassemble panel's three rune slots
+  (`socketsData`, UI.md Flash table) now show the sacrifice's returned upgrades on step-2
+  sacrifice rows. The target's installed upgrades could fill them on step-1 rows and the step-2
+  target row, which send none; mixing both meanings in one slot row may confuse, so wait for the
+  in-game look of the returned-upgrades use first (no caption, may read as more materials).
 - **Step-1 button label:** constant per item (UI.md); only worth it if a single label reads
   better for both steps than "Infuse".
 
