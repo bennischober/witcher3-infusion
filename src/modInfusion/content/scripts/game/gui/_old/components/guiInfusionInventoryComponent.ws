@@ -325,6 +325,7 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 				{
 					flashObject.SetMemberFlashInt( "actionPrice", p.laborFee );
 					SetCostPartList( flashObject, p.materials );
+					SetReturnedUpgradesList( flashObject, p.sacrificeUpgrades );
 					// Like a disabled craft button: a sacrifice whose
 					// remaining materials are missing cannot be activated.
 					// Flash then greys the panel, hides the E button,
@@ -393,5 +394,28 @@ class W3GuiInfusionInventoryComponent extends W3GuiRepairInventoryComponent
 			list.PushBackFlashObject( partData );
 		}
 		flashObject.SetMemberFlashArray( "partList", list );
+	}
+
+	// Step 2: the sacrifice's runes/glyphs that come back on success, in
+	// the Disassemble panel's three rune slots (ItemDisassembleInfo.as
+	// populateSocketsData; fed like vanilla's addSocketsListInfo in
+	// guiDisassembleInventoryComponent.ws). Flash shows a slot only per
+	// entry, so an enchanted sacrifice (nothing returned) shows none.
+	private function SetReturnedUpgradesList( out flashObject : CScriptedFlashObject, upgrades : array<name> ) : void
+	{
+		var list : CScriptedFlashArray;
+		var socketData : CScriptedFlashObject;
+		var i : int;
+
+		list = flashObject.CreateFlashArray();
+		for ( i = 0; i < upgrades.Size(); i += 1 )
+		{
+			socketData = flashObject.CreateFlashObject();
+			socketData.SetMemberFlashString( "name", GetLocStringByKeyExt( _inv.GetItemLocalizedNameByName( upgrades[i] ) ) );
+			socketData.SetMemberFlashString( "iconPath", _inv.GetItemIconPathByName( upgrades[i] ) );
+			list.PushBackFlashObject( socketData );
+		}
+		flashObject.SetMemberFlashArray( "socketsData", list );
+		flashObject.SetMemberFlashInt( "socketsCount", upgrades.Size() );
 	}
 }

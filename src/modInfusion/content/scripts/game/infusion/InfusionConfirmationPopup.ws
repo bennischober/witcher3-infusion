@@ -79,7 +79,15 @@ class InfusionConfirmationPopupData extends ConfirmationPopupData
 		{
 			text += "<br>" + GetLocStringByKeyExt( "panel_infusion_required" ) + ": " + parts;
 		}
-		text += "<br>" + GetLocStringByKeyExt( "panel_infusion_consumed_note" ) + "</font>";
+		text += "<br>" + GetLocStringByKeyExt( "panel_infusion_consumed_note" );
+		// An enchanted sacrifice's runeword/glyphword and its upgrades are
+		// lost, as when dismantling it; non-enchanted upgrades come back and
+		// need no line here (the panel's rune slots show them).
+		if ( preview.sacrificeEnchanted )
+		{
+			text += "<br><font color='#EC1212'>" + GetLocStringByKeyExt( "panel_infusion_enchant_lost" ) + "</font>";
+		}
+		text += "</font>";
 		return text;
 	}
 

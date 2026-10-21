@@ -601,6 +601,8 @@
 {
 	var err : EInfusionError;
 	var p : SInfusionPreview;
+	var text : string;
+	var i : int;
 
 	err = _infusionService.Execute( _infusionTargetId, _infusionSacrificeId, p, _infusionCraftsman );
 	if ( err == IFE_Ok )
@@ -610,7 +612,18 @@
 		{
 			_fixerInventory.AddMoney( p.laborFee );
 		}
-		showNotification( GetLocStringByKeyExt( "panel_infusion_done" ) );
+		// The sacrifice's returned runes/glyphs, listed like vanilla's
+		// dismantle notification (blacksmithMenu.ws OnDisassembleItem).
+		text = GetLocStringByKeyExt( "panel_infusion_done" );
+		if ( p.sacrificeUpgrades.Size() > 0 )
+		{
+			text += "<br/>" + "<font color =\"#404040\">" + GetLocStringByKeyExt( "panel_blacksmith_items_added" ) + ": </font>";
+			for ( i = 0; i < p.sacrificeUpgrades.Size(); i += 1 )
+			{
+				text += "<br/>" + GetLocStringByKeyExt( _inv.GetItemLocalizedNameByName( p.sacrificeUpgrades[i] ) ) + " x1";
+			}
+		}
+		showNotification( text );
 		theSound.SoundEvent( 'gui_crafting_craft_item' );
 
 		// Done: back to target selection (a failed attempt stays in the

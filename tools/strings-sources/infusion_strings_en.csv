@@ -32,3 +32,4 @@
 2112345042||panel_infusion_block_tier|Required rank:
 2112345043||panel_infusion_blocked_warning|Can't be infused here - see the tooltip
 2112345044||panel_infusion_block_excluded|Can't be infused safely
+2112345045||panel_infusion_enchant_lost|Enchanted: the enchantment and its runes or glyphs will be lost.
