@@ -36,7 +36,7 @@ crowns and materials restored to the exact amounts from before.
 
 | Command | Effect |
 | --- | --- |
-| `infuseScenarioAll` | Runs all scenarios below. Summary on screen and in the log: `SCENARIOS: 33/33 PASS` (or `\| FAIL: … \| SKIP: …`); one `scenario <name>: PASS/FAIL/SKIP (detail)` line per scenario. |
+| `infuseScenarioAll` | Runs all scenarios below. Summary on screen and in the log: `SCENARIOS: 36/36 PASS` (or `\| FAIL: … \| SKIP: …`); one `scenario <name>: PASS/FAIL/SKIP (detail)` line per scenario. |
 | `infuseScenario(name)` | Runs one scenario, e.g. `infuseScenario(silver_sword)`. |
 | `infuseScenarioN(n)` | Same by number (1-based, order below) — fallback if the console rejects a bare name. |
 | `infuseScenarioList` | Lists the names with their numbers. |
@@ -44,7 +44,8 @@ crowns and materials restored to the exact amounts from before.
 
 Successful infusions check: new level = sacrifice level, primary stat higher, durability 100 %
 (target damaged first where marked), sacrifice consumed, item identity, socketed upgrades,
-enchantment and all previous abilities intact, crowns charged = fee, materials used = preview.
+enchantment and all previous abilities intact, crowns charged = fee, materials used = preview,
+the sacrifice's runes/glyphs returned (none from an enchanted sacrifice).
 
 | # | Scenario | Checks (spec) |
 | --- | --- | --- |
@@ -55,27 +56,29 @@ enchantment and all previous abilities intact, crowns charged = fee, materials u
 | 5 | `witcher_sword_rune` | Witcher steel sword with a rune socketed — rune kept (§4.1) |
 | 6 | `witcher_armor_glyph` | Witcher armor with a glyph socketed — glyph kept |
 | 7 | `relic_runeword` | relic sword with a runeword — enchantment kept |
-| 8 | `ngplus_uncapped` | target and sacrifice above the player's max level (§8.3) |
-| 9 | `salvage_off` | salvage disabled: nothing covered, full recipe charged (§15.3) |
-| 10 | `fee_by_tier` | master armorer charges more than journeyman (§6.2, §15.4) |
-| 11 | `master_relic_ok` | master smith accepts a relic (§8.2) |
-| 12–22 | `reject_same`, `reject_lower`, `reject_equal`, `reject_category`, `reject_steel_silver`, `reject_quest`, `reject_crowns`, `reject_materials`, `reject_craftsman_type`, `reject_tier_witcher`, `reject_tier_relic` | exact rejection code **and** nothing consumed (§15.2, §13.3) |
-| 23 | `block_tier` | the grid's block reason for Witcher gear at a journeyman armorer is the tier (§9.3) |
-| 24 | `block_no_higher` | a target above every other item of its category: "no higher-level item" |
-| 25 | `block_ok` | a valid pair has no block reason (consistent with the infusable check) |
-| 26 | `block_excluded` | a quest-tagged sword is an explained exclusion (listed disabled, §14.2); untagged it isn't |
-| 27 | `materials_off` | material requirements off: labor fee only, no material consumed (§10) |
-| 28 | `fee_formula` | the fee matches the configured formula: value fallback for an ordinary and a Witcher target (incl. the target-tier multiplier), and the craftsman's full-repair price at a journeyman armorer — the higher one of target and sacrifice, softened above the soft ceiling (§6.3, §15.4) |
-| 29 | `fee_by_gap` | a 20-level gap costs more than a 5-level gap (§7.1, §15.4) |
-| 30 | `fee_config` | doubling the fee multiplier doubles the fee, with the soft ceiling lifted (§15.4) |
-| 31 | `fee_soft_cap` | a fee above the soft ceiling becomes √(fee × ceiling), one below it is unchanged (§6.3, §15.4) |
-| 32 | `materials_by_tier` | a master armorer's recipe is the journeyman's × the master's material efficiency, rounded to the nearest, and smaller in total (§7.2) |
-| 33 | `rollback_mismatch` | the level check after applying fails (forced by the dev fact `InfCfg_TestLevelMismatch`: `InfusionFaultInjection.ws` wraps the service's `ApplyLevelSteps` with `@wrapMethod` and overshoots by real step abilities; release builds don't contain it): `IFE_LevelMismatch`, and the pre-boosted target keeps its level, primary stat, step-ability count and damaged durability; crowns, materials and sacrifice untouched (§13.2–13.3) |
+| 8 | `sacrifice_runes_returned` | the sacrifice's two runes come back to the inventory free of charge (vanilla dismantle rule), the target's own rune stays |
+| 9 | `sacrifice_enchanted` | an enchanted sacrifice is flagged in the preview and returns nothing, as when dismantling |
+| 10 | `ngplus_uncapped` | target and sacrifice above the player's max level (§8.3) |
+| 11 | `salvage_off` | salvage disabled: nothing covered, full recipe charged (§15.3) |
+| 12 | `fee_by_tier` | master armorer charges more than journeyman (§6.2, §15.4) |
+| 13 | `master_relic_ok` | master smith accepts a relic (§8.2) |
+| 14–25 | `reject_same`, `reject_lower`, `reject_equal`, `reject_category`, `reject_steel_silver`, `reject_quest`, `reject_crowns`, `reject_materials`, `reject_keeps_upgrades`, `reject_craftsman_type`, `reject_tier_witcher`, `reject_tier_relic` | exact rejection code **and** nothing consumed (§15.2, §13.3); `reject_keeps_upgrades`: a failed infusion leaves the sacrifice's runes socketed and returns none |
+| 26 | `block_tier` | the grid's block reason for Witcher gear at a journeyman armorer is the tier (§9.3) |
+| 27 | `block_no_higher` | a target above every other item of its category: "no higher-level item" |
+| 28 | `block_ok` | a valid pair has no block reason (consistent with the infusable check) |
+| 29 | `block_excluded` | a quest-tagged sword is an explained exclusion (listed disabled, §14.2); untagged it isn't |
+| 30 | `materials_off` | material requirements off: labor fee only, no material consumed (§10) |
+| 31 | `fee_formula` | the fee matches the configured formula: value fallback for an ordinary and a Witcher target (incl. the target-tier multiplier), and the craftsman's full-repair price at a journeyman armorer — the higher one of target and sacrifice, softened above the soft ceiling (§6.3, §15.4) |
+| 32 | `fee_by_gap` | a 20-level gap costs more than a 5-level gap (§7.1, §15.4) |
+| 33 | `fee_config` | doubling the fee multiplier doubles the fee, with the soft ceiling lifted (§15.4) |
+| 34 | `fee_soft_cap` | a fee above the soft ceiling becomes √(fee × ceiling), one below it is unchanged (§6.3, §15.4) |
+| 35 | `materials_by_tier` | a master armorer's recipe is the journeyman's × the master's material efficiency, rounded to the nearest, and smaller in total (§7.2) |
+| 36 | `rollback_mismatch` | the level check after applying fails (forced by the dev fact `InfCfg_TestLevelMismatch`: `InfusionFaultInjection.ws` wraps the service's `ApplyLevelSteps` with `@wrapMethod` and overshoots by real step abilities; release builds don't contain it): `IFE_LevelMismatch`, and the pre-boosted target keeps its level, primary stat, step-ability count and damaged durability; crowns, materials and sacrifice untouched (§13.2–13.3) |
 
 Every successful infusion scenario also checks that the popup's projected primary stat equals
 the result (§9.2).
 
-Scenarios 1–9, 24–31 and 33 run without a craftsman (eligibility bypass, mechanics only); 10–11,
+Scenarios 1–11, 14–22, 27–34 and 36 run without a craftsman (eligibility bypass, mechanics only); 12–13,
 the three craftsman rejections, `block_tier` and `materials_by_tier` spawn journeyman/master test craftsmen (despawn after 5 min). SKIP means a
 precondition did not hold (game data differs, a freshly spawned craftsman was not ready yet —
 run again). Still manual: everything visual in the menu (docs/UI.md checklists).

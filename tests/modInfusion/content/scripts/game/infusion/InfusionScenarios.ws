@@ -33,6 +33,8 @@ struct SInfScnSpec
 	var upgradeName : name;     // rune/glyph socketed into the target ('' = none)
 	var enchantment : name;     // runeword/glyphword on the target ('' = none)
 	var expectQuality : int;    // SKIP unless the target has this quality (0 = any)
+	var sacrificeUpgrades : array<name>;  // runes/glyphs socketed into the sacrifice
+	var sacrificeEnchantment : name;      // runeword/glyphword on the sacrifice ('' = none)
 }
 
 // Target state before the infusion (identity checks, spec §4.1).
@@ -56,6 +58,8 @@ function InfusionScenarioNames( out names : array<name> )
 	names.PushBack( 'witcher_sword_rune' );
 	names.PushBack( 'witcher_armor_glyph' );
 	names.PushBack( 'relic_runeword' );
+	names.PushBack( 'sacrifice_runes_returned' );
+	names.PushBack( 'sacrifice_enchanted' );
 	names.PushBack( 'ngplus_uncapped' );
 	names.PushBack( 'salvage_off' );
 	names.PushBack( 'fee_by_tier' );
@@ -68,6 +72,7 @@ function InfusionScenarioNames( out names : array<name> )
 	names.PushBack( 'reject_quest' );
 	names.PushBack( 'reject_crowns' );
 	names.PushBack( 'reject_materials' );
+	names.PushBack( 'reject_keeps_upgrades' );
 	names.PushBack( 'reject_craftsman_type' );
 	names.PushBack( 'reject_tier_witcher' );
 	names.PushBack( 'reject_tier_relic' );
@@ -174,6 +179,23 @@ class W3InfusionScenarioRunner extends IScriptable
 				spec.enchantment = 'Runeword 1';
 				spec.expectQuality = 4;
 				return RunInfusion( spec, NULL );
+			// The sacrifice's runes come back (vanilla dismantle rule); the
+			// target keeps its own.
+			case 'sacrifice_runes_returned':
+				spec.targetName = 'Bear School steel sword 1';
+				spec.sacrificeName = 'Novigraadan sword 3';
+				spec.gap = 5;
+				spec.upgradeName = 'Rune stribog lesser';
+				spec.sacrificeUpgrades.PushBack( 'Rune dazhbog lesser' );
+				spec.sacrificeUpgrades.PushBack( 'Rune devana lesser' );
+				return RunInfusion( spec, NULL );
+			// An enchanted sacrifice returns nothing, as when dismantling.
+			case 'sacrifice_enchanted':
+				spec.targetName = 'Novigraadan sword 1';
+				spec.sacrificeName = 'Novigraadan sword 3';
+				spec.gap = 5;
+				spec.sacrificeEnchantment = 'Runeword 1';
+				return RunInfusion( spec, NULL );
 			case 'ngplus_uncapped':
 				return ScenarioNgPlus();
 			case 'salvage_off':
@@ -202,6 +224,8 @@ class W3InfusionScenarioRunner extends IScriptable
 				return ScenarioRejectCrowns();
 			case 'reject_materials':
 				return ScenarioRejectMaterials();
+			case 'reject_keeps_upgrades':
+				return ScenarioRejectKeepsUpgrades();
 			case 'reject_craftsman_type':
 				return ScenarioRejectCraftsman( 'Novigraadan sword 1', 'Novigraadan sword 3', true, IFE_WrongCraftsmanType, 0 );
 			case 'reject_tier_witcher':
@@ -246,11 +270,11 @@ class W3InfusionScenarioRunner extends IScriptable
 	public function RunInfusion( spec : SInfScnSpec, craftsman : CGameplayEntity ) : EInfScnStatus
 	{
 		var t, s : SItemUniqueId;
-		var before : SInfScnItemState;
+		var before, sacBefore : SInfScnItemState;
 		var p : SInfusionPreview;
 		var err : EInfusionError;
 		var moneyBefore : int;
-		var matBefore : array<int>;
+		var matBefore, upgradesBefore : array<int>;
 		var i : int;
 
 		if ( !Spawn( spec.targetName, t ) || !Spawn( spec.sacrificeName, s ) )
@@ -276,6 +300,17 @@ class W3InfusionScenarioRunner extends IScriptable
 		{
 			return ISS_Skip;
 		}
+		for ( i = 0; i < spec.sacrificeUpgrades.Size(); i += 1 )
+		{
+			if ( !SocketUpgrade( s, spec.sacrificeUpgrades[i] ) )
+			{
+				return ISS_Skip;
+			}
+		}
+		if ( spec.sacrificeEnchantment != '' && !Enchant( s, spec.sacrificeEnchantment ) )
+		{
+			return ISS_Skip;
+		}
 		if ( !BoostTo( s, Level( t ) + spec.gap ) )
 		{
 			return ISS_Fail;
@@ -286,11 +321,16 @@ class W3InfusionScenarioRunner extends IScriptable
 		}
 
 		before = Capture( t );
+		sacBefore = Capture( s );
 
 		err = svc.Preview( t, s, p, craftsman );
 		if ( err != IFE_Ok )
 		{
 			detail = "preview refused: " + InfusionErrorToString( err );
+			return ISS_Fail;
+		}
+		if ( !VerifyReturnPreview( spec, p ) )
+		{
 			return ISS_Fail;
 		}
 
@@ -301,6 +341,10 @@ class W3InfusionScenarioRunner extends IScriptable
 		for ( i = 0; i < p.materials.Size(); i += 1 )
 		{
 			matBefore.PushBack( inv.GetItemQuantityByName( p.materials[i].itemName ) );
+		}
+		for ( i = 0; i < sacBefore.enhancements.Size(); i += 1 )
+		{
+			upgradesBefore.PushBack( inv.GetItemQuantityByName( sacBefore.enhancements[i] ) );
 		}
 
 		err = svc.Execute( t, s, p, craftsman );
@@ -315,9 +359,87 @@ class W3InfusionScenarioRunner extends IScriptable
 		{
 			return ISS_Fail;
 		}
+		if ( !VerifyReturnedUpgrades( sacBefore, p, upgradesBefore ) )
+		{
+			return ISS_Fail;
+		}
 		detail = "" + spec.targetName + " L" + before.level + " -> L" + p.newLevel + ", " + p.statAttribute + " "
-			+ RoundMath( p.statBefore ) + " -> " + RoundMath( p.statAfter ) + ", fee " + p.laborFee + DescribeKept( before );
+			+ RoundMath( p.statBefore ) + " -> " + RoundMath( p.statAfter ) + ", fee " + p.laborFee + DescribeKept( before )
+			+ DescribeReturned( p );
 		return ISS_Pass;
+	}
+
+	// The preview's return list follows the vanilla dismantle rule: every
+	// socketed upgrade of a plain sacrifice, nothing of an enchanted one.
+	private function VerifyReturnPreview( spec : SInfScnSpec, p : SInfusionPreview ) : bool
+	{
+		var i : int;
+
+		if ( p.sacrificeEnchanted != ( spec.sacrificeEnchantment != '' ) )
+		{
+			detail = "preview: sacrificeEnchanted is " + p.sacrificeEnchanted;
+			return false;
+		}
+		if ( p.sacrificeEnchanted )
+		{
+			if ( p.sacrificeUpgrades.Size() > 0 )
+			{
+				detail = "preview: enchanted sacrifice would return " + p.sacrificeUpgrades.Size() + " upgrade(s)";
+				return false;
+			}
+			return true;
+		}
+		if ( p.sacrificeUpgrades.Size() != spec.sacrificeUpgrades.Size() )
+		{
+			detail = "preview: " + p.sacrificeUpgrades.Size() + " upgrade(s) to return, expected " + spec.sacrificeUpgrades.Size();
+			return false;
+		}
+		for ( i = 0; i < spec.sacrificeUpgrades.Size(); i += 1 )
+		{
+			if ( !p.sacrificeUpgrades.Contains( spec.sacrificeUpgrades[i] ) )
+			{
+				detail = "preview: " + spec.sacrificeUpgrades[i] + " missing from the return list";
+				return false;
+			}
+		}
+		return true;
+	}
+
+	// Each of the sacrifice's upgrades is now in the inventory once more per
+	// copy it had socketed - or not at all when it was enchanted.
+	// upgradesBefore: quantity of each sacBefore.enhancements name before Execute.
+	private function VerifyReturnedUpgrades( sacBefore : SInfScnItemState, p : SInfusionPreview, upgradesBefore : array<int> ) : bool
+	{
+		var i, expected, gained : int;
+
+		for ( i = 0; i < sacBefore.enhancements.Size(); i += 1 )
+		{
+			expected = 0;
+			if ( !p.sacrificeEnchanted )
+			{
+				expected = CountAbility( sacBefore.enhancements, sacBefore.enhancements[i] );
+			}
+			gained = inv.GetItemQuantityByName( sacBefore.enhancements[i] ) - upgradesBefore[i];
+			if ( gained != expected )
+			{
+				detail = "returned " + gained + " x " + sacBefore.enhancements[i] + ", expected " + expected;
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private function DescribeReturned( p : SInfusionPreview ) : string
+	{
+		if ( p.sacrificeEnchanted )
+		{
+			return ", enchanted sacrifice: nothing returned";
+		}
+		if ( p.sacrificeUpgrades.Size() > 0 )
+		{
+			return ", " + p.sacrificeUpgrades.Size() + " upgrade(s) returned";
+		}
+		return "";
 	}
 
 	private function VerifyInfusion( t, s : SItemUniqueId, before : SInfScnItemState, p : SInfusionPreview, moneyBefore : int, matBefore : array<int> ) : bool
@@ -811,6 +933,46 @@ class W3InfusionScenarioRunner extends IScriptable
 			}
 		}
 		return ExpectRejection( t, s, IFE_NotEnoughMaterials, NULL );
+	}
+
+	// A failed infusion returns none of the sacrifice's runes: they stay
+	// socketed and no rune item appears (ExpectRejection's quantity check).
+	private function ScenarioRejectKeepsUpgrades() : EInfScnStatus
+	{
+		var t, s : SItemUniqueId;
+		var p : SInfusionPreview;
+		var status : EInfScnStatus;
+
+		if ( !Spawn( 'Novigraadan sword 1', t ) || !Spawn( 'Novigraadan sword 3', s ) )
+		{
+			return ISS_Fail;
+		}
+		if ( !SocketUpgrade( s, 'Rune dazhbog lesser' ) || !SocketUpgrade( s, 'Rune devana lesser' ) )
+		{
+			return ISS_Skip;
+		}
+		if ( !BoostTo( s, Level( t ) + 10 ) )
+		{
+			return ISS_Fail;
+		}
+		if ( svc.Preview( t, s, p ) != IFE_Ok || p.sacrificeUpgrades.Size() != 2 )
+		{
+			detail = "setup pair invalid (" + p.sacrificeUpgrades.Size() + " upgrade(s) to return)";
+			return ISS_Fail;
+		}
+		TakeSnapshot( p );
+		inv.RemoveMoney( inv.GetMoney() );
+		status = ExpectRejection( t, s, IFE_NotEnoughCrowns, NULL );
+		if ( status == ISS_Pass && inv.GetItemEnhancementCount( s ) != 2 )
+		{
+			detail = "rejected, but the sacrifice now has " + inv.GetItemEnhancementCount( s ) + " upgrade(s)";
+			return ISS_Fail;
+		}
+		if ( status == ISS_Pass )
+		{
+			detail += ", both runes still socketed";
+		}
+		return status;
 	}
 
 	// Spec §13.2: the level check after applying fails (forced via
@@ -1492,12 +1654,15 @@ class W3InfusionScenarioRunner extends IScriptable
 	}
 
 	// Sockets a rune/glyph (vanilla EnhanceItemScript, as the crafting
-	// manager does it). False = SKIP: the game refused the upgrade.
+	// manager does it), adding a slot when all are taken (max 3).
+	// False = SKIP: the game refused the upgrade.
 	private function SocketUpgrade( t : SItemUniqueId, upgradeName : name ) : bool
 	{
 		var u : SItemUniqueId;
+		var used : int;
 
-		if ( inv.GetItemEnhancementSlotsCount( t ) == 0 )
+		used = inv.GetItemEnhancementCount( t );
+		if ( inv.GetItemEnhancementSlotsCount( t ) <= used && used < 3 )
 		{
 			inv.AddSlot( t );
 		}
@@ -1505,7 +1670,7 @@ class W3InfusionScenarioRunner extends IScriptable
 		{
 			return false;
 		}
-		if ( !inv.EnhanceItemScript( t, u ) || inv.GetItemEnhancementCount( t ) == 0 )
+		if ( !inv.EnhanceItemScript( t, u ) || inv.GetItemEnhancementCount( t ) <= used )
 		{
 			detail = "could not socket " + upgradeName + " (" + inv.GetItemEnhancementSlotsCount( t ) + " slots)";
 			return false;
@@ -1563,8 +1728,10 @@ class W3InfusionScenarioRunner extends IScriptable
 		return total;
 	}
 
-	// Records crowns and the preview's materials before the scenario
-	// changes them; RestoreSnapshot puts back exactly these amounts.
+	// Records crowns, the preview's materials and the sacrifice's returnable
+	// upgrades before the scenario changes them; RestoreSnapshot puts back
+	// exactly these amounts (returned runes/glyphs are new, untagged items
+	// that RemoveScenarioItems would not find).
 	private function TakeSnapshot( p : SInfusionPreview )
 	{
 		var i : int;
@@ -1577,6 +1744,11 @@ class W3InfusionScenarioRunner extends IScriptable
 		{
 			snapNames.PushBack( p.materials[i].itemName );
 			snapQty.PushBack( inv.GetItemQuantityByName( p.materials[i].itemName ) );
+		}
+		for ( i = 0; i < p.sacrificeUpgrades.Size(); i += 1 )
+		{
+			snapNames.PushBack( p.sacrificeUpgrades[i] );
+			snapQty.PushBack( inv.GetItemQuantityByName( p.sacrificeUpgrades[i] ) );
 		}
 	}
 
